@@ -1,0 +1,166 @@
+# Pulse Configuration
+# Copy to pulse.yaml and customize
+
+# OpenClaw connection
+openclaw:
+  webhook_url: "http://127.0.0.1:18789/hooks/agent"
+  webhook_token: "${OPENCLAW_HOOKS_TOKEN}"
+  # Default message prefix for self-initiated turns
+  message_prefix: "[PULSE]"
+  # Max agent turns per hour (rate limiting)
+  max_turns_per_hour: 10
+  # Cooldown between triggers (seconds)
+  min_trigger_interval: 300
+
+# Agent workspace paths (relative to workspace root)
+workspace:
+  root: "~/.openclaw/workspace"
+  goals: "scripts/goals.py"
+  curiosity: "memory/self/curiosity.json"
+  emotions: "memory/self/emotional-landscape.json"
+  hypotheses: "memory/self/hypotheses.json"
+  trust_scores: "memory/self/trust-scores.json"
+  values: "memory/self/discovered-values.md"
+  working_memory: "memory/self/working-memory.json"
+  evolution: "memory/self/evolution.json"
+  daily_notes: "memory/"
+
+# Drive engine
+drives:
+  # How fast unfulfilled drives accumulate pressure (per minute)
+  pressure_rate: 0.01
+  # Threshold to trigger an agent turn
+  trigger_threshold: 0.7
+  # Maximum pressure (caps accumulation)
+  max_pressure: 1.0
+  # Pressure decay after a successful turn
+  success_decay: 0.5
+  # Pressure boost on failure/frustration
+  failure_boost: 0.2
+  
+  # Drive categories and their base weights
+  categories:
+    goals:
+      weight: 1.0
+      source: "goals"
+    curiosity:
+      weight: 0.6
+      source: "curiosity"
+    emotions:
+      weight: 0.8
+      source: "emotions"
+    unfinished:
+      weight: 0.9
+      source: "hypotheses"
+    social:
+      weight: 0.4
+      source: "sensors.discord"
+    growth:
+      weight: 0.5
+      source: "evolution"
+
+# Sensors
+sensors:
+  # File system watcher
+  filesystem:
+    enabled: true
+    watch_paths:
+      - "~/.openclaw/workspace/memory/"
+      - "~/.openclaw/workspace/knowledge/"
+    ignore_patterns:
+      - "*.pyc"
+      - "__pycache__"
+      - ".git"
+    # Only trigger on external changes (not our own writes)
+    ignore_self_writes: true
+
+  # Discord agent channels
+  discord:
+    enabled: false
+    channels: []
+    # Alert if agent silent for N minutes
+    silence_threshold_minutes: 180
+
+  # Web monitors
+  web:
+    enabled: false
+    monitors: []
+    # Example:
+    # - name: "Polymarket API"
+    #   url: "https://clob.polymarket.com/health"
+    #   interval_seconds: 300
+    #   alert_on: "status_change"
+
+  # System health
+  system:
+    enabled: true
+    # Monitor memory pressure
+    memory_threshold_percent: 85
+    # Monitor process health (e.g., weather bot)
+    watch_processes: []
+
+  # Git activity
+  git:
+    enabled: false
+    repos: []
+
+# Priority evaluator
+evaluator:
+  # Mode: "rules" (default, zero dependencies) or "model" (smarter, needs an LLM endpoint)
+  mode: "rules"
+  
+  # Rules-based evaluation
+  rules:
+    # Trigger if any single drive exceeds threshold
+    single_drive_threshold: 0.8
+    # Trigger if combined weighted pressure exceeds threshold  
+    combined_threshold: 0.7
+    # Suppress triggers during human conversation (detect recent messages)
+    suppress_during_conversation: true
+    conversation_cooldown_minutes: 5
+
+  # Model-based evaluation (opt-in, set mode: "model" to enable)
+  # Uses any OpenAI-compatible API — zero vendor lock-in
+  model:
+    # Ollama (local, free, private — recommended)
+    base_url: "http://127.0.0.1:11434/v1"
+    api_key: "ollama"
+    model: "llama3.2:3b"
+    # # OpenAI
+    # base_url: "https://api.openai.com/v1"
+    # api_key: "${OPENAI_API_KEY}"
+    # model: "gpt-4o-mini"
+    # # Groq (fast, free tier)
+    # base_url: "https://api.groq.com/openai/v1"
+    # api_key: "${GROQ_API_KEY}"
+    # model: "llama-3.1-8b-instant"
+    # # Together, Fireworks, any OpenAI-compatible endpoint works
+    max_tokens: 512
+    temperature: 0.3
+    timeout_seconds: 10
+
+# State persistence
+state:
+  dir: "~/.pulse/state"
+  # How often to save state (seconds)
+  save_interval: 60
+  # Keep history of drive states for analysis
+  history_retention_days: 30
+
+# Logging
+logging:
+  level: "INFO"
+  file: "~/.pulse/logs/pulse.log"
+  # Also log to OpenClaw daily notes
+  sync_to_daily_notes: true
+
+# Daemon settings
+daemon:
+  # Main loop interval (how often to evaluate drives)
+  loop_interval_seconds: 30
+  # Graceful shutdown timeout
+  shutdown_timeout: 10
+  # PID file for process management
+  pid_file: "~/.pulse/pulse.pid"
+  # Health endpoint port (GET /health, GET /status)
+  health_port: 9720

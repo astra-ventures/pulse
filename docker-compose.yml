@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  pulse:
+    build: .
+    container_name: pulse
+    restart: unless-stopped
+    volumes:
+      - pulse-state:/root/.pulse
+      - ./config:/app/config:ro
+    environment:
+      - OPENCLAW_HOOKS_TOKEN=${OPENCLAW_HOOKS_TOKEN}
+    # For localhost webhook access to OpenClaw on host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pulse-state:

@@ -1,0 +1,3 @@
+#!/bin/bash
+# Pulse CLI — autonomous cognition engine
+exec /opt/homebrew/bin/python3 -m pulse.src.cli "$@"

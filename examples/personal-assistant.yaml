@@ -1,0 +1,99 @@
+# Pulse Config — Personal Assistant
+# Low-frequency background monitoring for a personal AI assistant
+# Priorities: long-term goals, daily reflection, creative writing
+
+openclaw:
+  webhook_url: "http://localhost:8080/hooks/agent"
+  webhook_token: "${PULSE_HOOK_TOKEN}"
+  min_trigger_interval: 3600    # 1 hour cooldown
+  max_turns_per_hour: 5         # conservative (avoid interrupting human)
+
+daemon:
+  loop_interval_seconds: 60     # check every minute
+  health_port: 9719
+  integration: "iris"           # or "default"
+  log_level: "INFO"
+
+drives:
+  trigger_threshold: 7.0         # higher = fewer triggers
+  pressure_rate: 0.005           # slow accumulation
+  max_pressure: 20.0
+  decay_on_success: 0.7
+  decay_on_failure: 0.3
+
+  categories:
+    goals:
+      weight: 1.2               # goals are important
+      sources:
+        - "goals.json"
+    
+    curiosity:
+      weight: 0.9
+      sources:
+        - "curiosity.json"
+    
+    writing:
+      weight: 1.0               # custom drive for creative work
+      sources:
+        - "iamiris.ai/journal.html"
+        - "memory/self/reflections/"
+    
+    learning:
+      weight: 0.8
+      sources:
+        - "hypotheses.json"
+    
+    social:
+      weight: 0.6               # lower priority
+      sources: []
+    
+    system:
+      weight: 0.5
+      sources: []
+
+sensors:
+  filesystem:
+    enabled: true
+    watch_paths:
+      - "."
+      - "memory/*.md"
+      - "iamiris.ai/**/*.html"
+    ignore_patterns:
+      - "*.pyc"
+      - ".git/*"
+      - "node_modules/*"
+    debounce_seconds: 5.0       # longer debounce (avoid spam during editing)
+  
+  conversation:
+    enabled: true
+    session_file: "memory/main-session.txt"
+    activity_threshold_seconds: 600  # 10 minutes (avoid interrupting deep conversation)
+    size_threshold_kb: 100
+  
+  system:
+    enabled: true
+    check_interval_seconds: 300
+    memory_threshold_mb: 150
+    disk_threshold_gb: 10
+  
+  discord:
+    enabled: false
+
+evaluator:
+  mode: "rules"  # simple threshold-based
+
+workspace:
+  root: "/Users/you/.openclaw/workspace"
+  resolve_paths: true
+
+state:
+  dir: "~/.pulse"
+  save_interval: 300
+  max_history_entries: 500      # keep history lean
+
+logging:
+  level: "INFO"
+  format: "text"                # human-readable
+  output: "stdout"
+  sync_to_daily_notes: true
+  daily_notes_dir: "memory"

@@ -1,0 +1,14 @@
+# Pulse Requirements
+# Python 3.11+ required
+
+# Core dependencies
+aiohttp>=3.9.0        # Async HTTP client + web server
+watchdog>=3.0.0       # Filesystem monitoring
+pyyaml>=6.0.1         # Config file parsing
+requests>=2.31.0      # HTTP client (sync)
+
+# CLI/UX
+rich>=13.7.0          # Beautiful terminal output
+
+# Optional (for model-based evaluator)
+# ollama-python>=0.1.0  # Ollama client (uncomment if using model mode)

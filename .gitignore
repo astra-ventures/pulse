@@ -1,0 +1,64 @@
+# Pulse .gitignore
+
+# State files (local daemon state, not for repo)
+state/
+*.state
+drives.json
+working_memory.json
+
+# Config files with secrets
+config/pulse.yaml
+.env
+*.secret
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+nohup.out
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Keep example configs
+!config/pulse.example.yaml
+!examples/*.yaml
