@@ -105,9 +105,12 @@ openclaw:
 
 ## Screenshots / Demo
 
-*(TODO: Add screenshot of `pulse status` output)*
-*(TODO: Add GIF of filesystem change → trigger → agent action)*
-*(TODO: Add architecture diagram from docs/architecture.md)*
+Use `SCREENSHOT_GUIDE.md` to capture:
+- Screenshot 1: `/state` before feedback (drive pressure visible)
+- Screenshot 2: `/state` after feedback (drive decay visible)
+- Short GIF: file change → trigger → agent action → feedback
+
+Optional: architecture diagram from `docs/architecture.md`.
 
 ## Documentation
 
