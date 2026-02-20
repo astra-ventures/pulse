@@ -101,6 +101,39 @@ Every module must register here. If it's not in this table, it doesn't exist.
 6. **DISSONANCE is append-only.** Never resolve contradictions — only add new ones or note when one deepens.
 7. **PALATE uses two-column format.** First instinct | Reflected opinion. The gap between them IS the data.
 
+## Integration Status
+
+All 19 nervous system modules are **WIRED** into the Pulse daemon via `NervousSystem` (`pulse/src/nervous_system.py`).
+
+| Module | Status | Wired Via |
+|--------|--------|-----------|
+| THALAMUS | ✅ WIRED | startup(), post_trigger(), shutdown() |
+| PROPRIOCEPTION | ✅ WIRED | startup() |
+| CIRCADIAN | ✅ WIRED | pre_sense(), pre_evaluate(), check_night_mode() |
+| ENDOCRINE | ✅ WIRED | pre_evaluate(), post_trigger() |
+| ADIPOSE | ✅ WIRED | pre_sense() |
+| MYELIN | ✅ WIRED | post_loop() (lexicon update) |
+| IMMUNE | ✅ WIRED | post_loop() (every 10th loop) |
+| CEREBELLUM | ✅ WIRED | startup() |
+| BUFFER | ✅ WIRED | post_trigger() |
+| SPINE | ✅ WIRED | pre_sense(), shutdown() |
+| RETINA | ✅ WIRED | pre_sense() |
+| AMYGDALA | ✅ WIRED | pre_sense() |
+| VAGUS | ✅ WIRED | pre_evaluate() |
+| LIMBIC | ✅ WIRED | pre_evaluate() |
+| ENTERIC | ✅ WIRED | pre_evaluate() |
+| PLASTICITY | ✅ WIRED | post_trigger() |
+| REM | ✅ WIRED | check_night_mode(), run_rem_session() |
+| MIRROR | 📋 FILE-BASED | memory/self/josh_model.md |
+| DISSONANCE | 📋 FILE-BASED | memory/self/contradictions.md |
+
+The daemon calls NervousSystem methods at these loop points:
+```
+INIT: nervous_system.startup()
+LOOP: pre_sense() → SENSE → pre_evaluate() → EVALUATE → ACT → post_trigger() → FEEDBACK → EVOLVE → post_loop() → night_mode_check → PERSIST
+SHUTDOWN: nervous_system.shutdown()
+```
+
 ## Integration Checkpoints
 
 After building any new module:
@@ -136,7 +169,8 @@ After building any new module:
 │   │   ├── adipose.py
 │   │   ├── immune.py
 │   │   ├── proprioception.py
-│   │   └── enteric.py
+│   │   ├── enteric.py
+│   │   └── nervous_system.py    ← Integration layer (all 19 modules)
 │   ├── tests/
 │   │   ├── test_drives.py
 │   │   ├── test_plasticity.py

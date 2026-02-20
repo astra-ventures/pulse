@@ -30,6 +30,7 @@ from pulse.src.core.webhook import OpenClawWebhook
 from pulse.src.core.daily_sync import DailyNoteSync
 from pulse.src.core.events import EventBus, TRIGGER_SUCCESS, TRIGGER_FAILURE, MUTATION_APPLIED
 from pulse.src.integrations import Integration
+from pulse.src.nervous_system import NervousSystem
 
 logger = logging.getLogger("pulse")
 
@@ -93,6 +94,14 @@ class PulseDaemon:
             self.bus.on(TRIGGER_FAILURE, self._on_trigger_daily_sync)
             self.bus.on(MUTATION_APPLIED, self._on_mutation_daily_sync)
 
+        # Nervous system — all 19 modules
+        try:
+            workspace = str(self.config.workspace.root) if hasattr(self.config, 'workspace') and hasattr(self.config.workspace, 'root') else "~/.openclaw/workspace"
+            self.nervous_system = NervousSystem(config=self.config, workspace_root=workspace)
+        except Exception as e:
+            logger.warning(f"NervousSystem init failed (continuing without): {e}")
+            self.nervous_system = None
+
         # Evaluator — rules (Phase 1-2) or model (Phase 3+)
         if self.config.evaluator.mode == "model":
             mc = self.config.evaluator.model
@@ -149,6 +158,14 @@ class PulseDaemon:
         self.state.load()
         self.drives.restore_state()
 
+        # Start nervous system
+        if self.nervous_system:
+            try:
+                ns_status = self.nervous_system.startup()
+                logger.info(f"NervousSystem: {ns_status.get('modules_loaded', 0)} modules loaded")
+            except Exception as e:
+                logger.warning(f"NervousSystem startup failed: {e}")
+
         # Restore config overrides from mutations
         overrides = self.state.get("config_overrides", {})
         if overrides:
@@ -175,11 +192,29 @@ class PulseDaemon:
                 sensor_data = await self.sensors.read()
                 logger.debug(f"SENSE: done. Changes: {sensor_data.get('filesystem', {}).get('changes', [])}")
 
+                # NERVOUS SYSTEM — pre-sense enrichment
+                ns_context = {}
+                if self.nervous_system:
+                    try:
+                        ns_context = self.nervous_system.pre_sense(sensor_data)
+                        if ns_context.get("should_pause"):
+                            logger.info("NervousSystem advises pause (threat/health)")
+                    except Exception as e:
+                        logger.warning(f"NervousSystem pre_sense failed: {e}")
+
                 # DRIVE — update drive pressures based on sensors + time
                 self.drives.refresh_sources()  # I/O: read workspace files (cached)
                 drive_state = self.drives.tick(sensor_data)  # Pure state transition
                 convo_info = sensor_data.get("conversation", {})
                 logger.info(f"DRIVE: pressure={drive_state.total_pressure:.3f} | convo_active={convo_info.get('active')} since={convo_info.get('seconds_since')}s")
+
+                # NERVOUS SYSTEM — pre-evaluate enrichment
+                ns_eval_context = {}
+                if self.nervous_system:
+                    try:
+                        ns_eval_context = self.nervous_system.pre_evaluate(drive_state, sensor_data)
+                    except Exception as e:
+                        logger.warning(f"NervousSystem pre_evaluate failed: {e}")
 
                 # EVALUATE — should we trigger an agent turn?
                 if self._model_evaluator:
@@ -245,6 +280,26 @@ class PulseDaemon:
                     self.state.set("drives", self.drives.save_state())
                     self.state.save()
 
+                # NERVOUS SYSTEM — post-loop maintenance
+                if self.nervous_system:
+                    try:
+                        self.nervous_system.post_loop()
+                    except Exception as e:
+                        logger.warning(f"NervousSystem post_loop failed: {e}")
+
+                    # Night mode check
+                    try:
+                        night = self.nervous_system.check_night_mode(
+                            drives={n: d for n, d in self.drives.drives.items()} if hasattr(self.drives, 'drives') else None
+                        )
+                        if night.get("rem_eligible"):
+                            logger.info("🌙 REM eligible — starting dream session")
+                            self.nervous_system.run_rem_session(
+                                drives={n: d for n, d in self.drives.drives.items()} if hasattr(self.drives, 'drives') else None
+                            )
+                    except Exception as e:
+                        logger.warning(f"NervousSystem night mode check failed: {e}")
+
                 # PERSIST — sync drives to state and save periodically
                 self.state.set("drives", self.drives.save_state())
                 self.state.maybe_save()
@@ -298,6 +353,13 @@ class PulseDaemon:
             self.drives.on_trigger_failure(decision)
             self.state.log_trigger(decision, success=False)
             self.bus.emit(TRIGGER_FAILURE, decision=decision, success=False, turn=self.turn_count)
+
+        # NERVOUS SYSTEM — post-trigger
+        if self.nervous_system:
+            try:
+                self.nervous_system.post_trigger(decision, success)
+            except Exception as e:
+                logger.warning(f"NervousSystem post_trigger failed: {e}")
 
         # Feed outcome back to model evaluator for history context
         if self._model_evaluator and hasattr(self.evaluator, 'record_trigger'):
@@ -436,6 +498,13 @@ class PulseDaemon:
 
     def _cleanup_sync(self):
         """Sync-only cleanup after event loop is closed."""
+        # Shutdown nervous system
+        if self.nervous_system:
+            try:
+                self.nervous_system.shutdown()
+            except Exception as e:
+                logger.warning(f"NervousSystem shutdown failed: {e}")
+
         # Save final state
         self.state.set("drives", self.drives.save_state())
         self.state.save()
