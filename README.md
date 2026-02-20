@@ -58,7 +58,7 @@ nano config/pulse.yaml  # set webhook_url + webhook_token
 python -m pulse
 
 # 5. Test
-curl http://localhost:9719/health
+curl http://localhost:9720/health
 ```
 
 See [docs/deployment.md](docs/deployment.md) for production setup (systemd, Docker, LaunchAgent).

@@ -72,7 +72,7 @@ python -m pulse
 **Check it's working:**
 ```bash
 # In another terminal
-curl http://localhost:9719/health
+curl http://localhost:9720/health
 
 # Should return:
 # {"status": "healthy", "uptime": 123, ...}
@@ -168,7 +168,7 @@ docker run -d \
   -e PULSE_HOOK_TOKEN=your-token \
   -v ~/.pulse:/root/.pulse \
   -v /path/to/openclaw/workspace:/workspace:ro \
-  -p 9719:9719 \
+  -p 9720:9720 \
   pulse:latest
 ```
 
@@ -178,7 +178,7 @@ docker run -d \
 - `-e PULSE_HOOK_TOKEN` — pass webhook token
 - `-v ~/.pulse:/root/.pulse` — persist state
 - `-v /workspace:/workspace:ro` — mount workspace read-only
-- `-p 9719:9719` — expose health endpoint
+- `-p 9720:9720` — expose health endpoint
 
 ### Docker Compose
 
@@ -197,7 +197,7 @@ services:
       - ~/.pulse:/root/.pulse
       - /path/to/openclaw/workspace:/workspace:ro
     ports:
-      - "9719:9719"
+      - "9720:9720"
     logging:
       driver: "json-file"
       options:
@@ -423,7 +423,7 @@ Update `fly.toml`:
 ### Health Endpoint
 
 ```bash
-curl http://localhost:9719/health
+curl http://localhost:9720/health
 ```
 
 **Response:**
@@ -600,7 +600,7 @@ Your agent picks up exactly where it left off.
 ## Security Checklist
 
 - [ ] Webhook token is secret (not in git)
-- [ ] Health endpoint not exposed to internet (or firewall port 9719)
+- [ ] Health endpoint not exposed to internet (or firewall port 9720)
 - [ ] Pulse runs as non-root user
 - [ ] State directory has restrictive permissions (`chmod 700 ~/.pulse`)
 - [ ] Logs don't contain secrets

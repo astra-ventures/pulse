@@ -36,4 +36,10 @@ build-backend = "setuptools.backends._legacy:_Backend"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pulse*"]
+include = ["src*"]
+
+[tool.setuptools.package-dir]
+"pulse.src" = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -10,6 +10,8 @@ services:
       - ./config:/app/config:ro
     environment:
       - OPENCLAW_HOOKS_TOKEN=${OPENCLAW_HOOKS_TOKEN}
+    ports:
+      - "9720:9720"
     # For localhost webhook access to OpenClaw on host
     extra_hosts:
       - "host.docker.internal:host-gateway"

@@ -1,17 +1,23 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+WORKDIR /app/pulse
 
-COPY pyproject.toml .
-COPY pulse/ pulse/
+# Install dependencies first (cached layer)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source — the repo IS the pulse package
+COPY src/ src/
 COPY config/ config/
-
-RUN pip install --no-cache-dir .
+COPY bin/ bin/
+COPY pyproject.toml .
 
 # State volume — mount this for persistence across restarts
 VOLUME /root/.pulse
 
 # Config volume — mount your pulse.yaml here
-VOLUME /app/config
+VOLUME /app/pulse/config
 
-CMD ["python", "-m", "pulse"]
+# PYTHONPATH makes `pulse.src` importable from /app
+ENV PYTHONPATH=/app
+CMD ["python", "-m", "pulse.src"]
