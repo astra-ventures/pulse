@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from pulse.src.sanctum import (
+from pulse.src.rem import (
     SanctumConfig,
     SanctumGuard,
     SanctumSession,

@@ -103,7 +103,7 @@ class DrivePerformance:
 
 # ─── Main Engine ─────────────────────────────────────────────
 
-class DriveEvolution:
+class Plasticity:
     """
     Tracks drive performance and evolves weights over time.
 

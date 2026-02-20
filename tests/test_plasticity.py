@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.drive_evolution import DriveEvolution, EvolutionConfig, EvaluationRecord, DrivePerformance
+from src.plasticity import Plasticity, EvolutionConfig, EvaluationRecord, DrivePerformance
 from src.drives.engine import Drive, DriveEngine
 
 
@@ -44,8 +44,8 @@ class TestDrivePerformance:
         assert p.average_quality == 0.5
 
 
-class TestDriveEvolution:
-    def _make_evolution(self, **kwargs) -> DriveEvolution:
+class TestPlasticity:
+    def _make_evolution(self, **kwargs) -> Plasticity:
         tmp = tempfile.mkdtemp()
         config = EvolutionConfig(
             state_file=f"{tmp}/drive-performance.json",
@@ -53,7 +53,7 @@ class TestDriveEvolution:
             evolution_interval=kwargs.get("evolution_interval", 5),
             **{k: v for k, v in kwargs.items() if k != "evolution_interval"},
         )
-        return DriveEvolution(config=config)
+        return Plasticity(config=config)
 
     def test_record_evaluation_increments_count(self):
         evo = self._make_evolution()
@@ -157,12 +157,12 @@ class TestDriveEvolution:
             audit_dir=tmp,
             evolution_interval=100,
         )
-        evo1 = DriveEvolution(config=config)
+        evo1 = Plasticity(config=config)
         evo1.record_evaluation("goals", True, 0.9, 9.0, "test")
         evo1.record_evaluation("curiosity", False, 0.3, 3.0, "test2")
 
         # Load fresh instance
-        evo2 = DriveEvolution(config=config)
+        evo2 = Plasticity(config=config)
         assert evo2.evaluation_count == 2
         assert len(evo2.history["goals"]) == 1
         assert len(evo2.history["curiosity"]) == 1
