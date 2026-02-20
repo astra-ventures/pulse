@@ -20,7 +20,7 @@ Example:
         "type": "add_drive",
         "name": "writing",
         "weight": 0.7,
-        "reason": "I want to write more on iamiris.ai — adding a dedicated drive"
+        "reason": "I want to write more on my blog — adding a dedicated drive"
     }
 ]
 
