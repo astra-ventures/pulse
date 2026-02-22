@@ -32,6 +32,9 @@ gh repo create jcap93/pulse --public --source . --remote origin --push
 
 ## ClawHub submission (10 minutes)
 Use `CLAWHUB_LISTING.md` as the submission copy.
+
+## Product Hunt launch (30 minutes, 7-14 days after GitHub)
+Use `PULSE_PRODUCTHUNT.md` — tagline, description, maker comment, gallery plan, X post, and response templates all ready. Just paste.
 - Category: OpenClaw / Agents / Automation
 - Pricing: Free core + Pro/Enterprise (as listed)
 - Add 2 screenshots (can be minimal):
