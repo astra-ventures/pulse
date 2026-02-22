@@ -45,7 +45,7 @@ class TestNephronBasics:
 
     def test_thalamus_pruning(self):
         """Test that THALAMUS bus gets trimmed when too large."""
-        thalamus_file = nephron.STATE_DIR / "thalamus.jsonl"
+        thalamus_file = nephron._DEFAULT_STATE_DIR / "thalamus.jsonl"
         
         # Create oversized file
         original = thalamus_file.read_text() if thalamus_file.exists() else ""
@@ -64,7 +64,7 @@ class TestNephronBasics:
 
     def test_thalamus_no_pruning_needed(self):
         """No pruning when under threshold."""
-        thalamus_file = nephron.STATE_DIR / "thalamus.jsonl"
+        thalamus_file = nephron._DEFAULT_STATE_DIR / "thalamus.jsonl"
         original = thalamus_file.read_text() if thalamus_file.exists() else ""
         try:
             lines = [json.dumps({"ts": i}) for i in range(100)]
@@ -75,7 +75,7 @@ class TestNephronBasics:
 
     def test_endocrine_history_pruning(self):
         """Trim mood_history when over 48."""
-        endo_file = nephron.STATE_DIR / "endocrine-state.json"
+        endo_file = nephron._DEFAULT_STATE_DIR / "endocrine-state.json"
         if not endo_file.exists():
             return
         
@@ -96,7 +96,7 @@ class TestNephronBasics:
 
     def test_chronicle_no_recent_pruning(self):
         """Recent chronicle entries should not be pruned."""
-        chronicle_file = nephron.STATE_DIR / "chronicle.jsonl"
+        chronicle_file = nephron._DEFAULT_STATE_DIR / "chronicle.jsonl"
         if not chronicle_file.exists():
             return
         

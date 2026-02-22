@@ -15,8 +15,8 @@ from pulse.src.mirror import (
 @pytest.fixture(autouse=True)
 def clean_state(tmp_path, monkeypatch):
     state_file = tmp_path / "mirror-state.json"
-    monkeypatch.setattr("pulse.src.mirror.STATE_FILE", state_file)
-    monkeypatch.setattr("pulse.src.mirror.STATE_DIR", tmp_path)
+    monkeypatch.setattr("pulse.src.mirror._DEFAULT_STATE_FILE", state_file)
+    monkeypatch.setattr("pulse.src.mirror._DEFAULT_STATE_DIR", tmp_path)
     monkeypatch.setattr("pulse.src.mirror.thalamus", MagicMock())
 
     josh_path = tmp_path / "josh_model.md"

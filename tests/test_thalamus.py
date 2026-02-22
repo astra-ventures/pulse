@@ -17,8 +17,8 @@ from pulse.src import thalamus
 def tmp_broadcast(tmp_path):
     """Redirect broadcast to temp dir."""
     bf = tmp_path / "thalamus.jsonl"
-    with patch.object(thalamus, "STATE_DIR", tmp_path), \
-         patch.object(thalamus, "BROADCAST_FILE", bf):
+    with patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
+         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
         yield bf
 
 
@@ -81,7 +81,7 @@ class TestRotation:
             remaining = thalamus.read_recent(100)
             assert len(remaining) <= 20  # After rotation, kept entries + new ones
             # Archived entries should exist
-            archives = list(thalamus.STATE_DIR.glob("broadcast-archive-*.jsonl"))
+            archives = list(thalamus._DEFAULT_STATE_DIR.glob("broadcast-archive-*.jsonl"))
             assert len(archives) >= 1
 
 

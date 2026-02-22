@@ -103,8 +103,8 @@ class TestBirthScan:
 
     def test_scan_graceful_on_missing_state(self):
         """Should return empty list if hypothalamus state doesn't exist."""
-        original = germinal.STATE_DIR / "hypothalamus-state.json"
-        backup = germinal.STATE_DIR / "hypothalamus-state.json.bak"
+        original = germinal._DEFAULT_STATE_DIR / "hypothalamus-state.json"
+        backup = germinal._DEFAULT_STATE_DIR / "hypothalamus-state.json.bak"
         
         if original.exists():
             original.rename(backup)
@@ -117,7 +117,7 @@ class TestBirthScan:
 
     def test_scan_ignores_young_drives(self):
         """Drives younger than threshold should not be candidates."""
-        hypo_file = germinal.STATE_DIR / "hypothalamus-state.json"
+        hypo_file = germinal._DEFAULT_STATE_DIR / "hypothalamus-state.json"
         original = hypo_file.read_text() if hypo_file.exists() else None
         
         try:
@@ -146,7 +146,7 @@ class TestBirthScan:
 
     def test_scan_finds_old_strong_drives(self):
         """Old, strong drives without a module should be candidates."""
-        hypo_file = germinal.STATE_DIR / "hypothalamus-state.json"
+        hypo_file = germinal._DEFAULT_STATE_DIR / "hypothalamus-state.json"
         original = hypo_file.read_text() if hypo_file.exists() else None
         
         try:

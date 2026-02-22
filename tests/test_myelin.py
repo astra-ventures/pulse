@@ -12,8 +12,8 @@ _tmpdir = tempfile.mkdtemp()
 _state_dir = Path(_tmpdir) / "state"
 _state_dir.mkdir()
 
-with patch("pulse.src.thalamus.STATE_DIR", _state_dir), \
-     patch("pulse.src.thalamus.BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
+with patch("pulse.src.thalamus._DEFAULT_STATE_DIR", _state_dir), \
+     patch("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
     import pulse.src.thalamus as thalamus
     import pulse.src.myelin as myelin_mod
     from pulse.src.myelin import Myelin, REFERENCE_THRESHOLD, _PRE_SEEDED
@@ -25,10 +25,10 @@ def clean_state(tmp_path):
     state_dir.mkdir(exist_ok=True)
     broadcast = state_dir / "broadcast.jsonl"
 
-    with patch.object(myelin_mod, "STATE_DIR", state_dir), \
-         patch.object(myelin_mod, "LEXICON_FILE", state_dir / "myelin-lexicon.json"), \
-         patch.object(thalamus, "STATE_DIR", state_dir), \
-         patch.object(thalamus, "BROADCAST_FILE", broadcast):
+    with patch.object(myelin_mod, "_DEFAULT_STATE_DIR", state_dir), \
+         patch.object(myelin_mod, "_DEFAULT_LEXICON_FILE", state_dir / "myelin-lexicon.json"), \
+         patch.object(thalamus, "_DEFAULT_STATE_DIR", state_dir), \
+         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", broadcast):
         myelin_mod._instance = None
         yield
 

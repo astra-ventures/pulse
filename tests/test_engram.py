@@ -15,8 +15,8 @@ from pulse.src.engram import (
 @pytest.fixture(autouse=True)
 def clean_store(tmp_path, monkeypatch):
     state_file = tmp_path / "engram-store.json"
-    monkeypatch.setattr("pulse.src.engram.STATE_FILE", state_file)
-    monkeypatch.setattr("pulse.src.engram.STATE_DIR", tmp_path)
+    monkeypatch.setattr("pulse.src.engram._DEFAULT_STATE_FILE", state_file)
+    monkeypatch.setattr("pulse.src.engram._DEFAULT_STATE_DIR", tmp_path)
     monkeypatch.setattr("pulse.src.engram.thalamus", MagicMock())
     yield state_file
 
@@ -242,7 +242,7 @@ class TestRecallWeighted:
         """Corrupt store file doesn't crash recall."""
         state_file = tmp_path / "engram-store.json"
         state_file.write_text("not valid json {{{")
-        monkeypatch.setattr("pulse.src.engram.STATE_FILE", state_file)
+        monkeypatch.setattr("pulse.src.engram._DEFAULT_STATE_FILE", state_file)
         result = recall("anything")
         assert result == ""
 
