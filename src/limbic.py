@@ -137,6 +137,69 @@ def get_current_afterimages() -> list[dict]:
     return active
 
 
+def detect_contagion(message_text: str, sender: str) -> Optional[dict]:
+    """Detect emotional tone from incoming messages, create resonance at 0.5x intensity.
+    
+    Simple keyword-based emotional contagion detection.
+    """
+    text_lower = message_text.lower()
+    
+    # Emotional tone patterns
+    _CONTAGION_MAP = {
+        "joy": (["happy", "excited", "amazing", "love it", "wonderful", "great news", "yay", "!!"], 1.5, 7.5),
+        "frustration": (["frustrated", "annoyed", "ugh", "broken", "stupid", "hate", "angry"], -1.5, 7.5),
+        "sadness": (["sad", "miss", "lonely", "heartbroken", "crying", "devastating"], -2.0, 8.0),
+        "excitement": (["can't wait", "so excited", "incredible", "blown away", "pumped"], 2.0, 8.0),
+        "anxiety": (["worried", "scared", "nervous", "anxious", "freaking out", "panic"], -1.0, 7.5),
+        "warmth": (["thank you", "appreciate", "grateful", "means a lot", "love you"], 2.0, 7.5),
+    }
+    
+    detected_emotion = None
+    detected_valence = 0.0
+    detected_intensity = 0.0
+    
+    for emotion, (keywords, valence, intensity) in _CONTAGION_MAP.items():
+        for kw in keywords:
+            if kw in text_lower:
+                detected_emotion = emotion
+                detected_valence = valence
+                detected_intensity = intensity
+                break
+        if detected_emotion:
+            break
+    
+    if not detected_emotion:
+        return None
+    
+    # Apply 0.5x resonance multiplier
+    resonance_valence = detected_valence * 0.5
+    resonance_intensity = detected_intensity * 0.5
+    
+    # Only create afterimage if resonance is strong enough
+    context = f"emotional contagion from {sender}: {detected_emotion}"
+    afterimage = record_emotion(resonance_valence, resonance_intensity, context)
+    
+    result = {
+        "detected_emotion": detected_emotion,
+        "sender": sender,
+        "original_valence": detected_valence,
+        "original_intensity": detected_intensity,
+        "resonance_valence": resonance_valence,
+        "resonance_intensity": resonance_intensity,
+        "afterimage_created": afterimage is not None,
+    }
+    
+    # Broadcast contagion event
+    thalamus.append({
+        "source": "limbic",
+        "type": "contagion",
+        "salience": resonance_intensity / 10.0,
+        "data": result,
+    })
+    
+    return result
+
+
 def get_emotional_color() -> Optional[dict]:
     """Return the dominant emotional residue right now, or None if all faded."""
     active = get_current_afterimages()

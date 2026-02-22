@@ -38,18 +38,18 @@ def clean_state(tmp_path):
 
 
 class TestPriorityRules:
-    def test_josh_direct(self):
+    def test_owner_direct(self):
         r = Retina()
-        scored = r.score({"sender": "+18135074387", "text": "hey"})
+        scored = r.score({"sender": "+15555550100", "text": "hey"})
         assert scored.priority == 1.0
-        assert scored.category == "josh_direct"
+        assert scored.category == "owner_direct"
         assert scored.should_process is True
 
-    def test_josh_mention(self):
+    def test_owner_mention(self):
         r = Retina()
-        scored = r.score({"sender": "+15551234567", "text": "Josh said something"})
+        scored = r.score({"sender": "+15551234567", "text": "owner said something"})
         assert scored.priority == 0.9
-        assert scored.category == "josh_mention"
+        assert scored.category == "owner_mention"
 
     def test_high_value_alert_edge(self):
         r = Retina()
@@ -122,7 +122,7 @@ class TestThresholdFiltering:
 
     def test_above_threshold_processed(self):
         r = Retina()
-        scored = r.score({"sender": "+18135074387", "text": "hi"})  # 1.0
+        scored = r.score({"sender": "+15555550100", "text": "hi"})  # 1.0
         assert scored.should_process is True
 
 
@@ -149,18 +149,18 @@ class TestDynamicThreshold:
         scored2 = r.score({"source_type": "cron", "anomaly": True})  # 0.7
         assert scored2.should_process is False  # 0.7 < 0.8
 
-    def test_focus_mode_josh_still_passes(self):
+    def test_focus_mode_owner_still_passes(self):
         r = Retina()
         r.set_focus_mode(True)
-        scored = r.score({"sender": "+18135074387", "text": "hey"})
-        assert scored.should_process is True  # Josh always passes
+        scored = r.score({"sender": "+15555550100", "text": "hey"})
+        assert scored.should_process is True  # Owner always passes
 
 
 class TestBatchFiltering:
     def test_filter_batch(self):
         r = Retina()
         signals = [
-            {"sender": "+18135074387", "text": "important"},
+            {"sender": "+15555550100", "text": "important"},
             {"source_type": "heartbeat"},
             {"health_level": "red"},
             {"source_type": "web_content"},
@@ -175,7 +175,7 @@ class TestAttentionQueue:
     def test_queue_sorted_by_priority(self):
         r = Retina()
         r.score({"health_level": "yellow"})  # 0.8
-        r.score({"sender": "+18135074387", "text": "hi"})  # 1.0
+        r.score({"sender": "+15555550100", "text": "hi"})  # 1.0
         r.score({"source_type": "mention", "follower_count": 50000})  # 0.75
         q = r.get_attention_queue()
         assert len(q) == 3
@@ -185,7 +185,7 @@ class TestAttentionQueue:
     def test_queue_limit(self):
         r = Retina()
         for i in range(5):
-            r.score({"sender": "+18135074387", "text": f"msg {i}"})
+            r.score({"sender": "+15555550100", "text": f"msg {i}"})
         assert len(r.get_attention_queue(limit=3)) == 3
 
 
@@ -210,11 +210,11 @@ class TestCustomRules:
 class TestThalamusIntegration:
     def test_score_writes_to_thalamus(self):
         r = Retina()
-        r.score({"sender": "+18135074387", "text": "hi"})
+        r.score({"sender": "+15555550100", "text": "hi"})
         entries = thalamus.read_by_source("retina")
         assert len(entries) >= 1
         assert entries[-1]["type"] == "attention"
-        assert entries[-1]["data"]["category"] == "josh_direct"
+        assert entries[-1]["data"]["category"] == "owner_direct"
 
 
 class TestScoredSignal:

@@ -62,3 +62,16 @@ htmlcov/
 # Keep example configs
 !config/pulse.example.yaml
 !examples/*.yaml
+
+# Internal planning docs (not for public repo)
+BRAINSTORM*.md
+AUDIT*.md
+LAUNCH_CHECKLIST.md
+LAUNCH_PACKET.md
+RELEASE_RUNBOOK.md
+SCREENSHOT_GUIDE.md
+SUBMISSION_CHECKLIST.md
+PUBLIC_RELEASE_HYGIENE.md
+ANIMA_LAUNCH.md
+CLAWHUB_LISTING.md
+NERVOUS-SYSTEM.md

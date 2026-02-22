@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discord Support
+    url: https://discord.com/invite/clawd
+    about: Ask questions in the OpenClaw Discord (#pulse channel)
+  - name: Documentation
+    url: https://github.com/[org-name]/pulse/tree/main/docs
+    about: Check the docs before opening an issue

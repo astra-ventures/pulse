@@ -5,6 +5,7 @@ Most data gets filtered before conscious awareness.
 """
 
 import json
+import os
 import re
 import time
 from collections import deque
@@ -15,8 +16,9 @@ from pulse.src import thalamus
 
 STATE_DIR = Path.home() / ".pulse" / "state"
 STATE_FILE = STATE_DIR / "retina-state.json"
+LEARNING_FILE = STATE_DIR / "retina-learning.json"
 
-JOSH_PHONE = "+18135074387"
+OWNER_PHONE = os.environ.get("PULSE_OWNER_PHONE", "+15555550100")
 DEFAULT_THRESHOLD = 0.3
 HIGH_LOAD_THRESHOLD = 0.6
 FOCUS_THRESHOLD = 0.8
@@ -46,14 +48,14 @@ class ScoredSignal:
 
 # --- Built-in matchers ---
 
-def _match_josh_direct(signal: dict) -> bool:
+def _match_owner_direct(signal: dict) -> bool:
     sender = signal.get("sender") or signal.get("from") or ""
-    return JOSH_PHONE in str(sender)
+    return OWNER_PHONE in str(sender)
 
 
-def _match_josh_mention(signal: dict) -> bool:
+def _match_owner_mention(signal: dict) -> bool:
     text = str(signal.get("text", "") or signal.get("content", "")).lower()
-    return "josh" in text and not _match_josh_direct(signal)
+    return "owner" in text and not _match_owner_direct(signal)
 
 
 def _match_high_value_alert(signal: dict) -> bool:
@@ -100,8 +102,8 @@ def _match_web_content(signal: dict) -> bool:
 
 # Default rules: (name, matcher, priority) — order matters (first match wins)
 _DEFAULT_RULES = [
-    ("josh_direct", _match_josh_direct, 1.0),
-    ("josh_mention", _match_josh_mention, 0.9),
+    ("owner_direct", _match_owner_direct, 1.0),
+    ("owner_mention", _match_owner_mention, 0.9),
     ("high_value_alert", _match_high_value_alert, 0.85),
     ("system_health", _match_system_health, 0.8),
     ("notable_mention", _match_notable_mention, 0.75),
@@ -126,7 +128,9 @@ class Retina:
         self._buffer_topic: Optional[str] = None
         self._signals_processed = 0
         self._signals_filtered = 0
+        self._learning: dict = {}  # category → {correct: int, wrong: int, adjustment: float}
         self._load_state()
+        self._load_learning()
 
     # --- Public API ---
 
@@ -145,6 +149,13 @@ class Retina:
                     break
             except Exception:
                 continue
+
+        # Apply learning adjustment
+        if category in self._learning:
+            adj = self._learning[category].get("adjustment", 0.0)
+            if adj != 0:
+                priority = max(0.0, min(1.0, priority + adj))
+                reasoning += f" (learning adj: {adj:+.2f})"
 
         # Topic boost from BUFFER
         if self._buffer_topic and priority > 0:
@@ -235,6 +246,42 @@ class Retina:
         """Set current topic from BUFFER for relevance boosting."""
         self._buffer_topic = topic
 
+    def record_outcome(self, category: str, was_correct: bool):
+        """Record whether a priority decision was correct. Adjusts rules over time."""
+        if category not in self._learning:
+            self._learning[category] = {"correct": 0, "wrong": 0, "adjustment": 0.0}
+        entry = self._learning[category]
+        if was_correct:
+            entry["correct"] += 1
+        else:
+            entry["wrong"] += 1
+        # Adjust: if >60% wrong over 10+ samples, nudge priority
+        total = entry["correct"] + entry["wrong"]
+        if total >= 10:
+            wrong_rate = entry["wrong"] / total
+            if wrong_rate > 0.6:
+                entry["adjustment"] = -0.1  # lower priority
+            elif wrong_rate < 0.2:
+                entry["adjustment"] = 0.05  # slight boost
+            else:
+                entry["adjustment"] = 0.0
+        self._save_learning()
+
+    def get_learning(self) -> dict:
+        """Return current learning state."""
+        return dict(self._learning)
+
+    def _load_learning(self):
+        try:
+            if LEARNING_FILE.exists():
+                self._learning = json.loads(LEARNING_FILE.read_text())
+        except Exception:
+            self._learning = {}
+
+    def _save_learning(self):
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        LEARNING_FILE.write_text(json.dumps(self._learning, indent=2))
+
     @property
     def threshold(self) -> float:
         return self._effective_threshold({})
@@ -245,7 +292,7 @@ class Retina:
         """Calculate effective threshold based on system state."""
         if self._focus_mode:
             # In focus mode, only Josh signals pass easily
-            if _match_josh_direct(signal):
+            if _match_owner_direct(signal):
                 return DEFAULT_THRESHOLD
             return FOCUS_THRESHOLD
         if self._spine_level in ("orange", "red"):

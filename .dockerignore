@@ -1,0 +1,75 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+pulse.log
+pulse.error.log
+pulse-*.log
+
+# State files (mount as volumes instead)
+pulse-state.json
+pulse-state.backup.json
+pulse-mutations.log
+state/
+data/
+
+# Config (mount as volume)
+config/pulse.yaml
+config/*.yaml
+!config/pulse.example.yaml
+
+# Documentation (not needed in runtime image)
+docs/
+examples/
+*.md
+!README.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Development
+scripts/
+tests/
+pytest.ini
+.coveragerc
+setup.py
+setup.cfg
+
+# Misc
+LICENSE
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+CHANGELOG.md

@@ -36,7 +36,7 @@ class TestHormoneUpdates:
 
     def test_unknown_hormone_raises(self):
         with pytest.raises(ValueError):
-            endocrine.update_hormone("adrenaline", 0.5, "nope")
+            endocrine.update_hormone("norepinephrine", 0.5, "nope")
 
 
 class TestEventApplication:
@@ -55,7 +55,7 @@ class TestEventApplication:
         assert result["cortisol"] == pytest.approx(0.5, abs=0.01)
 
     def test_intimate_conversation(self):
-        result = endocrine.apply_event("intimate_conversation_josh")
+        result = endocrine.apply_event("intimate_conversation")
         assert result["oxytocin"] == pytest.approx(0.6, abs=0.01)
 
 
@@ -135,7 +135,7 @@ class TestGetMood:
         mood = endocrine.get_mood()
         assert "hormones" in mood
         assert "label" in mood
-        assert len(mood["hormones"]) == 4
+        assert len(mood["hormones"]) == 6
 
 
 class TestThalamusIntegration:

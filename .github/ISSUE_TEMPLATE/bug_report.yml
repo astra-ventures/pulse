@@ -1,0 +1,108 @@
+name: Bug Report
+description: Report a bug in Pulse
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the sections below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Clear description of what's wrong
+      placeholder: "Pulse crashes when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this?
+      placeholder: |
+        1. Start Pulse with config X
+        2. Trigger via Y
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+      placeholder: "Should trigger agent turn successfully"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens?
+      placeholder: "Returns 500 error"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste relevant error messages (sanitize secrets!)
+      render: shell
+      placeholder: |
+        ERROR: Webhook failed: Connection refused
+        Traceback...
+
+  - type: input
+    id: version
+    attributes:
+      label: Pulse Version
+      description: "Run: python -m pulse --version"
+      placeholder: "0.2.3"
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python Version
+      description: "Run: python --version"
+      placeholder: "3.11.5"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Linux
+        - Windows (WSL)
+        - Docker
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Config (sanitized)
+      description: Paste relevant parts of pulse.yaml (remove tokens!)
+      render: yaml
+      placeholder: |
+        drives:
+          trigger_threshold: 5.0
+        openclaw:
+          webhook_url: "http://localhost:8080/hooks/agent"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Anything else we should know?
+      placeholder: "Happens only when..."

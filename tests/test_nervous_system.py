@@ -147,6 +147,190 @@ class TestShutdown:
         assert "failed" in result
 
 
+class TestDendriteWiring:
+    """DENDRITE wired into post_trigger."""
+
+    def test_dendrite_fires_in_post_trigger(self, ns, tmp_path):
+        from pulse.src import dendrite
+        state_dir = tmp_path / ".pulse" / "state"
+        with patch.object(dendrite, "STATE_DIR", state_dir), \
+             patch.object(dendrite, "STATE_FILE", state_dir / "dendrite-state.json"):
+            decision = MagicMock()
+            decision.reason = "test"
+            decision.total_pressure = 1.0
+            decision.top_drive = None
+            decision.sender = "alice"
+            decision.sentiment = 0.5
+            result = ns.post_trigger(decision, success=True)
+            assert isinstance(result, dict)
+            if ns._mod_dendrite:
+                assert result.get("dendrite_updated") is True
+
+    def test_dendrite_skips_without_sender(self, ns):
+        decision = MagicMock(spec=[])
+        decision.reason = "test"
+        decision.total_pressure = 1.0
+        decision.top_drive = None
+        result = ns.post_trigger(decision, success=True)
+        # No sender → dendrite should not fire
+        assert result.get("dendrite_updated") is not True or ns._mod_dendrite is None
+
+
+class TestRetinaWiring:
+    """RETINA wired into pre_sense (input scoring) + post_trigger (outcome learning)."""
+
+    def test_retina_scores_input_in_pre_sense(self, ns):
+        ctx = ns.pre_sense({"input": "hello world", "sender": "josh"})
+        if ns.retina:
+            assert "retina_priority" in ctx
+
+    def test_retina_records_outcome_in_post_trigger(self, ns):
+        decision = MagicMock()
+        decision.reason = "test"
+        decision.total_pressure = 1.0
+        decision.top_drive = None
+        decision.trigger_category = "conversation"
+        # Should not crash
+        result = ns.post_trigger(decision, success=True)
+        assert isinstance(result, dict)
+
+
+class TestMyelinWiring:
+    """MYELIN wired into pre_evaluate for context compression."""
+
+    def test_myelin_compresses_in_pre_evaluate(self, ns):
+        ctx = ns.pre_evaluate(None, {})
+        assert isinstance(ctx, dict)
+        # myelin_context key appears only when afterimages have content
+        # With no afterimages, key may or may not be present — just confirm no crash
+
+    def test_myelin_handles_afterimages(self, ns):
+        # Inject fake afterimages via limbic
+        if ns._mod_limbic:
+            ns._mod_limbic.record_emotion(valence=2.5, intensity=9.0, context="test event")
+        ctx = ns.pre_evaluate(None, {})
+        if ns.myelin and ctx.get("afterimages"):
+            assert "myelin_context" in ctx
+
+
+class TestVestibularWiring:
+    """VESTIBULAR wired into post_loop (every 5th loop)."""
+
+    def test_vestibular_fires_every_5th_loop(self, ns, tmp_path):
+        from pulse.src import vestibular
+        state_dir = tmp_path / ".pulse" / "state"
+        with patch.object(vestibular, "STATE_DIR", state_dir), \
+             patch.object(vestibular, "STATE_FILE", state_dir / "vestibular-state.json"):
+            for _ in range(5):
+                result = ns.post_loop()
+            if ns._mod_vestibular:
+                assert result.get("vestibular_updated") is True
+
+    def test_vestibular_not_on_4th_loop(self, ns):
+        for _ in range(4):
+            result = ns.post_loop()
+        assert result.get("vestibular_updated") is not True
+
+
+class TestThymusWiring:
+    """THYMUS wired into post_loop (every 10th loop)."""
+
+    def test_thymus_fires_every_10th_loop(self, ns):
+        for _ in range(10):
+            result = ns.post_loop()
+        if ns._mod_thymus:
+            assert result.get("thymus_updated") is True
+
+    def test_thymus_not_on_9th_loop(self, ns):
+        for _ in range(9):
+            result = ns.post_loop()
+        assert result.get("thymus_updated") is not True
+
+
+class TestOximeterWiring:
+    """OXIMETER wired into post_trigger + post_loop (every 20th loop)."""
+
+    def test_oximeter_fires_in_post_trigger(self, ns):
+        decision = MagicMock()
+        decision.reason = "test"
+        decision.total_pressure = 1.0
+        decision.top_drive = None
+        # Should not crash — oximeter update_metrics call
+        result = ns.post_trigger(decision, success=True)
+        assert isinstance(result, dict)
+
+    def test_oximeter_gap_fires_every_20th_loop(self, ns, tmp_path):
+        from pulse.src import oximeter, vestibular
+        state_dir = tmp_path / ".pulse" / "state"
+        with patch.object(oximeter, "STATE_DIR", state_dir), \
+             patch.object(oximeter, "STATE_FILE", state_dir / "oximeter-state.json"), \
+             patch.object(vestibular, "STATE_DIR", state_dir), \
+             patch.object(vestibular, "STATE_FILE", state_dir / "vestibular-state.json"):
+            for _ in range(20):
+                result = ns.post_loop()
+            if ns._mod_oximeter:
+                assert "oximeter_gap" in result
+
+
+class TestGenomeWiring:
+    """GENOME wired into post_loop (every 100th loop)."""
+
+    def test_genome_fires_every_100th_loop(self, ns, tmp_path):
+        from pulse.src import genome, vestibular, oximeter, thymus
+        state_dir = tmp_path / ".pulse" / "state"
+        with patch.object(genome, "STATE_DIR", state_dir), \
+             patch.object(genome, "STATE_FILE", state_dir / "genome.json"), \
+             patch.object(vestibular, "STATE_DIR", state_dir), \
+             patch.object(vestibular, "STATE_FILE", state_dir / "vestibular-state.json"), \
+             patch.object(oximeter, "STATE_DIR", state_dir), \
+             patch.object(oximeter, "STATE_FILE", state_dir / "oximeter-state.json"), \
+             patch.object(thymus, "STATE_DIR", state_dir), \
+             patch.object(thymus, "STATE_FILE", state_dir / "thymus-state.json"):
+            ns._loop_count = 99
+            result = ns.post_loop()
+            if ns._mod_genome:
+                assert result.get("genome_exported") is True
+
+    def test_genome_not_on_99th_loop(self, ns):
+        ns._loop_count = 98
+        result = ns.post_loop()
+        assert result.get("genome_exported") is not True
+
+
+class TestLimbicWiring:
+    """LIMBIC wired into post_trigger."""
+
+    def test_limbic_fires_in_post_trigger(self, ns):
+        decision = MagicMock()
+        decision.reason = "shipped_feature"
+        decision.total_pressure = 1.0
+        decision.top_drive = None
+        result = ns.post_trigger(decision, success=True)
+        # Limbic should record emotion without crashing
+        assert isinstance(result, dict)
+
+    def test_limbic_skips_without_reason(self, ns):
+        decision = MagicMock(spec=[])
+        # No .reason attr → limbic should skip
+        result = ns.post_trigger(decision, success=True)
+        assert isinstance(result, dict)
+
+
+class TestRemSessionWiring:
+    """run_rem_session wired with PONS + ENGRAM."""
+
+    def test_rem_session_with_pons_guard(self, ns):
+        from pulse.src.rem import Pons
+        # Ensure guard is released even if session returns None
+        result = ns.run_rem_session(drives=None, force=False)
+        assert Pons.is_active() is False
+
+    def test_rem_session_returns_none_without_rem(self, ns):
+        ns.rem = None
+        result = ns.run_rem_session()
+        assert result is None
+
+
 class TestGracefulDegradation:
     def test_works_with_broken_module(self):
         """NervousSystem should work even if a module import fails."""
@@ -181,12 +365,20 @@ class TestGracefulDegradation:
         for attr in ["thalamus", "proprioception", "circadian", "endocrine",
                       "adipose", "myelin", "immune", "cerebellum", "buffer",
                       "spine", "retina", "amygdala", "vagus", "limbic",
-                      "enteric", "plasticity", "rem"]:
+                      "enteric", "plasticity", "rem", "engram", "mirror",
+                      "callosum",
+                      "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
+                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle"]:
             setattr(ns, attr, None)
         for attr in ["_mod_thalamus", "_mod_circadian", "_mod_adipose",
                       "_mod_vagus", "_mod_limbic", "_mod_endocrine",
                       "_mod_buffer", "_mod_retina", "_mod_proprioception",
-                      "_mod_myelin", "_mod_immune"]:
+                      "_mod_myelin", "_mod_immune", "_mod_engram",
+                      "_mod_mirror", "_mod_callosum",
+                      "_mod_phenotype", "_mod_telomere", "_mod_hypothalamus",
+                      "_mod_soma", "_mod_dendrite", "_mod_vestibular",
+                      "_mod_thymus", "_mod_oximeter", "_mod_genome",
+                      "_mod_aura", "_mod_chronicle"]:
             setattr(ns, attr, None)
         
         # Should not crash

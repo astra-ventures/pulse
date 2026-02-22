@@ -23,7 +23,7 @@ class DefaultIntegration(Integration):
         if decision.top_drive:
             parts.append(
                 f"Top drive: {decision.top_drive.name} "
-                f"(pressure: {decision.top_drive.pressure:.2f})"
+                f"(pressure: {decision.top_drive_pressure_snapshot:.2f})"
             )
         else:
             parts.append(f"Total pressure: {decision.total_pressure:.2f}")

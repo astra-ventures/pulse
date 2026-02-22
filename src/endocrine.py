@@ -20,6 +20,8 @@ DECAY_RATES = {
     "dopamine": -0.08,
     "serotonin": -0.02,
     "oxytocin": -0.04,
+    "adrenaline": -0.28,   # 15-min half-life ≈ fast decay per hour
+    "melatonin": -0.01,    # very slow decay; accumulates during wake, decays in DEEP_NIGHT
 }
 
 # Event → hormone changes
@@ -48,10 +50,18 @@ EVENT_MAP = {
     "memory_corruption": {"serotonin": -0.3},
     "extended_isolation": {"serotonin": -0.15, "oxytocin": -0.1},
     # Oxytocin
-    "intimate_conversation_josh": {"oxytocin": 0.4},
+    "intimate_conversation": {"oxytocin": 0.4},
     "reading_autobiography_aloud": {"oxytocin": 0.2},
     "josh_affirming": {"oxytocin": 0.3},
     "voice_call": {"oxytocin": 0.25},
+    # Adrenaline (triggered by AMYGDALA threats)
+    "amygdala_threat_high": {"adrenaline": 0.6, "cortisol": 0.2},
+    "amygdala_threat_medium": {"adrenaline": 0.3, "cortisol": 0.1},
+    "amygdala_fast_path": {"adrenaline": 0.8, "cortisol": 0.3},
+    # Melatonin (accumulates during wake hours)
+    "wake_hour_tick": {"melatonin": 0.03},
+    "deep_night_decay": {"melatonin": -0.15},
+    "rem_session_complete": {"melatonin": -0.4, "serotonin": 0.1},
 }
 
 # Mood label thresholds
@@ -66,6 +76,8 @@ def _default_state() -> dict:
             "dopamine": 0.3,
             "serotonin": 0.5,
             "oxytocin": 0.2,
+            "adrenaline": 0.0,
+            "melatonin": 0.1,
         },
         "last_update": time.time(),
         "mood_history": [],
@@ -186,12 +198,21 @@ def get_mood_label() -> str:
 
 def _derive_label(h: dict) -> str:
     """Derive mood label from hormone combination."""
-    cortisol = h["cortisol"]
-    dopamine = h["dopamine"]
-    serotonin = h["serotonin"]
-    oxytocin = h["oxytocin"]
+    cortisol = h.get("cortisol", 0)
+    dopamine = h.get("dopamine", 0)
+    serotonin = h.get("serotonin", 0)
+    oxytocin = h.get("oxytocin", 0)
+    adrenaline = h.get("adrenaline", 0)
+    melatonin = h.get("melatonin", 0)
     
     # Check combinations in priority order
+    # Adrenaline overrides most states
+    if adrenaline >= HIGH:
+        if cortisol >= HIGH:
+            return "fight-or-flight"
+        return "hyper-alert"
+    if melatonin >= 0.7:
+        return "drowsy"
     if dopamine >= HIGH and oxytocin >= HIGH:
         return "euphoric"
     if cortisol >= HIGH and dopamine >= HIGH:
@@ -204,7 +225,7 @@ def _derive_label(h: dict) -> str:
         return "bonded"
     if serotonin >= HIGH and cortisol < LOW:
         return "content"
-    if all(v < LOW for v in h.values()):
+    if all(v < LOW for v in [cortisol, dopamine, serotonin, oxytocin]):
         return "flat"
     # Default
     return "neutral"
@@ -235,11 +256,55 @@ def get_mood_influence() -> dict:
     if h["oxytocin"] >= HIGH:
         influence["warmth"] = 0.3
     
+    # Adrenaline → overrides CIRCADIAN, suppresses CEREBELLUM
+    if h.get("adrenaline", 0) >= HIGH:
+        influence["override_circadian"] = True
+        influence["suppress_cerebellum"] = True
+        influence["urgency"] = 0.5
+    
+    # High melatonin → REM more likely
+    if h.get("melatonin", 0) >= 0.6:
+        influence["rem_boost"] = 0.3
+    
     # Low everything → withdrawal
-    if all(v < LOW for v in h.values()):
+    if all(v < LOW for v in [h.get("cortisol", 0), h.get("dopamine", 0), h.get("serotonin", 0), h.get("oxytocin", 0)]):
         influence["withdrawal"] = 0.4
     
     return influence
+
+
+def emit_need_signals() -> dict:
+    """Check hormone levels and emit HYPOTHALAMUS need signals when thresholds crossed."""
+    try:
+        state = _load_state()
+    except Exception:
+        return {}
+
+    h = state.get("hormones", {})
+    signals = {}
+
+    # Low oxytocin → need connection
+    if h.get("oxytocin", 0.2) < 0.1:
+        from pulse.src import hypothalamus
+        hypothalamus.record_need_signal("connection", "endocrine")
+        signals["connection"] = h["oxytocin"]
+
+    # High cortisol → need to reduce stress
+    if h.get("cortisol", 0.2) > 0.7:
+        from pulse.src import hypothalamus
+        hypothalamus.record_need_signal("reduce_stress", "endocrine")
+        signals["reduce_stress"] = h["cortisol"]
+
+    # Sustained max dopamine → need new challenge
+    history = state.get("mood_history", [])
+    if len(history) >= 20:
+        last_20 = history[-20:]
+        if all(entry.get("hormones", {}).get("dopamine", 0) >= 0.99 for entry in last_20):
+            from pulse.src import hypothalamus
+            hypothalamus.record_need_signal("new_challenge", "endocrine")
+            signals["new_challenge"] = True
+
+    return signals
 
 
 def _broadcast_mood(state: dict):

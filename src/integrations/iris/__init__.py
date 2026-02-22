@@ -14,11 +14,11 @@ Other agents would write their own integration or use DefaultIntegration.
 
 import json
 import logging
-import subprocess
 from pathlib import Path
 from datetime import datetime, timedelta
 
 from pulse.src.integrations import Integration
+from pulse.src import engram
 
 logger = logging.getLogger("pulse.iris")
 
@@ -93,31 +93,69 @@ class IrisIntegration(Integration):
         return "\n".join(lines)[:_MAX_MEMORY] if lines else ""
 
     def _load_hippocampus(self, config) -> str:
-        """Recall recent hippocampus memories via recall.sh."""
-        script = (
-            Path(config.workspace.root).expanduser()
-            / "skills" / "hippocampus-memory" / "scripts" / "recall.sh"
-        )
-        if not script.exists():
-            return ""
+        """Recall recent memories via native ENGRAM recall."""
         try:
-            result = subprocess.run(
-                ["bash", str(script), "recent work ideas projects", "--top", "5"],
-                capture_output=True, text=True, timeout=10,
-                env={
-                    "PATH": "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin",
-                    "HOME": str(Path.home()),
-                    "WORKSPACE": str(Path(config.workspace.root).expanduser()),
-                },
-            )
-            output = result.stdout.strip()
-            if output:
-                return f"**Hippocampus recall (recent/relevant):**\n{output}"[:_MAX_HIPPO]
+            result = engram.recall("recent work ideas projects", n=5)
+            return result[:_MAX_HIPPO] if result else ""
         except Exception as e:
-            logger.debug(f"Hippocampus recall failed: {e}")
+            logger.debug(f"ENGRAM recall failed: {e}")
         return ""
 
     # ── trigger message builder ──────────────────────────────────
+
+    def _load_germinal_birth(self, config) -> str:
+        """Check if GERMINAL has a pending module birth that needs a coding agent."""
+        try:
+            from pulse.src import germinal
+            state = germinal._load_state()
+            spec = state.get("in_progress")
+            if not spec:
+                return ""
+
+            module_name = spec.get("module_name", "UNKNOWN")
+            drive = spec.get("drive", "unknown")
+            purpose = spec.get("purpose", "")
+            hook = spec.get("hook", "post_loop")
+            module_file = spec.get("module_file", f"{module_name.lower()}.py")
+
+            workspace = Path(config.workspace.root).expanduser()
+            pulse_src = workspace / "pulse" / "src"
+
+            lines = [
+                "🧬 **GERMINAL BIRTH PENDING — HIGH PRIORITY**",
+                f"",
+                f"HYPOTHALAMUS detected persistent unmet drive: `{drive}`",
+                f"GERMINAL has initiated birth of new module: **{module_name}**",
+                f"Purpose: {purpose}",
+                f"",
+                f"**Your task: Build the {module_name} module**",
+                f"",
+                f"1. Create `{pulse_src}/{module_file}` following the pattern of `{pulse_src}/nephron.py`",
+                f"   - State file: `~/.pulse/state/{spec.get('state_file', module_name.lower() + '-state.json')}`",
+                f"   - Required methods: `_load_state()`, `_save_state()`, `get_status()`, `should_run(loop_count)` if needed",
+                f"   - Must emit to THALAMUS on significant events",
+                f"   - Include `_run_tests()` at bottom",
+                f"",
+                f"2. Wire into nervous_system.py:",
+                f"   - Add `self._mod_{module_name.lower()} = None` in __init__",
+                f"   - Add loading in `_init_modules()`",
+                f"   - Add hook call in `{hook}()`",
+                f"",
+                f"3. Write pytest tests in `pulse/tests/test_{module_name.lower()}.py`",
+                f"",
+                f"4. Run full test suite: `cd {workspace} && PYTHONPATH={workspace} python3 -m pytest pulse/tests/ -q`",
+                f"   All tests must pass before proceeding.",
+                f"",
+                f"5. After successful tests, call:",
+                f"   `python3 -c \"from pulse.src import germinal; germinal.record_birth('{drive}', '{module_name}', '{module_file}')\"` ",
+                f"   Then restart daemon: `launchctl kickstart -k gui/$(id -u)/ai.openclaw.pulse`",
+                f"",
+                f"6. Report back: 'GERMINAL: {module_name} born successfully'",
+            ]
+            return "\n".join(lines)
+        except Exception as e:
+            logger.debug(f"GERMINAL birth context failed: {e}")
+            return ""
 
     def build_trigger_message(self, decision, config) -> str:
         prefix = config.openclaw.message_prefix
@@ -131,7 +169,7 @@ class IrisIntegration(Integration):
         if decision.top_drive:
             parts.append(
                 f"Top drive: {decision.top_drive.name} "
-                f"(pressure: {decision.top_drive.pressure:.2f})"
+                f"(pressure: {decision.top_drive_pressure_snapshot:.2f})"
             )
         else:
             parts.append(f"Total pressure: {decision.total_pressure:.2f}")
@@ -176,6 +214,12 @@ class IrisIntegration(Integration):
             if hippo:
                 parts.append("")
                 parts.append(hippo)
+
+            # 5. GERMINAL — check for pending module births
+            germinal_ctx = self._load_germinal_birth(config)
+            if germinal_ctx:
+                parts.append("")
+                parts.append(germinal_ctx)
 
             parts.append("")
             parts.append("=" * 50)

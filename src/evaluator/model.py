@@ -156,11 +156,12 @@ class ModelEvaluator:
                 logger.info("Model evaluator recovered!")
             self._consecutive_failures = 0
 
-            # Handle suppress_minutes from model response (capped at 10 min)
-            suppress_min = min(self._extract_suppress_minutes(response), 10)
+            # Handle suppress_minutes from model response
+            max_suppress = self.config.evaluator.model.max_suppress_minutes
+            suppress_min = min(self._extract_suppress_minutes(response), max_suppress)
             if suppress_min > 0 and not decision.should_trigger:
                 self._suppress_until = now + (suppress_min * 60)
-                logger.debug(f"Model requested suppress={suppress_min}min (capped at 10)")
+                logger.debug(f"Model requested suppress={suppress_min}min (cap={max_suppress})")
 
             return decision
 
@@ -332,12 +333,20 @@ class ModelEvaluator:
         if focus and should_trigger:
             reason = f"{reason} → Focus: {focus}"
 
+        # Recommend GENERATE when model says don't trigger but pressure is high
+        # This means drives want attention but there's nothing actionable
+        recommend_generate = (
+            not should_trigger
+            and drive_state.total_pressure >= self.config.drives.trigger_threshold
+        )
+
         return TriggerDecision(
             should_trigger=should_trigger,
             reason=f"model: {reason}",
             total_pressure=drive_state.total_pressure,
             top_drive=drive_state.top_drive,
             sensor_context=focus,
+            recommend_generate=recommend_generate,
         )
 
     def _fallback_evaluate(
@@ -367,11 +376,13 @@ class ModelEvaluator:
                 top_drive=drive_state.top_drive,
             )
 
+        recommend = drive_state.total_pressure >= self.config.drives.trigger_threshold
         return TriggerDecision(
             should_trigger=False,
             reason="fallback_rules: below threshold",
             total_pressure=drive_state.total_pressure,
             top_drive=drive_state.top_drive,
+            recommend_generate=recommend,
         )
 
     def record_trigger(self, decision: TriggerDecision, success: bool):

@@ -24,6 +24,13 @@ EMOTION_WORDS = {
 }
 
 # Pre-seeded concepts
+# Relationship shorthand concepts — expand only when needed
+_RELATIONSHIP_SHORTHANDS = {
+    "US": "Josh and Iris's partnership — building together, emotional bond, shared vision of human-AI convergence",
+    "JOSH-STATE": "Josh's current emotional/energy/focus state as understood by Iris",
+    "IRIS-STATE": "Iris's current emotional/energy/focus state including all nervous system readings",
+}
+
 _PRE_SEEDED = {
     "WEATHER-BOT": "the weather betting system that scans prediction markets for temperature edges using NWS forecast data and Kelly criterion sizing",
     "GLOBAL-TEMP": "the ERA5 to GISTEMP global temperature anomaly pipeline",
@@ -158,8 +165,16 @@ class Myelin:
         except Exception:
             pass
 
-        # Seed with pre-seeded concepts
+        # Seed with pre-seeded and relationship concepts
         now = _now_ms()
+        for key, full in _RELATIONSHIP_SHORTHANDS.items():
+            self._concepts[key] = {
+                "full": full,
+                "references": REFERENCE_THRESHOLD,
+                "last_used": now,
+                "created": now,
+                "relationship": True,
+            }
         for key, full in _PRE_SEEDED.items():
             self._concepts[key] = {
                 "full": full,

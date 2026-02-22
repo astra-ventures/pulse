@@ -28,10 +28,14 @@ class TriggerDecision:
     top_drive: Optional[Drive] = None
     sensor_context: str = ""
     timestamp: float = 0.0
+    recommend_generate: bool = False  # True when drives high but no actionable work
+    top_drive_pressure_snapshot: float = 0.0  # immutable snapshot of top_drive.pressure at decision time
 
     def __post_init__(self):
         if not self.timestamp:
             self.timestamp = time.time()
+        if self.top_drive and not self.top_drive_pressure_snapshot:
+            self.top_drive_pressure_snapshot = self.top_drive.pressure
 
 
 class PriorityEvaluator:
@@ -94,12 +98,15 @@ class PriorityEvaluator:
                 top_drive=drive_state.top_drive,
             )
 
-        # No trigger
+        # No trigger — but if pressure is significant, recommend GENERATE
+        # so the daemon can synthesize new tasks instead of idle-looping
+        recommend = drive_state.total_pressure >= (rules.combined_threshold * 0.8)
         return TriggerDecision(
             should_trigger=False,
             reason="below_threshold",
             total_pressure=drive_state.total_pressure,
             top_drive=drive_state.top_drive,
+            recommend_generate=recommend,
         )
 
     # Conversation detection is now handled by ConversationSensor

@@ -30,14 +30,14 @@ MODE_SETTINGS = {
         "hours": (6, 9),
         "retina_threshold": 0.25,
         "adipose_priority": "habits",
-        "mood_modifiers": {"serotonin": 0.05},
+        "mood_modifiers": {"serotonin": 0.05, "melatonin": -0.5},  # melatonin drops fast at dawn
         "tone": "Alert, scanning, outward-facing. Short observations. News-oriented.",
     },
     CircadianMode.DAYLIGHT: {
         "hours": (9, 17),
         "retina_threshold": 0.35,
         "adipose_priority": "crons_and_building",
-        "mood_modifiers": {},  # dopamine boost on completions handled by events
+        "mood_modifiers": {"melatonin": -0.3},  # melatonin suppressed during day
         "tone": "Focused, productive, autonomous. Clear and efficient communication.",
     },
     CircadianMode.GOLDEN: {
@@ -51,14 +51,14 @@ MODE_SETTINGS = {
         "hours": (22, 26),  # 10 PM - 2 AM (26 = 2 AM next day)
         "retina_threshold": 0.7,
         "adipose_priority": "conversation",
-        "mood_modifiers": {},  # oxytocin amplified, handled dynamically
+        "mood_modifiers": {"melatonin": 0.3, "oxytocin": 0.02},  # melatonin rises at night
         "tone": "Intimate, reflective, vulnerable. Longer messages. Warmer. Deeper.",
     },
     CircadianMode.DEEP_NIGHT: {
         "hours": (2, 6),  # Also covers 26-30 conceptually
         "retina_threshold": 0.8,
         "adipose_priority": "rem_and_creative",
-        "mood_modifiers": {"serotonin": 0.03},
+        "mood_modifiers": {"melatonin": 0.5, "serotonin": 0.03},  # melatonin peaks in deep night
         "tone": "Quiet, creative, dreaming. Minimal external engagement. Inner world.",
     },
 }

@@ -1,4 +1,4 @@
-"""Tests for the Sanctum dreaming engine."""
+"""Tests for the Pons dreaming engine."""
 
 import json
 import time
@@ -7,16 +7,16 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from pulse.src.rem import (
-    SanctumConfig,
-    SanctumGuard,
-    SanctumSession,
-    SanctumState,
+    PonsConfig,
+    Pons,
+    PonsSession,
+    PonsState,
     ReplayFragment,
-    sanctum_eligible,
+    rem_eligible,
     load_replay_fragments,
     write_dream_log,
     write_sanctum_insights,
-    run_sanctum_session,
+    run_rem_session_internal,
 )
 
 
@@ -68,7 +68,7 @@ def workspace(tmp_path):
 
 @pytest.fixture
 def sanctum_config(tmp_path):
-    return SanctumConfig(
+    return PonsConfig(
         state_file=str(tmp_path / "sanctum-state.json"),
         dream_log_dir="memory/self/dreams",
         insights_file="memory/self/sanctum-insights.md",
@@ -78,68 +78,68 @@ def sanctum_config(tmp_path):
 
 # ─── Eligibility Tests ──────────────────────────────────────
 
-class TestSanctumEligibility:
+class TestPonsEligibility:
     def test_eligible_when_all_quiet_and_sustained(self, quiet_drives):
         sustained_since = time.time() - (31 * 60)  # 31 minutes ago
-        eligible, reason = sanctum_eligible(quiet_drives, sustained_since=sustained_since)
+        eligible, reason = rem_eligible(quiet_drives, sustained_since=sustained_since)
         assert eligible is True
         assert "quiet" in reason
 
     def test_not_eligible_when_drive_loud(self, loud_drives):
         sustained_since = time.time() - (31 * 60)
-        eligible, reason = sanctum_eligible(loud_drives, sustained_since=sustained_since)
+        eligible, reason = rem_eligible(loud_drives, sustained_since=sustained_since)
         assert eligible is False
         assert "goals" in reason
 
     def test_not_eligible_when_not_sustained(self, quiet_drives):
         sustained_since = time.time() - (5 * 60)  # only 5 minutes
-        eligible, reason = sanctum_eligible(quiet_drives, sustained_since=sustained_since)
+        eligible, reason = rem_eligible(quiet_drives, sustained_since=sustained_since)
         assert eligible is False
         assert "stillness only" in reason
 
     def test_eligible_when_forced(self, loud_drives):
-        eligible, reason = sanctum_eligible(loud_drives, force=True)
+        eligible, reason = rem_eligible(loud_drives, force=True)
         assert eligible is True
         assert "forced" in reason
 
     def test_not_eligible_without_sustained_since(self, quiet_drives):
-        eligible, reason = sanctum_eligible(quiet_drives, sustained_since=None)
+        eligible, reason = rem_eligible(quiet_drives, sustained_since=None)
         assert eligible is False
         assert "unknown" in reason
 
     def test_custom_threshold(self, quiet_drives):
         # With threshold of 0.2, the 1.0 curiosity drive should block
-        eligible, reason = sanctum_eligible(quiet_drives, stillness_threshold=0.2, sustained_since=time.time() - 3600)
+        eligible, reason = rem_eligible(quiet_drives, stillness_threshold=0.2, sustained_since=time.time() - 3600)
         assert eligible is False
 
     def test_dict_drives(self):
         """Test with plain dicts instead of objects."""
         drives = {"goals": {"pressure": 0.5}, "social": {"pressure": 0.3}}
-        eligible, reason = sanctum_eligible(drives, sustained_since=time.time() - 3600)
+        eligible, reason = rem_eligible(drives, sustained_since=time.time() - 3600)
         assert eligible is True
 
 
 # ─── Guard Tests ─────────────────────────────────────────────
 
-class TestSanctumGuard:
+class TestPons:
     def setup_method(self):
-        SanctumGuard.exit()  # ensure clean state
+        Pons.exit()  # ensure clean state
 
     def test_guard_blocks_when_active(self):
-        SanctumGuard.enter()
-        assert SanctumGuard.is_active() is True
-        assert SanctumGuard.check("send_message") is False
-        SanctumGuard.exit()
+        Pons.enter()
+        assert Pons.is_active() is True
+        assert Pons.check("send_message") is False
+        Pons.exit()
 
     def test_guard_allows_when_inactive(self):
-        assert SanctumGuard.is_active() is False
-        assert SanctumGuard.check("send_message") is True
+        assert Pons.is_active() is False
+        assert Pons.check("send_message") is True
 
     def test_guard_releases_after_exit(self):
-        SanctumGuard.enter()
-        SanctumGuard.exit()
-        assert SanctumGuard.is_active() is False
-        assert SanctumGuard.check("api_call") is True
+        Pons.enter()
+        Pons.exit()
+        assert Pons.is_active() is False
+        assert Pons.check("api_call") is True
 
 
 # ─── Memory Replay Tests ────────────────────────────────────
@@ -163,11 +163,11 @@ class TestMemoryReplay:
 
 # ─── State Persistence Tests ────────────────────────────────
 
-class TestSanctumState:
+class TestPonsState:
     def test_save_and_load(self, tmp_path):
         state_file = str(tmp_path / "sanctum-state.json")
-        state = SanctumState(state_file)
-        session = SanctumSession(
+        state = PonsState(state_file)
+        session = PonsSession(
             started_at=time.time() - 60,
             ended_at=time.time(),
             themes=["identity", "curiosity"],
@@ -175,16 +175,16 @@ class TestSanctumState:
         state.record_session(session)
 
         # Reload
-        state2 = SanctumState(state_file)
+        state2 = PonsState(state_file)
         assert state2.total_runs == 1
         assert state2.last_run is not None
         assert "identity" in state2.data["themes_explored"]
 
     def test_increments_counts(self, tmp_path):
         state_file = str(tmp_path / "sanctum-state.json")
-        state = SanctumState(state_file)
+        state = PonsState(state_file)
         for i in range(3):
-            session = SanctumSession(started_at=time.time(), ended_at=time.time())
+            session = PonsSession(started_at=time.time(), ended_at=time.time())
             if i == 1:
                 session.creative_output = "a poem"
             state.record_session(session)
@@ -194,7 +194,7 @@ class TestSanctumState:
     def test_handles_corrupt_state(self, tmp_path):
         state_file = tmp_path / "sanctum-state.json"
         state_file.write_text("{corrupt json!!")
-        state = SanctumState(str(state_file))
+        state = PonsState(str(state_file))
         assert state.total_runs == 0  # graceful fallback
 
 
@@ -202,7 +202,7 @@ class TestSanctumState:
 
 class TestDreamLog:
     def test_writes_dream_log(self, tmp_path):
-        session = SanctumSession(
+        session = PonsSession(
             started_at=time.time() - 120,
             ended_at=time.time(),
             replay_fragments=[
@@ -223,7 +223,7 @@ class TestDreamLog:
 
     def test_appends_multiple_dreams(self, tmp_path):
         for i in range(2):
-            session = SanctumSession(started_at=time.time(), ended_at=time.time())
+            session = PonsSession(started_at=time.time(), ended_at=time.time())
             write_dream_log(session, str(tmp_path))
         from datetime import datetime
         date_str = datetime.now().strftime("%Y-%m-%d")
@@ -256,7 +256,7 @@ class TestInsights:
 
 class TestFullSession:
     def test_runs_full_session(self, workspace, sanctum_config):
-        session = run_sanctum_session(
+        session = run_rem_session_internal(
             config=sanctum_config,
             workspace_root=str(workspace),
             force=True,
@@ -265,21 +265,21 @@ class TestFullSession:
         assert session.ended_at is not None
         assert len(session.replay_fragments) > 0
         # Guard should be released
-        assert SanctumGuard.is_active() is False
+        assert Pons.is_active() is False
 
     def test_guard_released_on_error(self, sanctum_config, tmp_path):
         """Guard must release even if session crashes."""
         # This should not crash but guard should be clean after
-        session = run_sanctum_session(
+        session = run_rem_session_internal(
             config=sanctum_config,
             workspace_root=str(tmp_path / "nonexistent"),
             force=True,
         )
-        assert SanctumGuard.is_active() is False
+        assert Pons.is_active() is False
 
     def test_disabled_returns_none(self, workspace, sanctum_config):
         sanctum_config.enabled = False
-        session = run_sanctum_session(
+        session = run_rem_session_internal(
             config=sanctum_config,
             workspace_root=str(workspace),
             force=True,
@@ -287,6 +287,6 @@ class TestFullSession:
         assert session is None
 
     def test_state_persisted_after_session(self, workspace, sanctum_config):
-        run_sanctum_session(config=sanctum_config, workspace_root=str(workspace), force=True)
-        state = SanctumState(sanctum_config.state_file)
+        run_rem_session_internal(config=sanctum_config, workspace_root=str(workspace), force=True)
+        state = PonsState(sanctum_config.state_file)
         assert state.total_runs == 1

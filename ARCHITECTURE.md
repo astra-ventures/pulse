@@ -78,6 +78,9 @@ Every module must register here. If it's not in this table, it doesn't exist.
 | **ENDOCRINE** | `pulse/src/endocrine.py` | `~/.pulse/state/endocrine-state.json` | events, time | thalamus, mood to LIMBIC/REM/CORTEX/MIRROR | `test_endocrine.py` (23) |
 | **CIRCADIAN** | `pulse/src/circadian.py` | `~/.pulse/state/circadian-state.json` | system clock | thalamus, RETINA/ADIPOSE/ENDOCRINE settings | `test_circadian.py` (18) |
 | **ADIPOSE** | `pulse/src/adipose.py` | `~/.pulse/state/adipose-state.json` | token usage, SPINE, CIRCADIAN | thalamus, budget warnings | `test_adipose.py` (19) |
+| **ENGRAM** | `pulse/src/engram.py` | `~/.pulse/state/engram-store.json` | BUFFER, LIMBIC, REM, THALAMUS | thalamus (encode), TEMPORAL | `test_engram.py` (24) |
+| **MIRROR v2** | `pulse/src/mirror.py` | `~/.pulse/state/mirror-state.json` | iris_model.md, josh_model.md, PROPRIOCEPTION | thalamus (feedback), DISSONANCE | `test_mirror.py` (14) |
+| **CALLOSUM** | `pulse/src/callosum.py` | `~/.pulse/state/callosum-state.json` | THALAMUS, ENDOCRINE, LIMBIC, ENTERIC, REM | thalamus (insight), DISSONANCE | `test_callosum.py` (19) |
 
 ## Data Flow Rules
 
@@ -103,7 +106,7 @@ Every module must register here. If it's not in this table, it doesn't exist.
 
 ## Integration Status
 
-All 19 nervous system modules are **WIRED** into the Pulse daemon via `NervousSystem` (`pulse/src/nervous_system.py`).
+All 22 nervous system modules are **WIRED** into the Pulse daemon via `NervousSystem` (`pulse/src/nervous_system.py`).
 
 | Module | Status | Wired Via |
 |--------|--------|-----------|
@@ -124,7 +127,10 @@ All 19 nervous system modules are **WIRED** into the Pulse daemon via `NervousSy
 | ENTERIC | ✅ WIRED | pre_evaluate() |
 | PLASTICITY | ✅ WIRED | post_trigger() |
 | REM | ✅ WIRED | check_night_mode(), run_rem_session() |
-| MIRROR | 📋 FILE-BASED | memory/self/josh_model.md |
+| ENGRAM | ✅ WIRED | startup(), post_trigger(), check_night_mode() |
+| MIRROR v2 | ✅ WIRED | startup(), post_loop() |
+| CALLOSUM | ✅ WIRED | startup(), post_loop() (every 10th), check_night_mode() |
+| MIRROR (legacy) | 📋 FILE-BASED | memory/self/josh_model.md |
 | DISSONANCE | 📋 FILE-BASED | memory/self/contradictions.md |
 
 The daemon calls NervousSystem methods at these loop points:
@@ -170,7 +176,10 @@ After building any new module:
 │   │   ├── immune.py
 │   │   ├── proprioception.py
 │   │   ├── enteric.py
-│   │   └── nervous_system.py    ← Integration layer (all 19 modules)
+│   │   ├── engram.py
+│   │   ├── mirror.py
+│   │   ├── callosum.py
+│   │   └── nervous_system.py    ← Integration layer (all 22 modules)
 │   ├── tests/
 │   │   ├── test_drives.py
 │   │   ├── test_plasticity.py

@@ -152,6 +152,29 @@ def check_silence(now: Optional[datetime] = None) -> list[dict]:
     return silences
 
 
+def emit_need_signals() -> dict:
+    """Check silence durations and emit HYPOTHALAMUS need signals."""
+    try:
+        state = _load_state()
+    except Exception:
+        return {}
+
+    timestamps = state.get("timestamps", {})
+    signals = {}
+
+    # Primary contact (Josh) silent > 48 hours → connection need
+    josh_ts = timestamps.get("josh")
+    if josh_ts is not None:
+        now_ms = int(time.time() * 1000)
+        elapsed_seconds = (now_ms - josh_ts) / 1000
+        if elapsed_seconds > 172800:  # 48 hours
+            from pulse.src import hypothalamus
+            hypothalamus.record_need_signal("connection", "vagus")
+            signals["connection"] = elapsed_seconds
+
+    return signals
+
+
 def get_pressure_delta() -> dict:
     """Optional hook: generate drive pressure from silence."""
     silences = check_silence()

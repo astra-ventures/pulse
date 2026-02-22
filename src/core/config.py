@@ -57,6 +57,8 @@ class DrivesConfig:
     max_pressure: float = 5.0
     success_decay: float = 0.5
     failure_boost: float = 0.2
+    override_min_individual_pressure: float = 1.5  # min weighted_pressure for high-pressure override
+    adaptive_decay: bool = True  # scale decay with total pressure
     categories: Dict[str, DriveCategory] = field(default_factory=dict)
 
 
@@ -105,6 +107,7 @@ class ModelEvalConfig:
     max_tokens: int = 512
     temperature: float = 0.3
     timeout_seconds: int = 10
+    max_suppress_minutes: int = 30  # cap on model-requested suppress_minutes
 
 
 @dataclass
@@ -129,6 +132,15 @@ class LoggingConfig:
 
 
 @dataclass
+class GenerativeConfig:
+    enabled: bool = True
+    roadmap_files: List[str] = field(default_factory=lambda: ["TIERS.md", "ROADMAP.md", "TODO.md"])
+    max_tasks: int = 3
+    auto_add_to_goals: bool = False
+    min_idle_minutes: int = 15
+
+
+@dataclass
 class DaemonConfig:
     loop_interval_seconds: int = 30
     shutdown_timeout: int = 10
@@ -147,6 +159,7 @@ class PulseConfig:
     state: StateConfig = field(default_factory=StateConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     daemon: DaemonConfig = field(default_factory=DaemonConfig)
+    generative: GenerativeConfig = field(default_factory=GenerativeConfig)
 
     @classmethod
     def load(cls, config_path: Optional[str] = None) -> "PulseConfig":
@@ -210,6 +223,8 @@ class PulseConfig:
                 max_pressure=d.get("max_pressure", config.drives.max_pressure),
                 success_decay=d.get("success_decay", config.drives.success_decay),
                 failure_boost=d.get("failure_boost", config.drives.failure_boost),
+                override_min_individual_pressure=d.get("override_min_individual_pressure", config.drives.override_min_individual_pressure),
+                adaptive_decay=d.get("adaptive_decay", config.drives.adaptive_decay),
                 categories=categories,
             )
 
@@ -232,6 +247,7 @@ class PulseConfig:
                     max_tokens=model_data.get("max_tokens", config.evaluator.model.max_tokens),
                     temperature=model_data.get("temperature", config.evaluator.model.temperature),
                     timeout_seconds=model_data.get("timeout_seconds", config.evaluator.model.timeout_seconds),
+                    max_suppress_minutes=model_data.get("max_suppress_minutes", config.evaluator.model.max_suppress_minutes),
                 ),
             )
 
@@ -277,6 +293,16 @@ class PulseConfig:
                 dir=s.get("dir", config.state.dir),
                 save_interval=s.get("save_interval", config.state.save_interval),
                 history_retention_days=s.get("history_retention_days", config.state.history_retention_days),
+            )
+
+        if "generative" in data:
+            g = data["generative"]
+            config.generative = GenerativeConfig(
+                enabled=g.get("enabled", config.generative.enabled),
+                roadmap_files=g.get("roadmap_files", config.generative.roadmap_files),
+                max_tasks=g.get("max_tasks", config.generative.max_tasks),
+                auto_add_to_goals=g.get("auto_add_to_goals", config.generative.auto_add_to_goals),
+                min_idle_minutes=g.get("min_idle_minutes", config.generative.min_idle_minutes),
             )
 
         # Validate critical config

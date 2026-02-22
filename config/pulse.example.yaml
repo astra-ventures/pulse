@@ -37,6 +37,11 @@ drives:
   success_decay: 0.5
   # Pressure boost on failure/frustration
   failure_boost: 0.2
+  # Minimum individual weighted_pressure for high-pressure override to fire
+  # Prevents override on ambient noise from many low-floor drives
+  override_min_individual_pressure: 1.5
+  # Scale success_decay proportionally when total pressure > 5.0
+  adaptive_decay: true
   
   # Drive categories and their base weights
   categories:
@@ -138,6 +143,8 @@ evaluator:
     max_tokens: 512
     temperature: 0.3
     timeout_seconds: 10
+    # Cap on model-requested suppress_minutes (default was 10, raised to 30)
+    max_suppress_minutes: 30
 
 # State persistence
 state:
@@ -153,6 +160,24 @@ logging:
   file: "~/.pulse/logs/pulse.log"
   # Also log to OpenClaw daily notes
   sync_to_daily_notes: true
+
+# Generative task synthesis (GENERATE step)
+# When all work is blocked on external dependencies but drives are still high,
+# Pulse synthesizes new tasks from goals + drives + memory + roadmap.
+# Works with zero config — roadmap files are optional enhancements.
+generative:
+  enabled: true
+  # Optional roadmap files to enhance task generation (read if present, ignored if not)
+  roadmap_files:
+    - "TIERS.md"
+    - "ROADMAP.md"
+    - "TODO.md"
+  # Max tasks to generate per cycle
+  max_tasks: 3
+  # Auto-add generated tasks to goals list (false = suggest only)
+  auto_add_to_goals: false
+  # Minimum idle time before GENERATE fires (minutes)
+  min_idle_minutes: 15
 
 # Daemon settings
 daemon:

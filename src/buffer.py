@@ -35,6 +35,7 @@ def _empty_buffer() -> dict:
         "key_context": "",
         "participants": [],
         "topic": "",
+        "emotional_anchor": {"vibe": "", "energy": 0.5, "engagement": 0.5},
     }
 
 
@@ -61,6 +62,7 @@ def capture(
     participants: Optional[list] = None,
     topic: Optional[str] = None,
     session_id: Optional[str] = None,
+    emotional_anchor: Optional[dict] = None,
 ) -> dict:
     """Save current working memory state."""
     buf = _load()
@@ -75,6 +77,8 @@ def capture(
         buf["participants"] = participants
     if topic is not None:
         buf["topic"] = topic
+    if emotional_anchor is not None:
+        buf["emotional_anchor"] = emotional_anchor
     _save(buf)
 
     # Broadcast to THALAMUS
@@ -134,6 +138,9 @@ def get_compact_summary(max_tokens: int = 500) -> str:
         parts.append(f"Mood: {es['context']} (valence={es.get('valence', 0):.1f})")
     if buf.get("participants"):
         parts.append("Participants: " + ", ".join(buf["participants"]))
+    anchor = buf.get("emotional_anchor", {})
+    if anchor.get("vibe"):
+        parts.append(f"Anchor: vibe={anchor['vibe']} energy={anchor.get('energy', 0.5):.1f} engagement={anchor.get('engagement', 0.5):.1f}")
 
     summary = "\n".join(parts)
     # Truncate to approximate token limit (avg ~4 chars/token)

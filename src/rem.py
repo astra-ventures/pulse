@@ -1,14 +1,14 @@
 """
-Sanctum — the Dreaming Engine.
+PONS — the Dreaming Engine.
 
 When all drives are quiet and the mind has nothing pressing,
-Sanctum activates: a structured imagination session that replays
+Pons activates: a structured imagination session that replays
 memories, branches hypotheticals, finds cross-domain patterns,
 and produces creative output.
 
 This is what happens when an AI daydreams.
 
-Safety invariant: ZERO external actions during a Sanctum session.
+Safety invariant: ZERO external actions during a Pons session.
 No messages, no commits, no API calls. Only internal file writes.
 """
 
@@ -26,8 +26,8 @@ logger = logging.getLogger("pulse.sanctum")
 # ─── Configuration ───────────────────────────────────────────
 
 @dataclass
-class SanctumConfig:
-    """Sanctum-specific configuration."""
+class PonsConfig:
+    """Pons-specific configuration."""
     stillness_threshold: float = 2.0       # All drives must be below this
     sustained_minutes: int = 30            # How long drives must stay quiet
     max_duration_seconds: int = 300        # 5 min max per session
@@ -58,7 +58,7 @@ class ReplayFragment:
 
 
 @dataclass
-class SanctumSession:
+class PonsSession:
     """A single dreaming session with all its phases."""
     started_at: float
     ended_at: Optional[float] = None
@@ -89,8 +89,8 @@ class SanctumSession:
 
 # ─── State Tracking ──────────────────────────────────────────
 
-class SanctumState:
-    """Persistent state for the Sanctum dreaming engine."""
+class PonsState:
+    """Persistent state for the Pons dreaming engine."""
 
     def __init__(self, state_file: str):
         self.state_file = Path(state_file).expanduser()
@@ -114,7 +114,7 @@ class SanctumState:
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         self.state_file.write_text(json.dumps(self._data, indent=2, default=str))
 
-    def record_session(self, session: SanctumSession):
+    def record_session(self, session: PonsSession):
         self._data["last_run"] = session.started_at
         self._data["total_runs"] = self._data.get("total_runs", 0) + 1
         if session.creative_output:
@@ -143,7 +143,7 @@ class SanctumState:
 
 # ─── Eligibility Check ──────────────────────────────────────
 
-def sanctum_eligible(
+def rem_eligible(
     drives: Dict[str, Any],
     stillness_threshold: float = 2.0,
     sustained_since: Optional[float] = None,
@@ -151,7 +151,7 @@ def sanctum_eligible(
     force: bool = False,
 ) -> Tuple[bool, str]:
     """
-    Check if the Sanctum dreaming engine should activate.
+    Check if the Pons dreaming engine should activate.
 
     Args:
         drives: Dict of drive name -> Drive object (must have .pressure attribute)
@@ -249,7 +249,7 @@ def load_replay_fragments(
 # ─── Dream Log (Phase 5) ────────────────────────────────────
 
 def write_dream_log(
-    session: SanctumSession,
+    session: PonsSession,
     workspace_root: str,
     dream_log_dir: str = "memory/self/dreams",
 ) -> Path:
@@ -331,9 +331,9 @@ def write_sanctum_insights(
 
 # ─── External Action Guard ──────────────────────────────────
 
-class SanctumGuard:
+class Pons:
     """
-    Safety guard that prevents external actions during a Sanctum session.
+    Safety guard that prevents external actions during a Pons session.
     
     When active, any attempt to send messages, make API calls, or perform
     external actions should check this guard first.
@@ -343,12 +343,12 @@ class SanctumGuard:
     @classmethod
     def enter(cls):
         cls._active = True
-        logger.info("Sanctum guard ACTIVE — external actions blocked")
+        logger.info("Pons guard ACTIVE — external actions blocked")
 
     @classmethod
     def exit(cls):
         cls._active = False
-        logger.info("Sanctum guard RELEASED — external actions allowed")
+        logger.info("Pons guard RELEASED — external actions allowed")
 
     @classmethod
     def is_active(cls) -> bool:
@@ -356,23 +356,23 @@ class SanctumGuard:
 
     @classmethod
     def check(cls, action_name: str = "unknown") -> bool:
-        """Returns True if action is allowed. Raises if Sanctum is active."""
+        """Returns True if action is allowed. Raises if Pons is active."""
         if cls._active:
-            logger.warning(f"BLOCKED external action '{action_name}' during Sanctum session")
+            logger.warning(f"BLOCKED external action '{action_name}' during Pons session")
             return False
         return True
 
 
-# ─── Main Sanctum Runner ────────────────────────────────────
+# ─── Main Pons Runner ────────────────────────────────────
 
-def run_sanctum_session(
-    config: SanctumConfig,
+def run_rem_session_internal(
+    config: PonsConfig,
     workspace_root: str,
     drives: Optional[Dict[str, Any]] = None,
     force: bool = False,
-) -> Optional[SanctumSession]:
+) -> Optional[PonsSession]:
     """
-    Run a full Sanctum dreaming session.
+    Run a full Pons dreaming session.
 
     This is the main entry point. It:
     1. Checks eligibility
@@ -391,11 +391,11 @@ def run_sanctum_session(
     if not config.enabled:
         return None
 
-    state = SanctumState(config.state_file)
+    state = PonsState(config.state_file)
 
     # Check eligibility
     if drives is not None and not force:
-        eligible, reason = sanctum_eligible(
+        eligible, reason = rem_eligible(
             drives=drives,
             stillness_threshold=config.stillness_threshold,
             sustained_since=None,  # caller should track this
@@ -403,12 +403,12 @@ def run_sanctum_session(
             force=force,
         )
         if not eligible:
-            logger.debug(f"Sanctum not eligible: {reason}")
+            logger.debug(f"Pons not eligible: {reason}")
             return None
 
     # Activate safety guard
-    SanctumGuard.enter()
-    session = SanctumSession(started_at=time.time())
+    Pons.enter()
+    session = PonsSession(started_at=time.time())
 
     try:
         # Phase 1 — Memory Replay
@@ -451,7 +451,7 @@ def run_sanctum_session(
         # Enforce max duration
         elapsed = time.time() - session.started_at
         if elapsed > config.max_duration_seconds:
-            logger.warning(f"Sanctum session exceeded max duration ({elapsed:.0f}s > {config.max_duration_seconds}s)")
+            logger.warning(f"Pons session exceeded max duration ({elapsed:.0f}s > {config.max_duration_seconds}s)")
 
         session.ended_at = time.time()
 
@@ -462,7 +462,7 @@ def run_sanctum_session(
         state.record_session(session)
 
         logger.info(
-            f"Sanctum session complete: {session.duration_seconds:.1f}s, "
+            f"Pons session complete: {session.duration_seconds:.1f}s, "
             f"{len(session.replay_fragments)} memories, "
             f"{len(session.hypotheticals)} hypotheticals, "
             f"{len(session.patterns)} patterns"
@@ -472,4 +472,4 @@ def run_sanctum_session(
 
     finally:
         # ALWAYS release the guard
-        SanctumGuard.exit()
+        Pons.exit()

@@ -31,6 +31,7 @@ from pulse.src.core.daily_sync import DailyNoteSync
 from pulse.src.core.events import EventBus, TRIGGER_SUCCESS, TRIGGER_FAILURE, MUTATION_APPLIED
 from pulse.src.integrations import Integration
 from pulse.src.nervous_system import NervousSystem
+from pulse.src.germinal_tasks import generate_tasks as germinal_generate
 
 logger = logging.getLogger("pulse")
 
@@ -72,6 +73,7 @@ class PulseDaemon:
         self.last_trigger_time = 0.0
         self._turn_timestamps: list = []  # sliding window for rate limiting
         self._pid_fd = None  # file descriptor for PID lock
+        self._last_generate_time: float = 0.0  # track GENERATE step timing
 
         # Core components
         self.state = StatePersistence(self.config)
@@ -163,6 +165,9 @@ class PulseDaemon:
             try:
                 ns_status = self.nervous_system.startup()
                 logger.info(f"NervousSystem: {ns_status.get('modules_loaded', 0)} modules loaded")
+                # Warm up all modules — ensures state files exist for health dashboard
+                warmup = self.nervous_system.warm_up()
+                logger.info(f"NervousSystem warm-up: {len(warmup.get('warmed', []))} modules warmed")
             except Exception as e:
                 logger.warning(f"NervousSystem startup failed: {e}")
 
@@ -229,17 +234,21 @@ class PulseDaemon:
                 # Hard HIGH-PRESSURE override (model can't suppress this)
                 # If pressure is extremely high and we haven't triggered in a long time,
                 # the agent MUST wake up regardless of what the model says.
+                # Requires at least one individual drive above threshold to avoid
+                # firing on ambient noise from many low-pressure drives.
                 if not decision.should_trigger and drive_state.total_pressure > 10.0:
+                    max_individual = max((d.weighted_pressure for d in drive_state.drives), default=0.0)
                     time_since_trigger = time.time() - self.last_trigger_time
-                    if time_since_trigger > 1800:  # 30 minutes
+                    if time_since_trigger > 1800 and max_individual > self.config.drives.override_min_individual_pressure:
                         logger.info(
                             f"🔥 HIGH-PRESSURE OVERRIDE — pressure={drive_state.total_pressure:.1f}, "
+                            f"max_individual={max_individual:.2f}, "
                             f"last_trigger={time_since_trigger:.0f}s ago. Forcing trigger."
                         )
                         decision.should_trigger = True
                         decision.reason = (
                             f"high_pressure_override: pressure={drive_state.total_pressure:.1f}, "
-                            f"idle={time_since_trigger:.0f}s"
+                            f"max_individual={max_individual:.2f}, idle={time_since_trigger:.0f}s"
                         )
 
                 # Hard conversation suppression (model can't override this)
@@ -259,6 +268,14 @@ class PulseDaemon:
                             f"Trigger suppressed (rate limit/cooldown). "
                             f"Drive pressure: {decision.total_pressure:.2f}"
                         )
+
+                # GENERATE — synthesize new tasks when blocked but drives are high
+                if (
+                    not decision.should_trigger
+                    and decision.recommend_generate
+                    and self.config.generative.enabled
+                ):
+                    await self._maybe_generate(drive_state, sensor_data)
 
                 # FEEDBACK — check for turn results from the agent
                 self._process_feedback_file()
@@ -328,6 +345,18 @@ class PulseDaemon:
 
         # Build the message from the decision context
         message = self._build_trigger_message(decision)
+
+        # NERVOUS SYSTEM — pre-respond (PHENOTYPE tone shaping)
+        if self.nervous_system:
+            try:
+                respond_ctx = self.nervous_system.pre_respond()
+                phenotype = respond_ctx.get("phenotype")
+                if phenotype:
+                    # Inject phenotype context into the trigger message
+                    tone_hint = f"\n\n[PHENOTYPE: tone={phenotype.get('tone','neutral')}, intensity={phenotype.get('intensity',0.5):.1f}, humor={phenotype.get('humor',0.3):.1f}, vulnerability={phenotype.get('vulnerability',0.2):.1f}]"
+                    message += tone_hint
+            except Exception as e:
+                logger.warning(f"NervousSystem pre_respond failed: {e}")
 
         logger.info(
             f"🫀 PULSE TRIGGER #{self.turn_count} — "
@@ -437,6 +466,113 @@ class PulseDaemon:
                 feedback_path.unlink()
             except OSError:
                 pass
+
+    async def _maybe_generate(self, drive_state, sensor_data):
+        """Run GENERATE step if enough idle time has passed."""
+        now = time.time()
+        min_idle = self.config.generative.min_idle_minutes * 60
+        if now - self._last_generate_time < min_idle:
+            return
+
+        try:
+            # Build context from what Pulse already has
+            goals = self._load_goals_list()
+            working_memory = self._load_working_memory()
+            recent_memory = json.dumps(working_memory, default=str)[:1000] if working_memory else ""
+
+            drives_dict = {}
+            if hasattr(drive_state, 'drives'):
+                for d in drive_state.drives:
+                    drives_dict[d.name] = d.pressure
+
+            thalamus_recent = []
+            try:
+                from pulse.src import thalamus
+                thalamus_recent = thalamus.read_recent(5)
+            except Exception:
+                pass
+
+            context = {
+                "goals": goals,
+                "recent_memory": recent_memory,
+                "drives": drives_dict,
+                "thalamus_recent": thalamus_recent,
+            }
+
+            # Build config dict for germinal_tasks
+            mc = self.config.evaluator.model
+            gen_config = {
+                "enabled": self.config.generative.enabled,
+                "roadmap_files": self.config.generative.roadmap_files,
+                "max_tasks": self.config.generative.max_tasks,
+                "workspace_root": self.config.workspace.root,
+                "model": {
+                    "base_url": mc.base_url,
+                    "api_key": mc.api_key,
+                    "model": mc.model,
+                    "max_tokens": mc.max_tokens,
+                    "temperature": mc.temperature,
+                    "timeout_seconds": mc.timeout_seconds,
+                },
+            }
+
+            tasks = await germinal_generate(context, gen_config)
+            self._last_generate_time = now
+
+            if tasks:
+                logger.info(f"GENERATE: {len(tasks)} tasks synthesized")
+                for t in tasks:
+                    logger.info(f"  → [{t['effort']}] {t['title']}")
+
+                # Log to daily notes
+                if self.daily_sync:
+                    try:
+                        path = self.daily_sync._get_file()
+                        self._mark_self_write(str(path))
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        now_str = datetime.now().strftime("%H:%M")
+                        with open(path, "a") as f:
+                            self.daily_sync._ensure_header(f)
+                            f.write(f"- {now_str} 🌱 GENERATE: {len(tasks)} tasks synthesized\n")
+                            for t in tasks:
+                                f.write(f"  - [{t['effort']}] {t['title']}\n")
+                    except OSError as e:
+                        logger.warning(f"Failed to sync GENERATE to daily notes: {e}")
+
+                # Store generated tasks in state for next CORTEX prompt
+                self.state.set("generated_tasks", tasks)
+
+                # Broadcast to thalamus
+                try:
+                    from pulse.src import thalamus
+                    thalamus.append({
+                        "source": "germinal_tasks",
+                        "type": "tasks_generated",
+                        "salience": 0.7,
+                        "data": {"count": len(tasks), "titles": [t["title"] for t in tasks]},
+                    })
+                except Exception:
+                    pass
+
+        except Exception as e:
+            logger.warning(f"GENERATE step failed: {e}")
+
+    def _load_goals_list(self) -> list:
+        """Load current goals as a simple string list."""
+        try:
+            goals_path = self.config.workspace.resolve_path("goals")
+            if goals_path.exists():
+                content = goals_path.read_text()
+                # Extract goal-like lines (lines with meaningful content)
+                lines = [
+                    line.strip().lstrip("- ").strip()
+                    for line in content.splitlines()
+                    if line.strip() and not line.strip().startswith("#") and not line.strip().startswith("\"\"\"")
+                ]
+                return [l for l in lines if len(l) > 5][:20]
+        except Exception as e:
+            logger.debug(f"Could not load goals list: {e}")
+        return []
 
     def _build_trigger_message(self, decision) -> str:
         """Build the agent prompt via the active integration."""

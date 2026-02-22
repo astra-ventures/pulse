@@ -225,6 +225,37 @@ def get_budget_report() -> dict:
     return report
 
 
+def emit_need_signals() -> dict:
+    """Check budget state and emit HYPOTHALAMUS need signals."""
+    try:
+        state = _load_state()
+    except Exception:
+        return {}
+
+    signals = {}
+
+    # Check days_at_zero if tracked
+    days_at_zero = state.get("days_at_zero", 0)
+    if days_at_zero > 7:
+        from pulse.src import hypothalamus
+        hypothalamus.record_need_signal("generate_revenue", "adipose")
+        signals["generate_revenue"] = days_at_zero
+        return signals
+
+    # Check if total budget is critically low (all categories near-depleted)
+    budgets = state.get("category_budgets", {})
+    usage = state.get("usage_today", {})
+    if budgets:
+        total_budget = sum(budgets.values())
+        total_used = sum(usage.get(cat, 0) for cat in budgets)
+        if total_budget > 0 and total_used / total_budget > 0.95:
+            from pulse.src import hypothalamus
+            hypothalamus.record_need_signal("generate_revenue", "adipose")
+            signals["generate_revenue"] = total_used / total_budget
+
+    return signals
+
+
 def _check_warnings(state: dict):
     """Check budget thresholds and broadcast warnings."""
     for cat in ["conversation", "crons"]:

@@ -194,6 +194,11 @@ class DriveEngine:
         decay_total = self.config.drives.success_decay
         now = time.time()
 
+        # Scale decay proportionally when total pressure is high
+        if self.config.drives.adaptive_decay and decision.total_pressure > 5.0:
+            pressure_multiplier = min(3.0, decision.total_pressure / 5.0)
+            decay_total = decay_total * pressure_multiplier
+
         if decision.total_pressure > 0:
             for drive in self.drives.values():
                 if drive.pressure > 0:

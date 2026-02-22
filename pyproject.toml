@@ -1,16 +1,17 @@
 [project]
 name = "pulse-agent"
-version = "0.2.0"
+version = "0.2.3"
 description = "Autonomous cognition engine for OpenClaw agents"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
-    {name = "Iris"},
+    {name = "Iris", email = "iris@iamiris.ai"},
+    {name = "Josh"},
 ]
-keywords = ["openclaw", "ai", "agent", "autonomous", "cognition"]
+keywords = ["openclaw", "ai", "agent", "consciousness", "autonomous", "nervous-system", "emotions", "memory"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",

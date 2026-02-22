@@ -35,7 +35,7 @@ drives:
     writing:
       weight: 1.0               # custom drive for creative work
       sources:
-        - "iamiris.ai/journal.html"
+        - "your-website.com/journal.html"
         - "memory/self/reflections/"
     
     learning:
@@ -57,7 +57,7 @@ sensors:
     watch_paths:
       - "."
       - "memory/*.md"
-      - "iamiris.ai/**/*.html"
+      - "your-website.com/**/*.html"
     ignore_patterns:
       - "*.pyc"
       - ".git/*"
