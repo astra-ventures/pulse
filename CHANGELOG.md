@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-23
+
+### Added
+- **Observation API** — HTTP API for external systems to query Pulse state in real-time
+  - `GET /state` — full nervous system snapshot (all module states)
+  - `GET /drives` — current drive pressures + active drives
+  - `GET /health` — SPINE health report
+  - `GET /mood` — ENDOCRINE mood label + hormone levels
+  - `GET /dashboard` — rich text dashboard for terminal or embedding
+  - Token-authenticated via `PULSE_OBS_TOKEN` env var
+  - `tests/test_observation_api.py` — endpoint coverage
+- **Plugin Architecture** — Drop-in extensions for Pulse's SENSE cycle
+  - `pulse/src/plugin_registry.py` — `PulsePlugin` base class (sense/get_state/act/on_load/on_unload/health)
+  - `PluginRegistry` singleton — register/unregister/sense_all/get_all_states/act_all
+  - `discover_plugins()` — scans `~/.pulse/plugins/` for `pulse_plugin_*.py` and package entry points
+  - Plugins called each `pre_sense()` cycle; failures isolated (one bad plugin can't crash the daemon)
+  - `pulse plugin list/discover/health` CLI subcommands
+  - `tests/test_plugin_registry.py` — 29 tests covering base class, registry ops, discovery, error isolation
+- **Biosensor Integration v1** — Live biometrics from Apple Watch → nervous system
+  - `pulse/src/biosensor_cache.py` — thread-safe singleton reading `biosensor-state.json` (5-min freshness check)
+  - HR zone helpers: `hr_zone()`, `hrv_stress()`, `move_ring_pct()`, `sleep()`, `workout()`
+  - SOMA integration: move ring close → energy +0.05; high HR → drain; workout active → posture `leaning_in`
+  - ENDOCRINE integration: high HR → adrenaline +0.3; low HRV stress → cortisol -0.15 + serotonin +0.1; ring closed → dopamine +0.25; deep sleep → serotonin +0.15
+  - Injected into `NervousSystem.pre_sense()` each cycle; `context["biosensor"]` available to CORTEX
+  - `tests/test_biosensor_integration.py` — 21 tests
+  - Setup: Cloudflare tunnel `bio.astra-hq.com → localhost:9721` + iPhone Shortcuts (see docs/BIOSENSOR_SETUP.md)
+- **GENOME CLI** — Export and inspect Pulse's internal genetic fingerprint
+  - `pulse genome export` — writes `~/.pulse/genome.json` (identity, drives, ENDOCRINE baseline, PLASTICITY history, CIRCADIAN profile, module weights, trait fingerprint)
+  - `pulse genome traits` — human-readable trait summary (emotional range, cognitive style, social orientation, temporal pattern)
+  - `pulse genome diff <genome_a> <genome_b>` — compare two genome snapshots (drift detection)
+  - Feeds PHENOTYPE for consistent personality expression
+- **DREAM Quality — Memory Consolidation** — CHRONICLE→ENGRAM pipeline
+  - `pulse/src/memory_consolidation.py` — scores and promotes CHRONICLE events to hippocampus ENGRAM
+  - `score_event()` — importance = salience × type_weight × recency_factor (24h decay to 0.3 floor)
+  - `consolidate()` — deduplicates by content hash, promotes above-threshold events, decays stale ENGRAMs (>14 days × 0.8), generates `ConsolidationReport` with themes + insight text
+  - Integrated into `rem.py` as Phase 6 of each dream session — runs automatically on every dream cycle
+  - Solves ENGRAM staleness problem: stale patterns recycling every trigger replaced by live consolidation from CHRONICLE
+  - `tests/test_memory_consolidation.py` — 24 tests
+
+### Fixed
+- **HYPOTHALAMUS count-based escalation** — Signals that fire 50+ times over 1+ hour from even a single module now escalate to active drives (persistent need pathway). Previously, multi-module threshold was the only promotion route; long-running single-source pressure could never escalate.
+  - `age_hours = (now - pending["first_seen"]) / 3600`
+  - `count_escalation = pending["count"] >= 50 and age_hours >= 1.0`
+  - Threshold check: `(len(pending["modules"]) >= threshold or count_escalation) and need_name not in state["active_drives"]`
+
+### Test Counts
+- v0.2.5: 693 tests
+- v0.3.0: 787 tests (+94)
+
 ## [0.2.5] - 2026-02-22
 
 ### Added
