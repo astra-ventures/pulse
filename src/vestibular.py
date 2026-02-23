@@ -4,6 +4,7 @@ Tracks ratios: building/shipping, working/reflecting, autonomy/collaboration.
 Imbalance → THALAMUS need_signal for HYPOTHALAMUS.
 """
 
+import copy
 import json
 import time
 from pathlib import Path
@@ -21,21 +22,32 @@ HEALTHY_RANGES = {
 }
 
 
+_DEFAULT_STATE = {
+    "counters": {
+        "building": 0, "shipping": 0,
+        "working": 0, "reflecting": 0,
+        "autonomy": 0, "collaboration": 0,
+    },
+    "imbalances": [],
+    "last_check": 0,
+}
+
+
 def _load_state() -> dict:
     if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(_DEFAULT_STATE_FILE.read_text())
+            raw = json.loads(_DEFAULT_STATE_FILE.read_text())
+            # Migrate old schema (had "ratios"/"alerts" instead of "counters"/"imbalances")
+            if "counters" not in raw:
+                raw["counters"] = copy.deepcopy(_DEFAULT_STATE["counters"])
+            if "imbalances" not in raw:
+                raw["imbalances"] = []
+            if "last_check" not in raw:
+                raw["last_check"] = 0
+            return raw
         except (json.JSONDecodeError, OSError):
             pass
-    return {
-        "counters": {
-            "building": 0, "shipping": 0,
-            "working": 0, "reflecting": 0,
-            "autonomy": 0, "collaboration": 0,
-        },
-        "imbalances": [],
-        "last_check": 0,
-    }
+    return copy.deepcopy(_DEFAULT_STATE)
 
 
 def _save_state(state: dict):
