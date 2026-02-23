@@ -229,15 +229,34 @@ def bridge() -> BridgeInsight:
         "data": insight.to_dict(),
     })
 
-    # If split detected, notify DISSONANCE
+    # If split detected, notify DISSONANCE (deduplicated — same tension not written twice in 60 min)
     if split_detected:
         try:
             dissonance_path = Path.home() / ".openclaw" / "workspace" / "memory" / "self" / "contradictions.md"
             if dissonance_path.exists():
-                with open(dissonance_path, "a") as f:
-                    f.write(f"\n\n### Callosum Split — {time.strftime('%Y-%m-%d %H:%M')}\n")
-                    f.write(f"**Tension:** {tension}\n")
-                    f.write(f"**Bridge:** {bridge_text}\n")
+                # Dedup: skip if same tension already written in the last 60 minutes
+                _should_write = True
+                try:
+                    existing = dissonance_path.read_text()
+                    # Check if this exact tension appears in entries from the last hour
+                    import re as _re
+                    recent_entries = _re.findall(
+                        r'### Callosum Split — (\d{4}-\d{2}-\d{2} \d{2}:\d{2})\n\*\*Tension:\*\* ([^\n]+)',
+                        existing
+                    )
+                    cutoff_ts = time.strftime('%Y-%m-%d %H:%M',
+                                              time.localtime(time.time() - 3600))
+                    for entry_ts, entry_tension in recent_entries:
+                        if entry_ts >= cutoff_ts and entry_tension.strip() == tension.strip():
+                            _should_write = False
+                            break
+                except Exception:
+                    pass
+                if _should_write:
+                    with open(dissonance_path, "a") as f:
+                        f.write(f"\n\n### Callosum Split — {time.strftime('%Y-%m-%d %H:%M')}\n")
+                        f.write(f"**Tension:** {tension}\n")
+                        f.write(f"**Bridge:** {bridge_text}\n")
         except Exception:
             pass
 
