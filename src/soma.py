@@ -99,6 +99,70 @@ def update_temperature(hormones: dict) -> str:
     return state["temperature"]
 
 
+def update_from_biosensors(cache=None) -> dict:
+    """Poll BiosensorCache and update SOMA state with biometric data.
+
+    Called each SENSE cycle via nervous_system.pre_sense().
+    Gracefully no-ops if bridge is not running or data is stale.
+
+    Returns: dict of changes applied (empty dict = no update)
+    """
+    try:
+        if cache is None:
+            from pulse.src.biosensor_cache import BiosensorCache
+            cache = BiosensorCache()
+
+        data = cache.read()
+        if data is None:
+            return {}
+
+        state = _load_state()
+        changes = {}
+
+        # Workout active → note physical exertion context
+        workout = cache.workout()
+        if workout:
+            activity = workout.get("activity", "workout")
+            state["posture"] = "leaning_in"
+            changes["posture"] = f"workout_active:{activity}"
+
+        # Move ring completion → energy boost (achievement signal)
+        move_pct = cache.move_ring_pct()
+        if move_pct is not None and move_pct >= 1.0:
+            state["energy"] = _clamp(state["energy"] + 0.05)
+            changes["energy"] = f"move_ring_closed:{move_pct:.0%}"
+
+        # Deep sleep → significant energy recovery
+        sleep = cache.sleep()
+        if sleep and sleep.get("stage") == "deep":
+            minutes = sleep.get("minutes", 0)
+            recovery = min(0.3, minutes / 60 * 0.15)  # ~0.15 per hour of deep sleep
+            if recovery > 0:
+                state["energy"] = _clamp(state["energy"] + recovery)
+                changes["energy"] = f"deep_sleep_recovery:{minutes}min:+{recovery:.3f}"
+
+        # HR zone: high → strain (reduce energy)
+        hr_zone = cache.hr_zone()
+        if hr_zone in ("high", "max"):
+            state["energy"] = _clamp(state["energy"] - 0.03)
+            changes["energy_drain"] = f"hr_zone:{hr_zone}"
+
+        if changes:
+            state["last_update"] = time.time()
+            state.setdefault("history", []).append({
+                "ts": time.time(),
+                "event": "biosensor_update",
+                "changes": changes,
+            })
+            state["history"] = state["history"][-50:]
+            _save_state(state)
+
+        return changes
+
+    except Exception:
+        return {}
+
+
 def get_status() -> dict:
     """Return current soma state."""
     state = _load_state()

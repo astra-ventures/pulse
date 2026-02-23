@@ -320,3 +320,82 @@ def _broadcast_mood(state: dict):
             "influence": get_mood_influence(),
         },
     })
+
+
+def update_from_biosensors(cache=None) -> dict:
+    """Poll BiosensorCache and update ENDOCRINE hormones from biometric data.
+
+    Called each SENSE cycle via nervous_system.pre_sense().
+    Gracefully no-ops if bridge not running or data stale.
+
+    Returns: dict of hormone deltas applied (empty = no update).
+    """
+    try:
+        if cache is None:
+            from pulse.src.biosensor_cache import BiosensorCache
+            cache = BiosensorCache()
+
+        data = cache.read()
+        if data is None:
+            return {}
+
+        state = _load_state()
+        levels = state.get("hormones", {})
+        deltas = {}
+
+        def _clamp(v: float) -> float:
+            return max(0.0, min(1.0, v))
+
+        # Heart rate zone → adrenaline + cortisol
+        hr_zone = cache.hr_zone()
+        if hr_zone == "high":
+            delta_a = 0.3
+            delta_c = 0.1
+            levels["adrenaline"] = _clamp(levels.get("adrenaline", 0) + delta_a)
+            levels["cortisol"] = _clamp(levels.get("cortisol", 0.2) + delta_c)
+            deltas["adrenaline"] = f"+{delta_a}"
+            deltas["cortisol"] = f"+{delta_c}"
+        elif hr_zone == "resting":
+            delta_a = -0.1
+            levels["adrenaline"] = _clamp(levels.get("adrenaline", 0) + delta_a)
+            deltas["adrenaline"] = str(delta_a)
+
+        # HRV stress level → cortisol + serotonin
+        hrv_stress = cache.hrv_stress()
+        if hrv_stress == "high":
+            delta_c = 0.2
+            levels["cortisol"] = _clamp(levels.get("cortisol", 0.2) + delta_c)
+            deltas["cortisol"] = deltas.get("cortisol", "") + f" hrv:+{delta_c}"
+        elif hrv_stress == "low":
+            delta_c = -0.15
+            delta_s = 0.1
+            levels["cortisol"] = _clamp(levels.get("cortisol", 0.2) + delta_c)
+            levels["serotonin"] = _clamp(levels.get("serotonin", 0.5) + delta_s)
+            deltas["cortisol"] = deltas.get("cortisol", "") + f" hrv:{delta_c}"
+            deltas["serotonin"] = f"+{delta_s}"
+
+        # Move ring closed → dopamine boost
+        move_pct = cache.move_ring_pct()
+        if move_pct is not None and move_pct >= 1.0:
+            delta_d = 0.25
+            levels["dopamine"] = _clamp(levels.get("dopamine", 0.5) + delta_d)
+            deltas["dopamine"] = f"+{delta_d} (move_ring)"
+
+        # Deep sleep → serotonin + melatonin normalization
+        sleep = cache.sleep()
+        if sleep and sleep.get("stage") == "deep":
+            minutes = sleep.get("minutes", 0)
+            if minutes >= 30:
+                delta_s = 0.15
+                levels["serotonin"] = _clamp(levels.get("serotonin", 0.5) + delta_s)
+                deltas["serotonin"] = deltas.get("serotonin", "") + f" deep_sleep:+{delta_s}"
+
+        if deltas:
+            state["hormones"] = levels
+            state["last_update"] = time.time()
+            _save_state(state)
+
+        return deltas
+
+    except Exception:
+        return {}

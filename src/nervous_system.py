@@ -953,6 +953,26 @@ class NervousSystem:
             except Exception as e:
                 logger.warning(f"pre_sense AMYGDALA failed: {e}")
 
+        # BIOSENSOR — poll Apple Watch data into SOMA + ENDOCRINE
+        try:
+            from pulse.src.biosensor_cache import BiosensorCache
+            _bio = BiosensorCache()
+            if _bio.is_active():
+                soma_changes, endo_changes = {}, {}
+                if self._mod_soma:
+                    soma_changes = self._mod_soma.update_from_biosensors(_bio)
+                if self._mod_endocrine:
+                    endo_changes = self._mod_endocrine.update_from_biosensors(_bio)
+                if soma_changes or endo_changes:
+                    context["biosensor"] = {
+                        "active": True,
+                        "soma_changes": soma_changes,
+                        "endo_changes": endo_changes,
+                    }
+                    logger.info(f"BIOSENSOR update applied: soma={soma_changes} endo={endo_changes}")
+        except Exception as e:
+            logger.warning(f"pre_sense BIOSENSOR failed: {e}")
+
         return context
 
     def pre_evaluate(self, drive_state, sensor_data: dict) -> dict:
