@@ -889,6 +889,75 @@ def cmd_genome(args):
         console.print("  [dim]pulse genome diff FILE                # compare[/]\n")
 
 
+def cmd_plugin(args):
+    """Manage Pulse plugins — list, discover, and inspect loaded plugins."""
+    from pulse.src.plugin_registry import PluginRegistry, discover_plugins, _DEFAULT_PLUGIN_DIR
+
+    sub = getattr(args, "plugin_cmd", None) or "list"
+
+    reg = PluginRegistry.get()
+
+    if sub == "discover":
+        plugin_dir = Path(args.dir) if getattr(args, "dir", None) else _DEFAULT_PLUGIN_DIR
+        n, errors = discover_plugins(registry=reg, plugin_dir=plugin_dir)
+        if n > 0:
+            console.print(f"[green]✓[/] Discovered and registered {n} plugin(s) from {plugin_dir}")
+        else:
+            console.print(f"[yellow]○[/] No new plugins found in {plugin_dir}")
+        for err in errors:
+            console.print(f"  [red]✗[/] {err}")
+        return
+
+    if sub == "health":
+        health = reg.health_all()
+        if not health:
+            console.print("[dim]No plugins registered.[/]")
+            return
+        from rich.table import Table
+        table = Table(title="Plugin Health", box=None, show_header=True,
+                      header_style="bold dim", padding=(0, 1))
+        table.add_column("Name")
+        table.add_column("Version")
+        table.add_column("Status")
+        table.add_column("Errors")
+        for h in health:
+            status = "[green]enabled[/]" if h["enabled"] else "[red]disabled[/]"
+            table.add_row(h["name"], h["version"], status, str(h["error_count"]))
+        console.print(table)
+        return
+
+    # Default: list
+    if reg.count == 0:
+        # Try auto-discovery first
+        discover_plugins(registry=reg)
+
+    if reg.count == 0:
+        console.print("[dim]No plugins loaded.[/]")
+        console.print(f"\n  Install plugins in: [cyan]{_DEFAULT_PLUGIN_DIR}[/]")
+        console.print("  File pattern: [cyan]pulse_plugin_*.py[/]")
+        console.print("  Class must subclass [cyan]PulsePlugin[/]")
+        return
+
+    from rich.table import Table
+    table = Table(title=f"Loaded Plugins ({reg.count})", box=None, show_header=True,
+                  header_style="bold dim", padding=(0, 1))
+    table.add_column("Name")
+    table.add_column("Version")
+    table.add_column("Description")
+    table.add_column("Status")
+
+    for h in reg.health_all():
+        name = h["name"]
+        plugin = reg._plugins.get(name)
+        desc = (plugin.description[:50] if plugin else "") or "—"
+        status = "[green]✓[/]" if h["enabled"] else "[red]✗ disabled[/]"
+        table.add_row(name, h["version"], desc, status)
+
+    console.print(table)
+    console.print(f"\n  [dim]pulse plugin discover     # scan ~/.pulse/plugins/[/]")
+    console.print(f"  [dim]pulse plugin health       # show error counts[/]")
+
+
 def cmd_config(args):
     """Show current configuration."""
     # Find config file
@@ -1187,6 +1256,14 @@ def main():
     g_diff.add_argument("file", metavar="FILE", help="Path to genome JSON to compare against")
     g_sub.add_parser("show", help="Show current genome (default if no subcommand)")
 
+    # plugin
+    p_parser = sub.add_parser("plugin", help="Manage community plugins")
+    p_sub = p_parser.add_subparsers(dest="plugin_cmd")
+    p_sub.add_parser("list", help="List loaded plugins (default)")
+    p_discover = p_sub.add_parser("discover", help="Scan plugin dir and load new plugins")
+    p_discover.add_argument("--dir", metavar="DIR", help="Plugin directory to scan (default: ~/.pulse/plugins/)")
+    p_sub.add_parser("health", help="Show plugin health + error counts")
+
     # help
     sub.add_parser("help", help="Show all commands with usage and descriptions")
 
@@ -1213,6 +1290,7 @@ def main():
         "logs": cmd_logs,
         "health": cmd_health,
         "genome": cmd_genome,
+        "plugin": cmd_plugin,
         "help": cmd_help,
     }
 

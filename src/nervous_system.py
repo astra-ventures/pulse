@@ -973,6 +973,21 @@ class NervousSystem:
         except Exception as e:
             logger.warning(f"pre_sense BIOSENSOR failed: {e}")
 
+        # PLUGINS — sense() contributions from registered community plugins
+        try:
+            from pulse.src.plugin_registry import PluginRegistry, discover_plugins
+            reg = PluginRegistry.get()
+            # Lazy discovery: run once when registry is empty and plugin dir may exist
+            if reg.count == 0:
+                discover_plugins(registry=reg)
+            if reg.count > 0:
+                plugin_drives = reg.sense_all()
+                if plugin_drives:
+                    context["plugin_drives"] = plugin_drives
+                    logger.debug(f"PLUGINS contributed drives: {plugin_drives}")
+        except Exception as e:
+            logger.warning(f"pre_sense PLUGINS failed: {e}")
+
         return context
 
     def pre_evaluate(self, drive_state, sensor_data: dict) -> dict:
