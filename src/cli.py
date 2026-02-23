@@ -738,6 +738,157 @@ def cmd_decay(args):
     console.print(f"[green]✓[/] Decayed [bold]{args.drive}[/] -{args.amount} → next cycle")
 
 
+_GENOME_FILE = _DEFAULT_STATE_DIR / "genome.json"
+
+# Default genome (mirrors genome.py defaults — used when state file absent)
+_DEFAULT_GENOME = {
+    "version": "3.0",
+    "created_at": 0,
+    "modules": {
+        "endocrine": {"decay_rates": {"cortisol": -0.05, "dopamine": -0.08, "serotonin": -0.02,
+                                      "oxytocin": -0.04, "adrenaline": -0.28, "melatonin": -0.01},
+                      "high_threshold": 0.5, "low_threshold": 0.3},
+        "limbic":    {"half_life_ms": 14400000, "decay_threshold": 0.5, "contagion_multiplier": 0.5},
+        "retina":    {"default_threshold": 0.3, "focus_threshold": 0.8},
+        "circadian": {"dawn_hours": [6, 9], "daylight_hours": [9, 17], "golden_hours": [17, 22]},
+        "amygdala":  {"fast_path_threshold": 0.7},
+        "phenotype": {"default_humor": 0.3, "default_intensity": 0.5},
+        "telomere":  {"drift_threshold": 0.3},
+        "hypothalamus": {"signal_threshold": 3, "retirement_days": 30, "weight_floor": 0.1},
+        "soma":      {"energy_cost_per_token": 0.001, "rem_replenish": 0.5},
+    },
+}
+
+
+def _read_genome() -> dict:
+    """Read genome from state file, or return default."""
+    if _GENOME_FILE.exists():
+        try:
+            return json.loads(_GENOME_FILE.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+    return _DEFAULT_GENOME.copy()
+
+
+def _write_genome(g: dict):
+    """Write genome to state file."""
+    _GENOME_FILE.parent.mkdir(parents=True, exist_ok=True)
+    g["created_at"] = int(time.time())
+    _GENOME_FILE.write_text(json.dumps(g, indent=2))
+
+
+def cmd_genome(args):
+    """Export, import, diff, or show the Pulse genome (DNA config)."""
+    sub = getattr(args, "genome_cmd", None) or "show"
+
+    if sub == "export":
+        g = _read_genome()
+        if getattr(args, "output", None):
+            out = Path(args.output)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(g, indent=2))
+            console.print(f"[green]✓[/] Genome exported → [bold]{out}[/]")
+        else:
+            print(json.dumps(g, indent=2))
+
+    elif sub == "import":
+        path = Path(args.file)
+        if not path.exists():
+            console.print(f"[red]✗[/] File not found: {path}")
+            sys.exit(1)
+        try:
+            incoming = json.loads(path.read_text())
+        except json.JSONDecodeError as e:
+            console.print(f"[red]✗[/] Invalid JSON: {e}")
+            sys.exit(1)
+        if "modules" not in incoming:
+            console.print("[red]✗[/] Invalid genome: missing 'modules' key")
+            sys.exit(1)
+        _write_genome(incoming)
+        n = len(incoming.get("modules", {}))
+        console.print(f"[green]✓[/] Genome imported from [bold]{path}[/] — {n} modules")
+        console.print(f"  Version: {incoming.get('version', '?')}")
+        if _is_running()[0]:
+            console.print("  [dim]Note: restart daemon to apply changes: [bold]pulse restart[/][/]")
+
+    elif sub == "diff":
+        path = Path(args.file)
+        if not path.exists():
+            console.print(f"[red]✗[/] File not found: {path}")
+            sys.exit(1)
+        try:
+            other = json.loads(path.read_text())
+        except json.JSONDecodeError as e:
+            console.print(f"[red]✗[/] Invalid JSON: {e}")
+            sys.exit(1)
+        current = _read_genome()
+
+        table = Table(title="Genome Diff", box=box.SIMPLE_HEAVY, padding=(0, 1))
+        table.add_column("Module", style="cyan")
+        table.add_column("Key")
+        table.add_column("Current", style="green")
+        table.add_column(f"File: {path.name}", style="yellow")
+
+        current_mods = current.get("modules", {})
+        other_mods = other.get("modules", {})
+        all_modules = set(current_mods) | set(other_mods)
+        diffs_found = 0
+
+        for mod in sorted(all_modules):
+            cur_cfg = current_mods.get(mod, {})
+            oth_cfg = other_mods.get(mod, {})
+            all_keys = set(cur_cfg) | set(oth_cfg)
+            for key in sorted(all_keys):
+                cur_val = cur_cfg.get(key, "[missing]")
+                oth_val = oth_cfg.get(key, "[missing]")
+                if str(cur_val) != str(oth_val):
+                    table.add_row(mod, key, str(cur_val), str(oth_val))
+                    diffs_found += 1
+
+        if diffs_found == 0:
+            console.print("[green]✓[/] Genomes are identical.")
+        else:
+            console.print(table)
+            console.print(f"\n[yellow]{diffs_found} difference(s)[/]")
+
+    else:  # show
+        g = _read_genome()
+        modules = g.get("modules", {})
+        # If no mutations yet, show defaults for reference
+        source = "live mutations"
+        if not modules:
+            modules = _DEFAULT_GENOME["modules"]
+            source = "defaults (no mutations yet)"
+
+        n_modules = len(modules)
+        console.print()
+        console.print(Panel(
+            f"Version: [bold]{g.get('version', '?')}[/]  │  "
+            f"Modules: [bold]{n_modules}[/]  │  "
+            f"Source: [dim]{source}[/]",
+            title="🧬 Pulse Genome",
+            border_style="magenta",
+        ))
+
+        table = Table(box=box.SIMPLE_HEAVY, padding=(0, 1), show_edge=False)
+        table.add_column("Module", style="cyan")
+        table.add_column("Key")
+        table.add_column("Value", style="green")
+
+        for mod, cfg in sorted(modules.items()):
+            if isinstance(cfg, dict):
+                for key, val in sorted(cfg.items()):
+                    table.add_row(mod, key, str(val))
+            else:
+                table.add_row(mod, "", str(cfg))
+
+        console.print(table)
+        console.print()
+        console.print("  [dim]pulse genome export -o backup.json   # save a backup[/]")
+        console.print("  [dim]pulse genome import FILE              # restore[/]")
+        console.print("  [dim]pulse genome diff FILE                # compare[/]\n")
+
+
 def cmd_config(args):
     """Show current configuration."""
     # Find config file
@@ -919,6 +1070,12 @@ def cmd_help(args):
         ("", "  Types: adjust_weight, adjust_threshold, adjust_rate, adjust_cooldown,"),
         ("", "         adjust_turns_per_hour, add_drive, remove_drive, spike_drive, decay_drive"),
         ("", ""),
+        ("", "[bold]Genome (DNA Config)[/]"),
+        ("pulse genome", "Show current genome — all module thresholds and weights"),
+        ("pulse genome export [-o FILE]", "Export genome to JSON file (or stdout)"),
+        ("pulse genome import FILE", "Import genome from a JSON file"),
+        ("pulse genome diff FILE", "Compare current genome against a saved file"),
+        ("", ""),
         ("", "[bold]Daemon Lifecycle[/]"),
         ("pulse start", "Start daemon via LaunchAgent (or foreground if no plist)"),
         ("pulse stop", "Graceful shutdown (SIGTERM)"),
@@ -1019,6 +1176,17 @@ def main():
     # health
     sub.add_parser("health", help="Raw health/status/evolution endpoints")
 
+    # genome — DNA export/import/diff
+    g_parser = sub.add_parser("genome", help="Export, import, or diff the Pulse genome (DNA config)")
+    g_sub = g_parser.add_subparsers(dest="genome_cmd")
+    g_export = g_sub.add_parser("export", help="Export current genome to JSON")
+    g_export.add_argument("--output", "-o", metavar="FILE", help="Output file (default: stdout)")
+    g_import = g_sub.add_parser("import", help="Import genome from a JSON file")
+    g_import.add_argument("file", metavar="FILE", help="Path to genome JSON")
+    g_diff = g_sub.add_parser("diff", help="Compare current genome against a saved file")
+    g_diff.add_argument("file", metavar="FILE", help="Path to genome JSON to compare against")
+    g_sub.add_parser("show", help="Show current genome (default if no subcommand)")
+
     # help
     sub.add_parser("help", help="Show all commands with usage and descriptions")
 
@@ -1044,6 +1212,7 @@ def main():
         "restart": cmd_restart,
         "logs": cmd_logs,
         "health": cmd_health,
+        "genome": cmd_genome,
         "help": cmd_help,
     }
 
