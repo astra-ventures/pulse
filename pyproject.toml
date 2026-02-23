@@ -1,6 +1,6 @@
 [project]
 name = "pulse-agent"
-version = "0.2.3"
+version = "0.3.0"
 description = "Autonomous cognition engine for OpenClaw agents"
 readme = "README.md"
 license = {text = "MIT"}

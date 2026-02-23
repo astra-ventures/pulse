@@ -67,7 +67,13 @@ def record_need_signal(need_name: str, source_module: str) -> dict:
 
     # Check if threshold met and not already an active drive
     threshold = 2 if need_name in REDUCED_THRESHOLD_NEEDS else SIGNAL_THRESHOLD
-    if len(pending["modules"]) >= threshold and need_name not in state["active_drives"]:
+
+    # Count-based escalation: a signal that has fired 50+ times over 1+ hour
+    # from even a single module is a genuine persistent need — promote it.
+    age_hours = (now - pending["first_seen"]) / 3600
+    count_escalation = pending["count"] >= 50 and age_hours >= 1.0
+
+    if (len(pending["modules"]) >= threshold or count_escalation) and need_name not in state["active_drives"]:
         state["active_drives"][need_name] = {
             "weight": 1.0,
             "born_ts": now,
