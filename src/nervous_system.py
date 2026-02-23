@@ -15,6 +15,37 @@ logger = logging.getLogger("pulse.nervous_system")
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 
+# ── Skill inference ────────────────────────────────────────────────────────────
+
+_SKILL_KEYWORDS: List[tuple] = [
+    ("coding",            ["cod", "build", "implement", "module", "class", "function",
+                           "fix", "test", "debug", "refactor", "script", "commit", "push"]),
+    ("genomic_analysis",  ["genome", "genomic", "snp", "gwas", "dna", "chromosome",
+                           "allele", "rsid", "variant", "biostack"]),
+    ("research",          ["research", "analysis", "study", "search", "learn",
+                           "scan", "find", "query", "investigate", "gwas"]),
+    ("trading_strategy",  ["trading", "polymarket", "kalshi", "market", "trade",
+                           "bet", "position", "edge", "kelly", "weather_bet"]),
+    ("creative_writing",  ["write", "journal", "blog", "publish", "poem",
+                           "post", "content", "article", "story"]),
+    ("system_architecture", ["architect", "structur", "plan",
+                              "roadmap", "pipeline", "schema"]),
+    ("business_strategy", ["strategy", "business", "trait", "product", "launch",
+                           "revenue", "market", "waitlist", "pricing"]),
+]
+
+
+def _infer_skill_from_reason(reason: str) -> Optional[str]:
+    """Map a trigger reason string to the most relevant THYMUS skill name.
+
+    Returns None for 'autonomous_operation' since post_loop already handles it.
+    """
+    r = reason.lower()
+    for skill, keywords in _SKILL_KEYWORDS:
+        if any(kw in r for kw in keywords):
+            return skill
+    return None  # caller should skip or fall back to autonomous_operation
+
 
 class NervousSystem:
     """Manages all 22 nervous system modules for the Pulse daemon.
@@ -1174,12 +1205,15 @@ class NervousSystem:
         # CHRONICLE — record trigger event
         if self._mod_chronicle:
             try:
+                _reason = getattr(decision, 'reason', 'unknown')
                 self._mod_chronicle.record_event(
                     source="nervous_system",
                     event_type="trigger",
                     data={
                         "success": success,
-                        "reason": getattr(decision, 'reason', 'unknown'),
+                        "reason": _reason,
+                        # summary field lets memory_consolidation extract readable content
+                        "summary": f"Trigger {'succeeded' if success else 'failed'}: {_reason}",
                     },
                     salience=0.6,
                 )
@@ -1203,6 +1237,18 @@ class NervousSystem:
                 result["engram_encoded"] = True
             except Exception as e:
                 logger.warning(f"post_trigger ENGRAM failed: {e}")
+
+        # THYMUS — practice the skill exercised by this trigger
+        if self._mod_thymus:
+            try:
+                _reason = getattr(decision, 'reason', '')
+                _skill = _infer_skill_from_reason(_reason)
+                if _skill:
+                    _quality = 0.7 if success else 0.4
+                    self._mod_thymus.practice_skill(_skill, quality=_quality)
+                    result["thymus_skill_practiced"] = _skill
+            except Exception as e:
+                logger.warning(f"post_trigger THYMUS skill inference failed: {e}")
 
         # DENDRITE — update social graph for sender
         context = getattr(decision, '__dict__', {}) if decision else {}

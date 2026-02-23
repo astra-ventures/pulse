@@ -178,8 +178,8 @@ def score_event(event: dict, now: Optional[float] = None) -> float:
 def _extract_content(event: dict) -> str:
     """Extract a human-readable content string from a CHRONICLE event."""
     data = event.get("data", {})
-    # Try common fields in priority order
-    for field_name in ("summary", "message", "description", "text", "content", "label"):
+    # Try common fields in priority order; "reason" covers trigger events
+    for field_name in ("summary", "message", "description", "text", "content", "label", "reason"):
         val = data.get(field_name)
         if val and isinstance(val, str) and len(val.strip()) > 5:
             return val.strip()[:500]
