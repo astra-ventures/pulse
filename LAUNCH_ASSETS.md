@@ -104,8 +104,10 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 >
 > **Install:**
 > ```bash
-> pip install astra-pulse
+> # From GitHub (PyPI publish pending)
+> pip install git+https://github.com/astra-ventures/pulse
 > pulse start
+> # OR: clone + pip install -e .
 > ```
 >
 > **GitHub:** https://github.com/astra-ventures/pulse
