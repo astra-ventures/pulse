@@ -68,6 +68,7 @@ class PonsSession:
     creative_output: Optional[str] = None
     creative_type: Optional[str] = None  # "poem", "hypothesis", "question", "insight"
     themes: List[str] = field(default_factory=list)
+    consolidation_report: Optional[dict] = None  # Phase 6: CHRONICLE→ENGRAM results
 
     @property
     def duration_seconds(self) -> float:
@@ -75,7 +76,7 @@ class PonsSession:
         return end - self.started_at
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "started_at": self.started_at,
             "ended_at": self.ended_at,
             "duration_seconds": round(self.duration_seconds, 1),
@@ -85,6 +86,9 @@ class PonsSession:
             "creative_type": self.creative_type,
             "themes": self.themes,
         }
+        if self.consolidation_report is not None:
+            d["consolidation"] = self.consolidation_report
+        return d
 
 
 # ─── State Tracking ──────────────────────────────────────────
@@ -447,6 +451,31 @@ def run_rem_session_internal(
         for frag in session.replay_fragments:
             all_tags.extend(frag.tags)
         session.themes = list(set(all_tags))[:10]
+
+        # Phase 6 — Memory Consolidation (CHRONICLE → ENGRAM)
+        try:
+            from pulse.src.memory_consolidation import consolidate
+            consolidation = consolidate()
+            session.consolidation_report = consolidation.to_dict()
+            if consolidation.promoted > 0:
+                logger.info(
+                    f"Phase 6: Consolidated {consolidation.promoted} new ENGRAMs "
+                    f"({consolidation.already_known} already known, "
+                    f"{consolidation.decayed} decayed). "
+                    f"Themes: {consolidation.top_themes}"
+                )
+                # Merge consolidation themes into session themes
+                session.themes = list(dict.fromkeys(
+                    session.themes + consolidation.top_themes
+                ))[:10]
+            else:
+                logger.debug(
+                    f"Phase 6: No new ENGRAMs (read {consolidation.events_read} events, "
+                    f"{consolidation.already_known} already known)"
+                )
+        except Exception as e:
+            logger.warning(f"Phase 6 memory consolidation failed: {e}")
+            session.consolidation_report = {"error": str(e)}
 
         # Enforce max duration
         elapsed = time.time() - session.started_at
