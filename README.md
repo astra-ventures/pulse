@@ -46,7 +46,7 @@ Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 
 ```bash
 # 1. Clone
-git clone https://github.com/jcap93/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
 # 2. Install
@@ -222,7 +222,7 @@ See [LICENSE](LICENSE) for details.
 
 ## Support
 
-- **GitHub Issues:** [github.com/jcap93/pulse/issues](https://github.com/jcap93/pulse/issues)
+- **GitHub Issues:** [github.com/astra-ventures/pulse/issues](https://github.com/astra-ventures/pulse/issues)
 - **Docs:** [Pulse Documentation](docs/)
 - **Discord:** [OpenClaw community](https://discord.com/invite/clawd) (#pulse channel)
 

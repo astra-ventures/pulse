@@ -22,12 +22,12 @@ gh auth status
 
 2) Create the public repo:
 ```bash
-gh repo create jcap93/pulse --public --source . --remote origin --push
+gh repo create astra-ventures/pulse --public --source . --remote origin --push
 ```
 (If the repo already exists, skip create and just push.)
 
 3) Verify URLs:
-- https://github.com/jcap93/pulse
+- https://github.com/astra-ventures/pulse
 - Docs + examples render correctly
 
 ## ClawHub submission (10 minutes)
@@ -51,4 +51,4 @@ Use `PULSE_PRODUCTHUNT.md` — tagline, description, maker comment, gallery plan
 - If you want to keep your personal GitHub clean, we can publish under `astra-ventures/pulse` instead. (I can swap URLs in CLAWHUB_LISTING.md in 30 seconds.)
 - **New:** `pulse/RELEASE_RUNBOOK.md` contains the minimal-step GitHub→ClawHub flow + verification checklist.
 
-**My recommendation:** publish under your personal (`jcap93`) for speed, then transfer later if needed.
+**Status:** Published under `astra-ventures/pulse` ✅ — https://github.com/astra-ventures/pulse

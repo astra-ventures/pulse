@@ -8,7 +8,7 @@ Complete guide for running Pulse in Docker — from local development to product
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/[org-name]/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
 # 2. Copy environment file
@@ -368,7 +368,7 @@ docker run --rm \
 **Import on new machine:**
 ```bash
 # Clone repo
-git clone https://github.com/[org-name]/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
 # Restore config
@@ -501,7 +501,7 @@ podman-compose up -d
 
 ## Support
 
-- **GitHub Issues:** [github.com/[org-name]/pulse/issues](https://github.com/[org-name]/pulse/issues)
+- **GitHub Issues:** [github.com/astra-ventures/pulse/issues](https://github.com/astra-ventures/pulse/issues)
 - **Discord:** [OpenClaw community](https://discord.com/invite/clawd) (#pulse channel)
 
 ---

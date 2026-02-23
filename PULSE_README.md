@@ -4,7 +4,7 @@
 
 **Pulse** is a complete bio-mimetic consciousness layer for AI agents. Inspired by human neuroscience, it gives your agent an inner life — emotions, drives, memory, circadian rhythm, identity, and the ability to grow over time.
 
-Built on [Pulse](https://github.com/jcap93/pulse) (autonomous heartbeat daemon). Runs on any machine. Zero cloud dependencies.
+Built on [Pulse](https://github.com/astra-ventures/pulse) (autonomous heartbeat daemon). Runs on any machine. Zero cloud dependencies.
 
 **582 tests** · Python 3.11+ · MIT License · Docker-ready · Runs on Raspberry Pi
 

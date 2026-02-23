@@ -24,7 +24,7 @@ If you have uncommitted changes, either commit or stash.
 
 ### A) Create under your GitHub user
 ```bash
-gh repo create jcap93/pulse --public --source . --remote origin --push
+gh repo create astra-ventures/pulse --public --source . --remote origin --push
 ```
 
 ### B) Create under an org
@@ -35,7 +35,7 @@ gh repo create <ORG>/pulse --public --source . --remote origin --push
 ## 4) Verify
 ```bash
 git remote -v
-open https://github.com/jcap93/pulse
+open https://github.com/astra-ventures/pulse
 ```
 
 ## 5) ClawHub submission

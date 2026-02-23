@@ -10,17 +10,17 @@
 - [x] LICENSE added (MIT)
 - [x] ClawHub listing drafted
 
-## GitHub Repo Setup (Needs Josh Approval)
+## GitHub Repo Setup ✅ COMPLETE (Feb 22, 2026)
 
-- [ ] Create public repo: `gh repo create jcap93/pulse --public`
-- [ ] Push codebase: `git init && git add . && git commit -m "Initial commit" && git push`
-- [ ] Verify repo accessible at https://github.com/jcap93/pulse
-- [ ] Update CLAWHUB_LISTING.md with real GitHub URLs
-- [ ] Add topics/tags: `autonomy`, `openclaw`, `ai-agent`, `daemon`
+- [x] Create public repo: `gh repo create astra-ventures/pulse --public`
+- [x] Push codebase: 5 commits pushed, 693 tests, v0.2.5
+- [x] Verify repo accessible at https://github.com/astra-ventures/pulse
+- [x] Update CLAWHUB_LISTING.md with real GitHub URLs
+- [ ] Add topics/tags: `autonomy`, `openclaw`, `ai-agent`, `daemon` ← **Josh: add via GitHub repo settings**
 
 ## ClawHub Listing Updates
 
-- [ ] Replace all `github.com/yourusername/pulse` with `github.com/jcap93/pulse`
+- [x] Replace all `github.com/yourusername/pulse` with `github.com/astra-ventures/pulse`
 - [ ] Add screenshots:
   - `pulse status` output
   - GIF of filesystem change → trigger → agent action
@@ -47,11 +47,11 @@
 
 ## Estimated Timeline
 
-- **Day 1 (today):** Prep complete, awaiting Josh approval ✅
-- **Day 2:** GitHub repo created + pushed (5 min with approval)
-- **Day 3:** ClawHub submission (1 hour)
-- **Week 2:** Product Hunt launch prep
-- **Week 3:** Product Hunt launch day
+- **Day 1 (Feb 21):** Prep complete ✅
+- **Day 2 (Feb 22):** GitHub repo created + pushed ✅ — https://github.com/astra-ventures/pulse
+- **Day 3 (Feb 23):** ClawHub submission — Josh: visit clawhub.com/submit, paste CLAWHUB_LISTING.md (~1 hr)
+- **Week 2 (Mar 2-6):** Product Hunt launch prep — assets ready in PULSE_PRODUCTHUNT.md
+- **Week 3 (Mar 3-7):** Product Hunt launch day (Tuesday 12:01 AM Pacific recommended)
 
 ---
 

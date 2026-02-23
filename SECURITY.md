@@ -88,7 +88,7 @@ When deploying Pulse:
 
 ## Known Issues
 
-None currently. Check [GitHub Security Advisories](https://github.com/[org-name]/pulse/security/advisories) for updates.
+None currently. Check [GitHub Security Advisories](https://github.com/astra-ventures/pulse/security/advisories) for updates.
 
 ## Security Features
 

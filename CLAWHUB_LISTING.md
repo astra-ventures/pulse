@@ -58,7 +58,7 @@ Pulse is a persistent daemon that gives AI agents self-directed initiative. Inst
 pip install pulse-agent
 
 # Or clone
-git clone https://github.com/jcap93/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 pip install -r requirements.txt
 ```
@@ -153,8 +153,8 @@ Optional: architecture diagram from `docs/architecture.md`.
 
 ## Support
 
-- **GitHub Issues:** [github.com/jcap93/pulse/issues](https://github.com/jcap93/pulse/issues)
-- **Docs:** [github.com/jcap93/pulse/docs](https://github.com/jcap93/pulse/docs)
+- **GitHub Issues:** [github.com/astra-ventures/pulse/issues](https://github.com/astra-ventures/pulse/issues)
+- **Docs:** [github.com/astra-ventures/pulse/docs](https://github.com/astra-ventures/pulse/docs)
 - **Discord:** [OpenClaw community](https://discord.com/invite/clawd) (#pulse channel)
 
 ## Requirements
@@ -233,4 +233,4 @@ writing:
 
 ---
 
-**[Install Pulse →](https://github.com/jcap93/pulse)**
+**[Install Pulse →](https://github.com/astra-ventures/pulse)**

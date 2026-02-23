@@ -3,7 +3,7 @@
 This is the small cleanup that makes the public GitHub repo look intentional.
 
 ## 0) Decide where this will live
-- Personal: `jcap93/pulse` (fast)
+- Personal: `astra-ventures/pulse` (fast)
 - Org: `astra-ventures/pulse` (cleaner branding)
 
 ## 1) Fix git author identity (recommended before pushing public)

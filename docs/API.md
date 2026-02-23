@@ -491,4 +491,4 @@ app.run(port=8080)
 
 ## Support
 
-Questions? Open an issue: [github.com/jcap93/pulse/issues](https://github.com/jcap93/pulse/issues)
+Questions? Open an issue: [github.com/astra-ventures/pulse/issues](https://github.com/astra-ventures/pulse/issues)

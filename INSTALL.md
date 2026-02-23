@@ -22,7 +22,7 @@ python3 --version  # Should show 3.11.x or higher
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/jcap93/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
 # 2. Install dependencies
@@ -249,7 +249,7 @@ python3.11 --version
 **Install Pulse:**
 ```bash
 # Clone
-git clone https://github.com/jcap93/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
 # Create virtual environment (recommended for Pi)
@@ -412,7 +412,7 @@ docker rmi pulse:latest
 
 ## Support
 
-- **GitHub Issues:** [github.com/jcap93/pulse/issues](https://github.com/jcap93/pulse/issues)
+- **GitHub Issues:** [github.com/astra-ventures/pulse/issues](https://github.com/astra-ventures/pulse/issues)
 - **Discord:** [OpenClaw community](https://discord.com/invite/clawd) (#pulse channel)
 - **Docs:** [docs/](docs/)
 
