@@ -12,8 +12,8 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "enteric-state.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "enteric-state.json"
 MAX_PATTERNS = 200
 
 
@@ -40,10 +40,10 @@ class Pattern:
 # ── State persistence ───────────────────────────────────────────────────
 
 def _load_state() -> dict:
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    if STATE_FILE.exists():
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, OSError):
             pass
     return {
@@ -57,7 +57,7 @@ def _load_state() -> dict:
 
 
 def _save_state(state: dict):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
     # Prune patterns
     if len(state["pattern_library"]) > MAX_PATTERNS:
         state["pattern_library"] = state["pattern_library"][-MAX_PATTERNS:]
@@ -65,7 +65,7 @@ def _save_state(state: dict):
         state["override_log"] = state["override_log"][-100:]
     if len(state["training_history"]) > 200:
         state["training_history"] = state["training_history"][-200:]
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def _context_keys(context: dict) -> list[str]:
@@ -96,7 +96,7 @@ def _similarity(keys_a: list[str], keys_b: list[str]) -> float:
 def _get_mood_bias() -> tuple[float, float]:
     """Returns (toward_bias, away_bias) from endocrine state.
     High cortisol → away bias. High dopamine → toward bias."""
-    endocrine_file = STATE_DIR / "endocrine-state.json"
+    endocrine_file = _DEFAULT_STATE_DIR / "endocrine-state.json"
     if not endocrine_file.exists():
         return (0.0, 0.0)
     try:

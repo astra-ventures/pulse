@@ -16,11 +16,11 @@ def clean_state(tmp_path, monkeypatch):
     state_dir.mkdir()
     archive_dir = state_dir / "buffer-archive"
     archive_dir.mkdir()
-    monkeypatch.setattr(buffer, "STATE_DIR", state_dir)
-    monkeypatch.setattr(buffer, "BUFFER_FILE", state_dir / "buffer.json")
-    monkeypatch.setattr(buffer, "ARCHIVE_DIR", archive_dir)
-    monkeypatch.setattr(thalamus, "STATE_DIR", state_dir)
-    monkeypatch.setattr(thalamus, "BROADCAST_FILE", state_dir / "broadcast.jsonl")
+    monkeypatch.setattr(buffer, "_DEFAULT_STATE_DIR", state_dir)
+    monkeypatch.setattr(buffer, "_DEFAULT_BUFFER_FILE", state_dir / "buffer.json")
+    monkeypatch.setattr(buffer, "_DEFAULT_ARCHIVE_DIR", archive_dir)
+    monkeypatch.setattr(thalamus, "_DEFAULT_STATE_DIR", state_dir)
+    monkeypatch.setattr(thalamus, "_DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl")
 
 
 class TestCaptureGet:

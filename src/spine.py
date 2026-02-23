@@ -13,8 +13,8 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-HEALTH_FILE = STATE_DIR / "spine-health.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_HEALTH_FILE = _DEFAULT_STATE_DIR / "spine-health.json"
 
 # Alert level ordering
 LEVELS = ["green", "yellow", "orange", "red"]
@@ -38,7 +38,7 @@ MAX_HISTORY = 24
 
 
 def _ensure_dir():
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _empty_state() -> dict:
@@ -59,9 +59,9 @@ def _empty_state() -> dict:
 
 
 def _load() -> dict:
-    if HEALTH_FILE.exists():
+    if _DEFAULT_HEALTH_FILE.exists():
         try:
-            return json.loads(HEALTH_FILE.read_text())
+            return json.loads(_DEFAULT_HEALTH_FILE.read_text())
         except (json.JSONDecodeError, OSError):
             pass
     return _empty_state()
@@ -69,7 +69,7 @@ def _load() -> dict:
 
 def _save(state: dict):
     _ensure_dir()
-    HEALTH_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_HEALTH_FILE.write_text(json.dumps(state, indent=2))
 
 
 def _max_level(*levels: str) -> str:

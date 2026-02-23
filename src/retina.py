@@ -14,9 +14,9 @@ from typing import Any, Callable, Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "retina-state.json"
-LEARNING_FILE = STATE_DIR / "retina-learning.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "retina-state.json"
+_DEFAULT_LEARNING_FILE = _DEFAULT_STATE_DIR / "retina-learning.json"
 
 OWNER_PHONE = os.environ.get("PULSE_OWNER_PHONE", "+15555550100")
 DEFAULT_THRESHOLD = 0.3
@@ -273,14 +273,14 @@ class Retina:
 
     def _load_learning(self):
         try:
-            if LEARNING_FILE.exists():
-                self._learning = json.loads(LEARNING_FILE.read_text())
+            if _DEFAULT_LEARNING_FILE.exists():
+                self._learning = json.loads(_DEFAULT_LEARNING_FILE.read_text())
         except Exception:
             self._learning = {}
 
     def _save_learning(self):
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        LEARNING_FILE.write_text(json.dumps(self._learning, indent=2))
+        _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+        _DEFAULT_LEARNING_FILE.write_text(json.dumps(self._learning, indent=2))
 
     @property
     def threshold(self) -> float:
@@ -301,8 +301,8 @@ class Retina:
 
     def _load_state(self):
         try:
-            if STATE_FILE.exists():
-                data = json.loads(STATE_FILE.read_text())
+            if _DEFAULT_STATE_FILE.exists():
+                data = json.loads(_DEFAULT_STATE_FILE.read_text())
                 self._threshold = data.get("current_threshold", DEFAULT_THRESHOLD)
                 self._signals_processed = data.get("signals_processed_today", 0)
                 self._signals_filtered = data.get("signals_filtered_today", 0)
@@ -312,7 +312,7 @@ class Retina:
             pass
 
     def _save_state(self):
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
         data = {
             "current_threshold": self._threshold,
             "signals_processed_today": self._signals_processed,
@@ -322,7 +322,7 @@ class Retina:
             "focus_mode": self._focus_mode,
             "attention_log": list(self._attention_log),
         }
-        STATE_FILE.write_text(json.dumps(data, indent=2))
+        _DEFAULT_STATE_FILE.write_text(json.dumps(data, indent=2))
 
 
 # Module-level singleton

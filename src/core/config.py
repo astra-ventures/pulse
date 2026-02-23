@@ -150,6 +150,19 @@ class DaemonConfig:
 
 
 @dataclass
+class ParietalConfig:
+    enabled: bool = True
+    scan_interval_hours: float = 6.0
+    workspace_root: str = "~/.openclaw/workspace"
+    use_llm_inference: bool = True
+    max_projects: int = 50
+    max_sensors_per_project: int = 5
+    ignored_dirs: List[str] = field(default_factory=lambda: [
+        ".git", "node_modules", "__pycache__", "venv", ".venv", "dist", "build",
+    ])
+
+
+@dataclass
 class PulseConfig:
     openclaw: OpenClawConfig = field(default_factory=OpenClawConfig)
     workspace: WorkspaceConfig = field(default_factory=WorkspaceConfig)
@@ -160,6 +173,7 @@ class PulseConfig:
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     daemon: DaemonConfig = field(default_factory=DaemonConfig)
     generative: GenerativeConfig = field(default_factory=GenerativeConfig)
+    parietal: ParietalConfig = field(default_factory=ParietalConfig)
 
     @classmethod
     def load(cls, config_path: Optional[str] = None) -> "PulseConfig":
@@ -303,6 +317,18 @@ class PulseConfig:
                 max_tasks=g.get("max_tasks", config.generative.max_tasks),
                 auto_add_to_goals=g.get("auto_add_to_goals", config.generative.auto_add_to_goals),
                 min_idle_minutes=g.get("min_idle_minutes", config.generative.min_idle_minutes),
+            )
+
+        if "parietal" in data:
+            p = data["parietal"]
+            config.parietal = ParietalConfig(
+                enabled=p.get("enabled", config.parietal.enabled),
+                scan_interval_hours=p.get("scan_interval_hours", config.parietal.scan_interval_hours),
+                workspace_root=p.get("workspace_root", config.parietal.workspace_root),
+                use_llm_inference=p.get("use_llm_inference", config.parietal.use_llm_inference),
+                max_projects=p.get("max_projects", config.parietal.max_projects),
+                max_sensors_per_project=p.get("max_sensors_per_project", config.parietal.max_sensors_per_project),
+                ignored_dirs=p.get("ignored_dirs", config.parietal.ignored_dirs),
             )
 
         # Validate critical config

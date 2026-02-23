@@ -11,10 +11,10 @@ from pulse.src import spine, thalamus
 def clean_state(tmp_path, monkeypatch):
     state_dir = tmp_path / "state"
     state_dir.mkdir()
-    monkeypatch.setattr(spine, "STATE_DIR", state_dir)
-    monkeypatch.setattr(spine, "HEALTH_FILE", state_dir / "spine-health.json")
-    monkeypatch.setattr(thalamus, "STATE_DIR", state_dir)
-    monkeypatch.setattr(thalamus, "BROADCAST_FILE", state_dir / "broadcast.jsonl")
+    monkeypatch.setattr(spine, "_DEFAULT_STATE_DIR", state_dir)
+    monkeypatch.setattr(spine, "_DEFAULT_HEALTH_FILE", state_dir / "spine-health.json")
+    monkeypatch.setattr(thalamus, "_DEFAULT_STATE_DIR", state_dir)
+    monkeypatch.setattr(thalamus, "_DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl")
 
 
 class TestTokenUsage:

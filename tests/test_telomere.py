@@ -19,13 +19,13 @@ def tmp_state(tmp_path):
     memory_dir.mkdir()
     (memory_dir / "2026-01-01.md").write_text("test")
     (memory_dir / "2026-01-02.md").write_text("test")
-    with patch.object(telomere, "STATE_DIR", tmp_path), \
-         patch.object(telomere, "STATE_FILE", sf), \
-         patch.object(telomere, "SNAPSHOT_DIR", snap_dir), \
+    with patch.object(telomere, "_DEFAULT_STATE_DIR", tmp_path), \
+         patch.object(telomere, "_DEFAULT_STATE_FILE", sf), \
+         patch.object(telomere, "_DEFAULT_SNAPSHOT_DIR", snap_dir), \
          patch.object(telomere, "SOUL_PATH", soul), \
          patch.object(telomere, "MEMORY_DIR", memory_dir), \
-         patch.object(thalamus, "STATE_DIR", tmp_path), \
-         patch.object(thalamus, "BROADCAST_FILE", bf):
+         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
+         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
         yield tmp_path
 
 

@@ -13,8 +13,8 @@ from typing import Callable, Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "immune-log.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "immune-log.json"
 MAX_INFECTIONS = 200
 
 
@@ -134,10 +134,10 @@ _custom_antibodies: list[Antibody] = []
 # ── State persistence ───────────────────────────────────────────────────
 
 def _load_state() -> dict:
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    if STATE_FILE.exists():
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, OSError):
             pass
     return {
@@ -149,11 +149,11 @@ def _load_state() -> dict:
 
 
 def _save_state(state: dict):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
     # Prune old infections
     if len(state["infections_detected"]) > MAX_INFECTIONS:
         state["infections_detected"] = state["infections_detected"][-MAX_INFECTIONS:]
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 # ── Core functions ──────────────────────────────────────────────────────

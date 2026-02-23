@@ -32,8 +32,8 @@ import argparse
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-BIOSENSOR_FILE = STATE_DIR / "biosensor-state.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_BIOSENSOR_FILE = _DEFAULT_STATE_DIR / "biosensor-state.json"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("biosensor_bridge")
@@ -41,8 +41,8 @@ log = logging.getLogger("biosensor_bridge")
 # ─── Biometric → Pulse State Mapping ─────────────────────────────────────────
 
 def _load_biosensor_state() -> dict:
-    if BIOSENSOR_FILE.exists():
-        return json.loads(BIOSENSOR_FILE.read_text())
+    if _DEFAULT_BIOSENSOR_FILE.exists():
+        return json.loads(_DEFAULT_BIOSENSOR_FILE.read_text())
     return {
         "heart_rate": {"value": None, "ts": None, "zone": None},
         "hrv": {"value": None, "ts": None, "stress_level": None},
@@ -54,9 +54,9 @@ def _load_biosensor_state() -> dict:
 
 
 def _save_biosensor_state(state: dict):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
     state["last_update"] = time.time()
-    BIOSENSOR_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_BIOSENSOR_FILE.write_text(json.dumps(state, indent=2))
 
 
 def _hr_zone(bpm: float) -> str:
@@ -92,7 +92,7 @@ def update_endocrine_from_biometrics(state: dict):
     Write ENDOCRINE event based on current biometric state.
     This mimics what endocrine.trigger_event() would do, but file-direct.
     """
-    endocrine_path = STATE_DIR / "endocrine-state.json"
+    endocrine_path = _DEFAULT_STATE_DIR / "endocrine-state.json"
     if not endocrine_path.exists():
         log.warning("ENDOCRINE state file not found — skipping hormonal update")
         return
@@ -146,7 +146,7 @@ def update_endocrine_from_biometrics(state: dict):
 
 def update_soma_from_biometrics(state: dict):
     """Update SOMA energy/posture based on biometrics."""
-    soma_path = STATE_DIR / "soma-state.json"
+    soma_path = _DEFAULT_STATE_DIR / "soma-state.json"
     if not soma_path.exists():
         log.warning("SOMA state file not found — skipping")
         return
@@ -277,9 +277,9 @@ def main():
     parser.add_argument("--host", default="127.0.0.1")
     args = parser.parse_args()
 
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
     log.info(f"Biosensor bridge starting on {args.host}:{args.port}")
-    log.info(f"State dir: {STATE_DIR}")
+    log.info(f"State dir: {_DEFAULT_STATE_DIR}")
     log.info("Endpoints: /biosensor/{heartrate,hrv,activity,sleep,workout} | /biosensor/status | /health")
 
     server = HTTPServer((args.host, args.port), BiosensorHandler)

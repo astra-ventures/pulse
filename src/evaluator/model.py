@@ -77,7 +77,7 @@ HARD RULES (override everything else):
 Decision guidelines (only apply after hard rules pass):
 - trigger=true ONLY when there is a SPECIFIC, ACTIONABLE task the agent can do RIGHT NOW
 - trigger=false is the DEFAULT. When in doubt, don't trigger.
-- EXCEPTION: If total pressure exceeds 10.0 AND last trigger was more than 30 minutes ago, trigger=true with suggested_focus from working memory or highest-pressure drive. High pressure means the agent has been idle too long.
+- EXCEPTION: If total pressure exceeds 10.0 AND the highest individual drive exceeds 1.5 AND last trigger was more than 30 minutes ago, trigger=true with suggested_focus from working memory or highest-pressure drive. High pressure means the agent has been genuinely idle too long — not just ambient floor accumulation.
 - Below pressure 10.0, "pressure accumulated" alone is NOT sufficient — you must name a concrete action
 - urgency reflects how soon this needs attention (1.0 = NOW, 0.5 = soon, 0.1 = whenever)
 - suppress_minutes: when not triggering, suggest 10-30 minutes to avoid rapid re-evaluation

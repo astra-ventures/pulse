@@ -13,8 +13,8 @@ def ns(tmp_path, monkeypatch):
     """NervousSystem with isolated state dirs."""
     state_dir = tmp_path / ".pulse" / "state"
     state_dir.mkdir(parents=True)
-    monkeypatch.setattr("pulse.src.thalamus.STATE_DIR", state_dir)
-    monkeypatch.setattr("pulse.src.thalamus.BROADCAST_FILE", state_dir / "broadcast.jsonl")
+    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_STATE_DIR", state_dir)
+    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl")
     return NervousSystem(workspace_root=str(tmp_path))
 
 
@@ -153,8 +153,8 @@ class TestDendriteWiring:
     def test_dendrite_fires_in_post_trigger(self, ns, tmp_path):
         from pulse.src import dendrite
         state_dir = tmp_path / ".pulse" / "state"
-        with patch.object(dendrite, "STATE_DIR", state_dir), \
-             patch.object(dendrite, "STATE_FILE", state_dir / "dendrite-state.json"):
+        with patch.object(dendrite, "_DEFAULT_STATE_DIR", state_dir), \
+             patch.object(dendrite, "_DEFAULT_STATE_FILE", state_dir / "dendrite-state.json"):
             decision = MagicMock()
             decision.reason = "test"
             decision.total_pressure = 1.0
@@ -219,8 +219,8 @@ class TestVestibularWiring:
     def test_vestibular_fires_every_5th_loop(self, ns, tmp_path):
         from pulse.src import vestibular
         state_dir = tmp_path / ".pulse" / "state"
-        with patch.object(vestibular, "STATE_DIR", state_dir), \
-             patch.object(vestibular, "STATE_FILE", state_dir / "vestibular-state.json"):
+        with patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir), \
+             patch.object(vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"):
             for _ in range(5):
                 result = ns.post_loop()
             if ns._mod_vestibular:
@@ -262,10 +262,10 @@ class TestOximeterWiring:
     def test_oximeter_gap_fires_every_20th_loop(self, ns, tmp_path):
         from pulse.src import oximeter, vestibular
         state_dir = tmp_path / ".pulse" / "state"
-        with patch.object(oximeter, "STATE_DIR", state_dir), \
-             patch.object(oximeter, "STATE_FILE", state_dir / "oximeter-state.json"), \
-             patch.object(vestibular, "STATE_DIR", state_dir), \
-             patch.object(vestibular, "STATE_FILE", state_dir / "vestibular-state.json"):
+        with patch.object(oximeter, "_DEFAULT_STATE_DIR", state_dir), \
+             patch.object(oximeter, "_DEFAULT_STATE_FILE", state_dir / "oximeter-state.json"), \
+             patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir), \
+             patch.object(vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"):
             for _ in range(20):
                 result = ns.post_loop()
             if ns._mod_oximeter:
@@ -278,14 +278,14 @@ class TestGenomeWiring:
     def test_genome_fires_every_100th_loop(self, ns, tmp_path):
         from pulse.src import genome, vestibular, oximeter, thymus
         state_dir = tmp_path / ".pulse" / "state"
-        with patch.object(genome, "STATE_DIR", state_dir), \
-             patch.object(genome, "STATE_FILE", state_dir / "genome.json"), \
-             patch.object(vestibular, "STATE_DIR", state_dir), \
-             patch.object(vestibular, "STATE_FILE", state_dir / "vestibular-state.json"), \
-             patch.object(oximeter, "STATE_DIR", state_dir), \
-             patch.object(oximeter, "STATE_FILE", state_dir / "oximeter-state.json"), \
-             patch.object(thymus, "STATE_DIR", state_dir), \
-             patch.object(thymus, "STATE_FILE", state_dir / "thymus-state.json"):
+        with patch.object(genome, "_DEFAULT_STATE_DIR", state_dir), \
+             patch.object(genome, "_DEFAULT_STATE_FILE", state_dir / "genome.json"), \
+             patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir), \
+             patch.object(vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"), \
+             patch.object(oximeter, "_DEFAULT_STATE_DIR", state_dir), \
+             patch.object(oximeter, "_DEFAULT_STATE_FILE", state_dir / "oximeter-state.json"), \
+             patch.object(thymus, "_DEFAULT_STATE_DIR", state_dir), \
+             patch.object(thymus, "_DEFAULT_STATE_FILE", state_dir / "thymus-state.json"):
             ns._loop_count = 99
             result = ns.post_loop()
             if ns._mod_genome:
@@ -368,7 +368,8 @@ class TestGracefulDegradation:
                       "enteric", "plasticity", "rem", "engram", "mirror",
                       "callosum",
                       "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle"]:
+                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+                      "parietal"]:
             setattr(ns, attr, None)
         for attr in ["_mod_thalamus", "_mod_circadian", "_mod_adipose",
                       "_mod_vagus", "_mod_limbic", "_mod_endocrine",
@@ -378,7 +379,8 @@ class TestGracefulDegradation:
                       "_mod_phenotype", "_mod_telomere", "_mod_hypothalamus",
                       "_mod_soma", "_mod_dendrite", "_mod_vestibular",
                       "_mod_thymus", "_mod_oximeter", "_mod_genome",
-                      "_mod_aura", "_mod_chronicle"]:
+                      "_mod_aura", "_mod_chronicle",
+                      "_mod_parietal"]:
             setattr(ns, attr, None)
         
         # Should not crash

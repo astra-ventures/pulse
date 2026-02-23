@@ -42,11 +42,11 @@ console = Console()
 
 HEALTH_URL = "http://127.0.0.1:{port}"
 DEFAULT_PORT = 9720
-STATE_DIR = Path("~/.pulse/state").expanduser()
+_DEFAULT_STATE_DIR = Path("~/.pulse/state").expanduser()
 LOG_FILE = Path("~/.pulse/logs/pulse.log").expanduser()
 STDOUT_LOG = Path("~/.pulse/logs/pulse-stdout.log").expanduser()
 PID_FILE = Path("~/.pulse/pulse.pid").expanduser()
-MUTATIONS_FILE = STATE_DIR / "mutations.json"
+MUTATIONS_FILE = _DEFAULT_STATE_DIR / "mutations.json"
 PLIST = Path("~/Library/LaunchAgents/ai.openclaw.pulse.plist").expanduser()
 
 
@@ -223,14 +223,14 @@ def cmd_status(args):
         
         table.add_row("Health", f"http://127.0.0.1:{_port()}")
         table.add_row("Service", "LaunchAgent" if PLIST.exists() else "[dim]manual[/]")
-        table.add_row("State", str(STATE_DIR))
+        table.add_row("State", str(_DEFAULT_STATE_DIR))
         table.add_row("Logs", str(STDOUT_LOG))
     else:
         table.add_row("Status", "[red bold]● stopped[/]")
         table.add_row("Service", "LaunchAgent" if PLIST.exists() else "[dim]not installed[/]")
-        table.add_row("State", str(STATE_DIR))
-        if STATE_DIR.exists():
-            state_file = STATE_DIR / "pulse-state.json"
+        table.add_row("State", str(_DEFAULT_STATE_DIR))
+        if _DEFAULT_STATE_DIR.exists():
+            state_file = _DEFAULT_STATE_DIR / "pulse-state.json"
             if state_file.exists():
                 try:
                     data = json.loads(state_file.read_text())
@@ -261,7 +261,7 @@ def cmd_drives(args):
         max_p = data.get("max_pressure", 5.0)
     else:
         # Read from state file
-        state_file = STATE_DIR / "pulse-state.json"
+        state_file = _DEFAULT_STATE_DIR / "pulse-state.json"
         if not state_file.exists():
             console.print("[dim]No drive state found[/]")
             return
@@ -321,7 +321,7 @@ def cmd_drives(args):
 
 def cmd_triggers(args):
     """Show recent trigger history."""
-    history_file = STATE_DIR / "trigger-history.jsonl"
+    history_file = _DEFAULT_STATE_DIR / "trigger-history.jsonl"
     if not history_file.exists():
         console.print("[dim]No trigger history yet[/]")
         return
@@ -368,7 +368,7 @@ def cmd_triggers(args):
 
 def cmd_mutations(args):
     """Show mutation audit log."""
-    log_file = STATE_DIR / "mutations.jsonl"
+    log_file = _DEFAULT_STATE_DIR / "mutations.jsonl"
     if not log_file.exists():
         console.print("[dim]No mutations recorded yet[/]")
         return

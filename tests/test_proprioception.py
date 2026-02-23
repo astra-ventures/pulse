@@ -8,8 +8,8 @@ from pulse.src import proprioception
 
 @pytest.fixture(autouse=True)
 def clean_state(tmp_path, monkeypatch):
-    monkeypatch.setattr(proprioception, "STATE_DIR", tmp_path)
-    monkeypatch.setattr(proprioception, "STATE_FILE", tmp_path / "proprioception-state.json")
+    monkeypatch.setattr(proprioception, "_DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr(proprioception, "_DEFAULT_STATE_FILE", tmp_path / "proprioception-state.json")
 
 
 @pytest.fixture

@@ -16,8 +16,8 @@ from pulse.src.callosum import (
 @pytest.fixture(autouse=True)
 def clean_state(tmp_path, monkeypatch):
     state_file = tmp_path / "callosum-state.json"
-    monkeypatch.setattr("pulse.src.callosum.STATE_FILE", state_file)
-    monkeypatch.setattr("pulse.src.callosum.STATE_DIR", tmp_path)
+    monkeypatch.setattr("pulse.src.callosum._DEFAULT_STATE_FILE", state_file)
+    monkeypatch.setattr("pulse.src.callosum._DEFAULT_STATE_DIR", tmp_path)
     monkeypatch.setattr("pulse.src.callosum.DREAM_DIR", tmp_path / "dreams")
     monkeypatch.setattr("pulse.src.callosum.thalamus", MagicMock())
     yield tmp_path

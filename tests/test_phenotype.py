@@ -12,10 +12,10 @@ from pulse.src import phenotype, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "phenotype-state.json"
-    with patch.object(phenotype, "STATE_DIR", tmp_path), \
-         patch.object(phenotype, "STATE_FILE", sf), \
-         patch.object(thalamus, "STATE_DIR", tmp_path), \
-         patch.object(thalamus, "BROADCAST_FILE", bf):
+    with patch.object(phenotype, "_DEFAULT_STATE_DIR", tmp_path), \
+         patch.object(phenotype, "_DEFAULT_STATE_FILE", sf), \
+         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
+         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
         yield tmp_path
 
 

@@ -8,8 +8,8 @@ from pulse.src import enteric
 
 @pytest.fixture(autouse=True)
 def clean_state(tmp_path, monkeypatch):
-    monkeypatch.setattr(enteric, "STATE_DIR", tmp_path)
-    monkeypatch.setattr(enteric, "STATE_FILE", tmp_path / "enteric-state.json")
+    monkeypatch.setattr(enteric, "_DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr(enteric, "_DEFAULT_STATE_FILE", tmp_path / "enteric-state.json")
 
 
 @pytest.fixture
@@ -102,7 +102,7 @@ def test_mood_bias_high_dopamine(tmp_path, mock_thalamus):
 
 def test_log_override(mock_thalamus):
     enteric.log_override({"task": "risky"}, "away", "proceed", outcome="positive")
-    state = json.loads(enteric.STATE_FILE.read_text())
+    state = json.loads(enteric._DEFAULT_STATE_FILE.read_text())
     assert len(state["override_log"]) == 1
     assert state["override_log"][0]["gut_direction"] == "away"
     assert state["override_log"][0]["cortex_decision"] == "proceed"

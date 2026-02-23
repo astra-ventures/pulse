@@ -13,8 +13,8 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "cerebellum-state.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "cerebellum-state.json"
 
 DEFAULT_MIN_REPS = 5
 DEFAULT_SIMILARITY = 0.85
@@ -31,10 +31,10 @@ class Cerebellum:
         self.state = self._load_state()
 
     def _load_state(self) -> dict:
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        if STATE_FILE.exists():
+        _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+        if _DEFAULT_STATE_FILE.exists():
             try:
-                return json.loads(STATE_FILE.read_text())
+                return json.loads(_DEFAULT_STATE_FILE.read_text())
             except (json.JSONDecodeError, OSError):
                 pass
         return {
@@ -46,8 +46,8 @@ class Cerebellum:
         }
 
     def _save_state(self):
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        STATE_FILE.write_text(json.dumps(self.state, indent=2))
+        _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+        _DEFAULT_STATE_FILE.write_text(json.dumps(self.state, indent=2))
 
     def track_execution(self, task_name: str, input_hash: str, output_pattern: str, tokens_used: int):
         """Record a task execution for habit detection."""
@@ -111,7 +111,7 @@ class Cerebellum:
 
     def graduate_task(self, task_name: str, script_template: str) -> str:
         """Mark a task as habitual — future runs use script instead of LLM."""
-        script_dir = STATE_DIR / "habits"
+        script_dir = _DEFAULT_STATE_DIR / "habits"
         script_dir.mkdir(parents=True, exist_ok=True)
         script_path = script_dir / f"{task_name.replace(' ', '_')}.sh"
         script_path.write_text(script_template)

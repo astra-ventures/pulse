@@ -9,8 +9,8 @@ from pulse.src import immune
 
 @pytest.fixture(autouse=True)
 def clean_state(tmp_path, monkeypatch):
-    monkeypatch.setattr(immune, "STATE_DIR", tmp_path)
-    monkeypatch.setattr(immune, "STATE_FILE", tmp_path / "immune-log.json")
+    monkeypatch.setattr(immune, "_DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr(immune, "_DEFAULT_STATE_FILE", tmp_path / "immune-log.json")
     immune._custom_antibodies.clear()
 
 
@@ -140,7 +140,7 @@ def test_vaccinated_antibody_runs_in_scan(mock_thalamus):
 
 def test_record_infection(mock_thalamus):
     immune.record_infection("test_type", "something bad happened")
-    state = json.loads(immune.STATE_FILE.read_text())
+    state = json.loads(immune._DEFAULT_STATE_FILE.read_text())
     assert len(state["infections_detected"]) == 1
     assert state["infections_detected"][0]["type"] == "test_type"
 

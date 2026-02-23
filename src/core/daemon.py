@@ -171,6 +171,16 @@ class PulseDaemon:
             except Exception as e:
                 logger.warning(f"NervousSystem startup failed: {e}")
 
+            # PARIETAL — initial world model scan + sensor registration
+            if self.nervous_system.parietal:
+                try:
+                    workspace = str(self.config.workspace.root) if hasattr(self.config, 'workspace') else "~/.openclaw/workspace"
+                    self.nervous_system.parietal.scan(workspace_root=workspace)
+                    registered = self.nervous_system.parietal.register_sensors(self.sensors)
+                    logger.info(f"PARIETAL: {registered} sensors auto-registered from world model")
+                except Exception as e:
+                    logger.warning(f"PARIETAL init scan failed: {e}")
+
         # Restore config overrides from mutations
         overrides = self.state.get("config_overrides", {})
         if overrides:
@@ -345,6 +355,20 @@ class PulseDaemon:
 
         # Build the message from the decision context
         message = self._build_trigger_message(decision)
+
+        # PARIETAL — inject world model context
+        if self.nervous_system and self.nervous_system.parietal:
+            try:
+                world_ctx = self.nervous_system.parietal.get_context()
+                parts = []
+                if world_ctx.get("unhealthy"):
+                    parts.append(f"Unhealthy systems: {', '.join(world_ctx['unhealthy'])}")
+                if world_ctx.get("goal_conditions_pending"):
+                    parts.append(f"Pending goals: {', '.join(world_ctx['goal_conditions_pending'])}")
+                if parts:
+                    message += "\n\n[PARIETAL: " + " | ".join(parts) + "]"
+            except Exception as e:
+                logger.warning(f"PARIETAL context injection failed: {e}")
 
         # NERVOUS SYSTEM — pre-respond (PHENOTYPE tone shaping)
         if self.nervous_system:
@@ -532,10 +556,14 @@ class PulseDaemon:
                         path.parent.mkdir(parents=True, exist_ok=True)
                         now_str = datetime.now().strftime("%H:%M")
                         with open(path, "a") as f:
-                            self.daily_sync._ensure_header(f)
-                            f.write(f"- {now_str} 🌱 GENERATE: {len(tasks)} tasks synthesized\n")
-                            for t in tasks:
-                                f.write(f"  - [{t['effort']}] {t['title']}\n")
+                            fcntl.flock(f, fcntl.LOCK_EX)
+                            try:
+                                self.daily_sync._ensure_header(f)
+                                f.write(f"- {now_str} 🌱 GENERATE: {len(tasks)} tasks synthesized\n")
+                                for t in tasks:
+                                    f.write(f"  - [{t['effort']}] {t['title']}\n")
+                            finally:
+                                fcntl.flock(f, fcntl.LOCK_UN)
                     except OSError as e:
                         logger.warning(f"Failed to sync GENERATE to daily notes: {e}")
 

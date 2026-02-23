@@ -12,24 +12,24 @@ from typing import Optional
 
 from . import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "afterimage.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "afterimage.json"
 DEFAULT_HALF_LIFE_MS = 14_400_000  # 4 hours
 DECAY_THRESHOLD = 0.5  # Remove afterimages below this
 
 
 def _load_state() -> list[dict]:
-    if STATE_FILE.exists():
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, KeyError):
             return []
     return []
 
 
 def _save_state(afterimages: list[dict]):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(afterimages, indent=2))
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_FILE.write_text(json.dumps(afterimages, indent=2))
 
 
 def _valence_to_emotion(valence: float, intensity: float) -> str:

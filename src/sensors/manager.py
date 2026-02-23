@@ -60,6 +60,11 @@ class SensorManager:
                 logger.warning(f"Error stopping sensor '{sensor.name}': {e}")
         logger.info("All sensors stopped")
 
+    def add_sensor(self, sensor: "BaseSensor"):
+        """Dynamically register a new sensor at runtime."""
+        self.sensors.append(sensor)
+        logger.info(f"PARIETAL: registered sensor '{sensor.name}'")
+
     async def read(self) -> dict:
         """Read all sensors and return combined data."""
         readings = {}
@@ -70,7 +75,7 @@ class SensorManager:
             except Exception as e:
                 logger.warning(f"Sensor '{sensor.name}' error: {e}")
                 readings[sensor.name] = {"error": str(e)}
-        
+
         self._last_readings = readings
         return readings
 

@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-02-22
+
+### Added
+- **PARIETAL — World Model Module**: Environment discovery, health signal inference, and dynamic sensor registration
+  - `scan()` walks workspace up to 3 levels deep, detects project types (Python, Node, trading bot, Cloudflare worker, Fly.io app, Go, Rust, Docker)
+  - `_infer_signals()` generates health signals from heuristics: log file watchers, HTTP health endpoints, git status, trade activity monitors
+  - `register_sensors()` dynamically registers `ParietalFileSensor`, `ParietalFileContentSensor`, `ParietalHttpSensor`, `ParietalGitSensor` with SensorManager at runtime
+  - `update_signal_weight()` integrates with PLASTICITY feedback — actionable signals gain weight, noise signals lose weight
+  - `get_context()` provides compact world model summary for CORTEX context injection
+  - Extracts goal conditions from PROJECTS.md / TIERS.md / GOALS.md checkboxes
+  - Extracts deployment URLs from wrangler.toml, fly.toml, .env files
+  - State persisted to `parietal-state.json` with full signal weight history
+- `SensorManager.add_sensor()` — dynamic sensor registration at runtime
+- `ParietalConfig` dataclass in `core/config.py` with `parietal:` YAML section
+- PARIETAL integrated into `NervousSystem` (init, warm-up, post_loop re-scan, startup, shutdown)
+- PARIETAL context injected into daemon trigger messages (unhealthy systems, pending goals)
+- Initial world model scan + sensor registration at daemon startup
+- `tests/test_parietal.py` — 45 tests covering discovery, signal inference, file age sensors, git sensors, weight updates, context output, re-scan deduplication, state isolation, goal conditions, serialization, sensor registration, HTTP sensors, caps, and status
+- Test count: 648 → 693 passing
+
+## [0.2.4] - 2026-02-22
+
+### Fixed
+- **Gap #1 — EXCEPTION rule false positive**: Model evaluator's EXCEPTION rule fired on ambient floor-level drives (total > 10.0 but every individual drive ~1.24). Added guard: highest individual drive must exceed 1.5 before EXCEPTION triggers.
+- **Gap #3 — Daily notes file locking**: All 4 daily-note write sites (daily_sync log_trigger, log_mutation; daemon _maybe_generate; health _handle_feedback) now use `fcntl.flock()` for exclusive locking. Prevents duplicate/corrupted entries under concurrent writes.
+
+### Changed
+- **Gap #2 — State directory isolation**: All 33 nervous system modules renamed `STATE_DIR` → `_DEFAULT_STATE_DIR` (and derived file constants). `NervousSystem.__init__()` now accepts `state_dir: Optional[Path]` parameter, patching each module's paths at init time. Enables multi-companion isolation without importlib.reload hacks.
+  - `pulse-api/main.py` now passes `state_dir=companion_state_dir` directly instead of reloading all Pulse modules per companion
+  - `cli.py` constant renamed for consistency
+  - 27 test files updated to reference new constant names
+
+### Added
+- `tests/test_evaluator_model.py` — 6 tests for EXCEPTION rule guard
+- `tests/test_daemon_logging.py` — 5 tests for flock presence and concurrent write safety
+- `tests/test_state_isolation.py` — 8 tests for multi-companion state directory isolation
+
 ## [0.2.3] - 2026-02-18
 
 ### Changed
@@ -103,9 +140,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ClawHub listing draft
 - MIT license (open source)
 
-[Unreleased]: https://github.com/jcap93/pulse/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/jcap93/pulse/compare/v0.2.5...HEAD
+[0.2.5]: https://github.com/jcap93/pulse/compare/v0.2.4...v0.2.5
+[0.2.4]: https://github.com/jcap93/pulse/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/jcap93/pulse/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/jcap93/pulse/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/jcap93/pulse/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/jcap93/pulse/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jcap93/pulse/releases/tag/v0.1.0
+
+### Improvement Candidate (Feb 22, 2026)
+**Blocker-aware drive suppression**
+
+Pattern observed: model-generated trigger focus re-suggests the same blocked items within a 30-min window, creating wasteful repetitive loops. Goals drive stays elevated even after a complete sweep because "blocked" != "resolved."
+
+Proposed fix: Add `blocker_last_checked` timestamps to drive state. When a specific focus item has been verified-blocked within the last N minutes (configurable, default 30), suppress re-triggering that focus until either:
+1. Status changes (external signal), OR
+2. The cooldown window expires
+
+This would reduce wasted trigger sessions on persistent blockers and let the drive naturally decay without manufactured "sweeps."
+
+File under: HYPOTHALAMUS / drive evolution / blocker awareness

@@ -12,8 +12,8 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "hypothalamus-state.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "hypothalamus-state.json"
 
 SIGNAL_THRESHOLD = 3  # signals from different modules needed to birth a drive
 RETIREMENT_DAYS = 30
@@ -26,9 +26,9 @@ REDUCED_THRESHOLD_NEEDS = {"connection", "social", "belonging", "companionship"}
 
 
 def _load_state() -> dict:
-    if STATE_FILE.exists():
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, OSError):
             pass
     return {
@@ -40,8 +40,8 @@ def _load_state() -> dict:
 
 
 def _save_state(state: dict):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def record_need_signal(need_name: str, source_module: str) -> dict:

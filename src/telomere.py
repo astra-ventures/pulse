@@ -12,18 +12,18 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "telomere-state.json"
-SNAPSHOT_DIR = STATE_DIR / "telomere" / "snapshots"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "telomere-state.json"
+_DEFAULT_SNAPSHOT_DIR = _DEFAULT_STATE_DIR / "telomere" / "snapshots"
 SOUL_PATH = Path.home() / ".openclaw" / "workspace" / "SOUL.md"
 MEMORY_DIR = Path.home() / ".openclaw" / "workspace" / "memory"
 DRIFT_THRESHOLD = 0.3
 
 
 def _load_state() -> dict:
-    if STATE_FILE.exists():
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, OSError):
             pass
     return {
@@ -39,8 +39,8 @@ def _load_state() -> dict:
 
 
 def _save_state(state: dict):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def _hash_file(path: Path) -> str:
@@ -131,7 +131,7 @@ def check_identity() -> dict:
 
 def take_snapshot() -> dict:
     """Take a monthly snapshot of SOUL.md hash."""
-    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     
     current_hash = _hash_file(SOUL_PATH)
     snapshot = {
@@ -141,7 +141,7 @@ def take_snapshot() -> dict:
     }
     
     # Save snapshot file
-    snap_file = SNAPSHOT_DIR / f"{snapshot['month']}.json"
+    snap_file = _DEFAULT_SNAPSHOT_DIR / f"{snapshot['month']}.json"
     snap_file.write_text(json.dumps(snapshot, indent=2))
     
     # Update state

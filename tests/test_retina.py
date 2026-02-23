@@ -13,8 +13,8 @@ _tmpdir = tempfile.mkdtemp()
 _state_dir = Path(_tmpdir) / "state"
 _state_dir.mkdir()
 
-with patch("pulse.src.thalamus.STATE_DIR", _state_dir), \
-     patch("pulse.src.thalamus.BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
+with patch("pulse.src.thalamus._DEFAULT_STATE_DIR", _state_dir), \
+     patch("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
     import pulse.src.thalamus as thalamus
     # Now patch retina's state
     with patch.dict(os.environ, {}):
@@ -29,10 +29,10 @@ def clean_state(tmp_path):
     state_dir.mkdir(exist_ok=True)
     broadcast = state_dir / "broadcast.jsonl"
 
-    with patch.object(retina_mod, "STATE_DIR", state_dir), \
-         patch.object(retina_mod, "STATE_FILE", state_dir / "retina-state.json"), \
-         patch.object(thalamus, "STATE_DIR", state_dir), \
-         patch.object(thalamus, "BROADCAST_FILE", broadcast):
+    with patch.object(retina_mod, "_DEFAULT_STATE_DIR", state_dir), \
+         patch.object(retina_mod, "_DEFAULT_STATE_FILE", state_dir / "retina-state.json"), \
+         patch.object(thalamus, "_DEFAULT_STATE_DIR", state_dir), \
+         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", broadcast):
         retina_mod._instance = None
         yield
 

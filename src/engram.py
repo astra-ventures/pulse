@@ -13,8 +13,8 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "engram-store.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "engram-store.json"
 
 
 @dataclass
@@ -40,18 +40,18 @@ class Engram:
 # ── State persistence ───────────────────────────────────────────────────
 
 def _load_store() -> list[dict]:
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    if STATE_FILE.exists():
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, OSError):
             pass
     return []
 
 
 def _save_store(store: list[dict]):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(store, indent=2))
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_FILE.write_text(json.dumps(store, indent=2))
 
 
 # ── Core functions ──────────────────────────────────────────────────────

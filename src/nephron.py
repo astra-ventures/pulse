@@ -20,8 +20,8 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "nephron-state.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "nephron-state.json"
 
 # Pruning thresholds
 THALAMUS_MAX_ENTRIES = 500       # Keep last 500 bus messages
@@ -44,17 +44,17 @@ def _default_state() -> dict:
 
 
 def _load_state() -> dict:
-    if STATE_FILE.exists():
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, KeyError):
             pass
     return _default_state()
 
 
 def _save_state(state: dict):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def should_run(loop_count: int) -> bool:
@@ -142,7 +142,7 @@ def filter_all() -> dict:
 
 def _prune_thalamus() -> int:
     """Trim THALAMUS bus to max entries."""
-    thalamus_file = STATE_DIR / "thalamus.jsonl"
+    thalamus_file = _DEFAULT_STATE_DIR / "thalamus.jsonl"
     if not thalamus_file.exists():
         return 0
 
@@ -158,7 +158,7 @@ def _prune_thalamus() -> int:
 
 def _prune_chronicle() -> int:
     """Remove CHRONICLE entries older than threshold."""
-    chronicle_file = STATE_DIR / "chronicle.jsonl"
+    chronicle_file = _DEFAULT_STATE_DIR / "chronicle.jsonl"
     if not chronicle_file.exists():
         return 0
 
@@ -184,7 +184,7 @@ def _prune_chronicle() -> int:
 
 def _prune_endocrine_history() -> int:
     """Trim mood_history to max entries."""
-    endo_file = STATE_DIR / "endocrine-state.json"
+    endo_file = _DEFAULT_STATE_DIR / "endocrine-state.json"
     if not endo_file.exists():
         return 0
 
@@ -204,7 +204,7 @@ def _prune_endocrine_history() -> int:
 
 def _prune_retina_learning() -> int:
     """Trim RETINA outcome learning to max entries."""
-    retina_file = STATE_DIR / "retina-learning.json"
+    retina_file = _DEFAULT_STATE_DIR / "retina-learning.json"
     if not retina_file.exists():
         return 0
 
@@ -224,7 +224,7 @@ def _prune_retina_learning() -> int:
 
 def _prune_engrams() -> int:
     """Prune low-importance old ENGRAM memories."""
-    engram_file = STATE_DIR / "engram-store.json"
+    engram_file = _DEFAULT_STATE_DIR / "engram-store.json"
     if not engram_file.exists():
         return 0
 
@@ -292,7 +292,7 @@ def _run_tests():
     print("  ✅ Loop interval check")
 
     # Test thalamus pruning
-    test_file = STATE_DIR / "thalamus-test.jsonl"
+    test_file = _DEFAULT_STATE_DIR / "thalamus-test.jsonl"
     test_lines = [json.dumps({"ts": i, "source": "test"}) for i in range(600)]
     test_file.write_text("\n".join(test_lines) + "\n")
     # Read back and verify we could prune

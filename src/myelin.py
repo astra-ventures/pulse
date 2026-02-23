@@ -12,8 +12,8 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-LEXICON_FILE = STATE_DIR / "myelin-lexicon.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_LEXICON_FILE = _DEFAULT_STATE_DIR / "myelin-lexicon.json"
 
 REFERENCE_THRESHOLD = 5  # must be referenced this many times before compression
 DEMOTION_DAYS = 7  # unused concepts demoted after this many days
@@ -155,8 +155,8 @@ class Myelin:
 
     def _load_state(self):
         try:
-            if LEXICON_FILE.exists():
-                data = json.loads(LEXICON_FILE.read_text())
+            if _DEFAULT_LEXICON_FILE.exists():
+                data = json.loads(_DEFAULT_LEXICON_FILE.read_text())
                 self._concepts = data.get("concepts", {})
                 self._tracking = data.get("tracking", {})
                 self._total_tokens_saved = data.get("total_tokens_saved", 0)
@@ -185,14 +185,14 @@ class Myelin:
         self._save_state()
 
     def _save_state(self):
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
         data = {
             "concepts": self._concepts,
             "tracking": self._tracking,
             "total_tokens_saved": self._total_tokens_saved,
             "compression_ratio": self._compression_ratio,
         }
-        LEXICON_FILE.write_text(json.dumps(data, indent=2))
+        _DEFAULT_LEXICON_FILE.write_text(json.dumps(data, indent=2))
 
 
 # Module-level singleton

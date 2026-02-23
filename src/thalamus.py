@@ -11,14 +11,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-BROADCAST_FILE = STATE_DIR / "broadcast.jsonl"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_BROADCAST_FILE = _DEFAULT_STATE_DIR / "broadcast.jsonl"
 MAX_ENTRIES = 1000
 KEEP_ENTRIES = 500
 
 
 def _ensure_dir():
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def append(entry: dict) -> dict:
@@ -32,7 +32,7 @@ def append(entry: dict) -> dict:
     
     line = json.dumps(entry, separators=(",", ":")) + "\n"
     
-    with open(BROADCAST_FILE, "a") as f:
+    with open(_DEFAULT_BROADCAST_FILE, "a") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
             f.write(line)
@@ -46,10 +46,10 @@ def append(entry: dict) -> dict:
 
 def _read_all() -> list[dict]:
     """Read all entries from broadcast file."""
-    if not BROADCAST_FILE.exists():
+    if not _DEFAULT_BROADCAST_FILE.exists():
         return []
     entries = []
-    with open(BROADCAST_FILE, "r") as f:
+    with open(_DEFAULT_BROADCAST_FILE, "r") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -85,9 +85,9 @@ def read_by_type(entry_type: str, n: int = 10) -> list[dict]:
 
 def _count_lines() -> int:
     """Count lines in broadcast file."""
-    if not BROADCAST_FILE.exists():
+    if not _DEFAULT_BROADCAST_FILE.exists():
         return 0
-    with open(BROADCAST_FILE, "r") as f:
+    with open(_DEFAULT_BROADCAST_FILE, "r") as f:
         return sum(1 for line in f if line.strip())
 
 
@@ -103,13 +103,13 @@ def _maybe_rotate():
     
     # Archive
     date_str = datetime.now().strftime("%Y-%m-%d")
-    archive_path = STATE_DIR / f"broadcast-archive-{date_str}.jsonl"
+    archive_path = _DEFAULT_STATE_DIR / f"broadcast-archive-{date_str}.jsonl"
     with open(archive_path, "a") as f:
         for e in archive_entries:
             f.write(json.dumps(e, separators=(",", ":")) + "\n")
     
     # Rewrite main file
-    with open(BROADCAST_FILE, "w") as f:
+    with open(_DEFAULT_BROADCAST_FILE, "w") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
             for e in keep_entries:

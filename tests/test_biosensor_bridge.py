@@ -64,7 +64,7 @@ class TestHRVStress:
 
 class TestBiosensorState:
     def test_default_state_structure(self):
-        with patch("src.biosensor_bridge.BIOSENSOR_FILE") as mock_path:
+        with patch("src.biosensor_bridge._DEFAULT_BIOSENSOR_FILE") as mock_path:
             mock_path.exists.return_value = False
             state = _load_biosensor_state()
         assert "heart_rate" in state
@@ -74,7 +74,7 @@ class TestBiosensorState:
         assert "workout" in state
 
     def test_heart_rate_defaults(self):
-        with patch("src.biosensor_bridge.BIOSENSOR_FILE") as mock_path:
+        with patch("src.biosensor_bridge._DEFAULT_BIOSENSOR_FILE") as mock_path:
             mock_path.exists.return_value = False
             state = _load_biosensor_state()
         hr = state["heart_rate"]
@@ -82,13 +82,13 @@ class TestBiosensorState:
         assert hr["zone"] is None
 
     def test_workout_defaults(self):
-        with patch("src.biosensor_bridge.BIOSENSOR_FILE") as mock_path:
+        with patch("src.biosensor_bridge._DEFAULT_BIOSENSOR_FILE") as mock_path:
             mock_path.exists.return_value = False
             state = _load_biosensor_state()
         assert state["workout"]["active"] is False
 
     def test_activity_defaults(self):
-        with patch("src.biosensor_bridge.BIOSENSOR_FILE") as mock_path:
+        with patch("src.biosensor_bridge._DEFAULT_BIOSENSOR_FILE") as mock_path:
             mock_path.exists.return_value = False
             state = _load_biosensor_state()
         assert state["activity"]["goal_move"] == 600

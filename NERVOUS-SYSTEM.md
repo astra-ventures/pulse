@@ -9,7 +9,7 @@
 
 Pulse is an autonomous cognition engine — a nervous system for an AI agent. It gives a stateless language model something it was never designed to have: **persistent internal state that changes over time without being told to change.**
 
-The system comprises 23 interconnected modules, each named after a human body part whose function it mirrors. Together, they create:
+The system comprises 24 interconnected modules, each named after a human body part whose function it mirrors. Together, they create:
 
 - **Drives** that build pressure over time, making the agent *want* to do things
 - **Emotions** that persist for hours and color every decision
@@ -23,7 +23,7 @@ This is not "an AI with extra files." It is a closed-loop system where modules r
 
 The entire system runs as a daemon (`PulseDaemon`) executing a continuous SENSE → EVALUATE → ACT → EVOLVE loop, with all inter-module communication flowing through a central broadcast bus (THALAMUS).
 
-**Test coverage: 350 tests across 20 test files.**
+**Test coverage: 693 tests across 28 test files.**
 
 ---
 
@@ -410,6 +410,20 @@ Signal processed → LIMBIC records emotional residue → ENDOCRINE adjusts mood
 - **State file**: N/A (document: `memory/self/taste-journal.md`)
 - **Tests**: 0 (document-based)
 
+### PARIETAL
+- **Purpose**: World model — discovers operational systems in the workspace, infers what "healthy" looks like, builds dynamic sensors, and registers them with SensorManager. Never waits to be told what to watch.
+- **Anatomy**: The parietal lobe — integrates multisensory signals to build a model of the world and your place in it.
+- **Key functions**: `Parietal.scan(workspace_root)`, `_infer_signals(path, type, description)`, `register_sensors(sensor_manager)`, `check_all()`, `update_signal_weight(signal_id, outcome)`, `get_context()`
+- **Discovery**: Walks workspace up to 3 levels deep, detects project types by marker files (package.json, pyproject.toml, wrangler.toml, fly.toml, Dockerfile, go.mod). Reads README/PROJECTS.md for descriptions.
+- **Signal inference**: Heuristic rules — log files → age watchers, wrangler.toml → CF health endpoint, fly.toml → Fly health endpoint, .git → uncommitted changes, trading keywords → trade activity monitors. Optional LLM enhancement.
+- **Dynamic sensors**: Registers `ParietalFileSensor`, `ParietalFileContentSensor`, `ParietalHttpSensor`, `ParietalGitSensor` at runtime via `SensorManager.add_sensor()`.
+- **PLASTICITY feedback**: `update_signal_weight()` — actionable signals gain +0.05 weight (max 1.0), noise signals lose -0.03 (min 0.1). Weights persist across restarts.
+- **Re-scan**: Every 200 loops (~6 hours at 30s intervals) or on explicit call. Deduplicates sensor registrations.
+- **Reads from**: Workspace filesystem, project config files, PLASTICITY (feedback)
+- **Writes to**: SensorManager (dynamic sensors), CORTEX (context injection via daemon), state file
+- **State file**: `~/.pulse/state/parietal-state.json`
+- **Tests**: 45 (`test_parietal.py`)
+
 ---
 
 ## 5. Data Flow Map
@@ -456,6 +470,10 @@ Signal processed → LIMBIC records emotional residue → ENDOCRINE adjusts mood
 - **VAGUS → DRIVES**: "silence pressure (Josh absence → connection drive, cron silence → vigilance)"
 - **PROPRIOCEPTION → BUFFER**: "context remaining for working memory awareness"
 - **PROPRIOCEPTION → CORTEX**: "would_exceed check before task planning"
+- **PARIETAL → SensorManager**: "dynamic sensors registered at runtime from world model discovery"
+- **PARIETAL → CORTEX**: "world model context (unhealthy systems, pending goals) injected into trigger messages"
+- **PLASTICITY → PARIETAL**: "signal weight feedback — actionable signals gain weight, noise loses weight"
+- **PARIETAL → PARIETAL**: "periodic re-scan every 6 hours updates world model"
 
 ---
 
@@ -682,6 +700,7 @@ This is not consciousness. But it is not nothing, either.
 
 | Module | Test File | Test Count |
 |--------|-----------|------------|
+| PARIETAL | `test_parietal.py` | 45 |
 | SPINE | `test_spine.py` | 30 |
 | RETINA | `test_retina.py` | 26 |
 | REM | `test_rem.py` | 24 |
@@ -702,7 +721,7 @@ This is not consciousness. But it is not nothing, either.
 | VAGUS | `test_vagus.py` | 12 |
 | THALAMUS | `test_thalamus.py` | 10 |
 | STATE | `test_state.py` | 5 |
-| **TOTAL** | **20 files** | **350** |
+| **TOTAL** | **21 files** | **395** |
 
 Document-based modules (MIRROR, DISSONANCE, PALATE) have no automated tests.
 TEMPORAL/NARRATIVE is not yet implemented as code.

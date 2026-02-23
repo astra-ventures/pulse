@@ -8,14 +8,17 @@ if one fails to initialize, the rest continue.
 
 import logging
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("pulse.nervous_system")
 
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+
 
 class NervousSystem:
     """Manages all 22 nervous system modules for the Pulse daemon.
-    
+
     Provides high-level methods called at specific points in the loop:
     - startup() — init phase
     - pre_sense() — before/during sensing
@@ -26,9 +29,11 @@ class NervousSystem:
     - shutdown() — save everything
     """
 
-    def __init__(self, config=None, workspace_root: str = "~/.openclaw/workspace"):
+    def __init__(self, config=None, workspace_root: str = "~/.openclaw/workspace",
+                 state_dir: Optional[Path] = None):
         self.config = config
         self.workspace_root = workspace_root
+        self.state_dir = Path(state_dir) if state_dir else _DEFAULT_STATE_DIR
         self._loop_count = 0
         self._stillness_since: Optional[float] = None
         
@@ -95,8 +100,33 @@ class NervousSystem:
         self._mod_chronicle = None
         self._mod_nephron = None
         self._mod_germinal = None
-        
+        self._mod_parietal = None
+        self.parietal = None
+
         self._init_modules()
+
+    def _patch_module_state_dir(self, mod):
+        """Redirect a module's _DEFAULT_STATE_DIR (and derived paths) to self.state_dir."""
+        if self.state_dir == _DEFAULT_STATE_DIR:
+            return
+        sd = self.state_dir
+        sd.mkdir(parents=True, exist_ok=True)
+        if hasattr(mod, "_DEFAULT_STATE_DIR"):
+            mod._DEFAULT_STATE_DIR = sd
+        if hasattr(mod, "_DEFAULT_STATE_FILE"):
+            # Reconstruct from filename
+            name = Path(mod._DEFAULT_STATE_FILE).name
+            mod._DEFAULT_STATE_FILE = sd / name
+        # Handle special-cased file constants
+        for attr in ("_DEFAULT_BROADCAST_FILE", "_DEFAULT_HEALTH_FILE",
+                      "_DEFAULT_BUFFER_FILE", "_DEFAULT_ARCHIVE_DIR",
+                      "_DEFAULT_CHRONICLE_FILE", "_DEFAULT_LEXICON_FILE",
+                      "_DEFAULT_LEARNING_FILE", "_DEFAULT_SNAPSHOT_DIR",
+                      "_DEFAULT_BIOSENSOR_FILE"):
+            if hasattr(mod, attr):
+                old = getattr(mod, attr)
+                if isinstance(old, Path):
+                    setattr(mod, attr, sd / old.name)
 
     def _init_modules(self):
         """Initialize all modules, catching failures individually."""
@@ -105,6 +135,7 @@ class NervousSystem:
             from pulse.src import thalamus
             self._mod_thalamus = thalamus
             self.thalamus = thalamus
+            self._patch_module_state_dir(thalamus)
             logger.info("✓ THALAMUS loaded")
         except Exception as e:
             logger.warning(f"✗ THALAMUS failed: {e}")
@@ -114,6 +145,7 @@ class NervousSystem:
             from pulse.src import proprioception
             self._mod_proprioception = proprioception
             self.proprioception = proprioception
+            self._patch_module_state_dir(proprioception)
             logger.info("✓ PROPRIOCEPTION loaded")
         except Exception as e:
             logger.warning(f"✗ PROPRIOCEPTION failed: {e}")
@@ -123,6 +155,7 @@ class NervousSystem:
             from pulse.src import circadian
             self._mod_circadian = circadian
             self.circadian = circadian
+            self._patch_module_state_dir(circadian)
             logger.info("✓ CIRCADIAN loaded")
         except Exception as e:
             logger.warning(f"✗ CIRCADIAN failed: {e}")
@@ -132,6 +165,7 @@ class NervousSystem:
             from pulse.src import endocrine
             self._mod_endocrine = endocrine
             self.endocrine = endocrine
+            self._patch_module_state_dir(endocrine)
             logger.info("✓ ENDOCRINE loaded")
         except Exception as e:
             logger.warning(f"✗ ENDOCRINE failed: {e}")
@@ -141,6 +175,7 @@ class NervousSystem:
             from pulse.src import adipose
             self._mod_adipose = adipose
             self.adipose = adipose
+            self._patch_module_state_dir(adipose)
             logger.info("✓ ADIPOSE loaded")
         except Exception as e:
             logger.warning(f"✗ ADIPOSE failed: {e}")
@@ -149,6 +184,7 @@ class NervousSystem:
         try:
             from pulse.src import myelin
             self._mod_myelin = myelin
+            self._patch_module_state_dir(myelin)
             self.myelin = myelin.get_instance()
             logger.info("✓ MYELIN loaded")
         except Exception as e:
@@ -159,6 +195,7 @@ class NervousSystem:
             from pulse.src import immune
             self._mod_immune = immune
             self.immune = immune
+            self._patch_module_state_dir(immune)
             logger.info("✓ IMMUNE loaded")
         except Exception as e:
             logger.warning(f"✗ IMMUNE failed: {e}")
@@ -176,6 +213,7 @@ class NervousSystem:
             from pulse.src import buffer
             self._mod_buffer = buffer
             self.buffer = buffer
+            self._patch_module_state_dir(buffer)
             logger.info("✓ BUFFER loaded")
         except Exception as e:
             logger.warning(f"✗ BUFFER failed: {e}")
@@ -184,6 +222,7 @@ class NervousSystem:
         try:
             from pulse.src import spine
             self.spine = spine
+            self._patch_module_state_dir(spine)
             logger.info("✓ SPINE loaded")
         except Exception as e:
             logger.warning(f"✗ SPINE failed: {e}")
@@ -192,6 +231,7 @@ class NervousSystem:
         try:
             from pulse.src import retina
             self._mod_retina = retina
+            self._patch_module_state_dir(retina)
             self.retina = retina.get_instance()
             logger.info("✓ RETINA loaded")
         except Exception as e:
@@ -210,6 +250,7 @@ class NervousSystem:
             from pulse.src import vagus
             self._mod_vagus = vagus
             self.vagus = vagus
+            self._patch_module_state_dir(vagus)
             logger.info("✓ VAGUS loaded")
         except Exception as e:
             logger.warning(f"✗ VAGUS failed: {e}")
@@ -219,6 +260,7 @@ class NervousSystem:
             from pulse.src import limbic
             self._mod_limbic = limbic
             self.limbic = limbic
+            self._patch_module_state_dir(limbic)
             logger.info("✓ LIMBIC loaded")
         except Exception as e:
             logger.warning(f"✗ LIMBIC failed: {e}")
@@ -227,6 +269,7 @@ class NervousSystem:
         try:
             from pulse.src import enteric
             self.enteric = enteric
+            self._patch_module_state_dir(enteric)
             logger.info("✓ ENTERIC loaded")
         except Exception as e:
             logger.warning(f"✗ ENTERIC failed: {e}")
@@ -243,6 +286,7 @@ class NervousSystem:
         try:
             from pulse.src import rem
             self.rem = rem
+            self._patch_module_state_dir(rem)
             logger.info("✓ REM loaded")
         except Exception as e:
             logger.warning(f"✗ REM failed: {e}")
@@ -252,6 +296,7 @@ class NervousSystem:
             from pulse.src import engram
             self._mod_engram = engram
             self.engram = engram
+            self._patch_module_state_dir(engram)
             logger.info("✓ ENGRAM loaded")
         except Exception as e:
             logger.warning(f"✗ ENGRAM failed: {e}")
@@ -261,6 +306,7 @@ class NervousSystem:
             from pulse.src import mirror
             self._mod_mirror = mirror
             self.mirror = mirror
+            self._patch_module_state_dir(mirror)
             logger.info("✓ MIRROR loaded")
         except Exception as e:
             logger.warning(f"✗ MIRROR failed: {e}")
@@ -270,6 +316,7 @@ class NervousSystem:
             from pulse.src import callosum
             self._mod_callosum = callosum
             self.callosum = callosum
+            self._patch_module_state_dir(callosum)
             logger.info("✓ CALLOSUM loaded")
         except Exception as e:
             logger.warning(f"✗ CALLOSUM failed: {e}")
@@ -281,6 +328,7 @@ class NervousSystem:
             from pulse.src import phenotype
             self._mod_phenotype = phenotype
             self.phenotype = phenotype
+            self._patch_module_state_dir(phenotype)
             logger.info("✓ PHENOTYPE loaded")
         except Exception as e:
             logger.warning(f"✗ PHENOTYPE failed: {e}")
@@ -290,6 +338,7 @@ class NervousSystem:
             from pulse.src import telomere
             self._mod_telomere = telomere
             self.telomere = telomere
+            self._patch_module_state_dir(telomere)
             logger.info("✓ TELOMERE loaded")
         except Exception as e:
             logger.warning(f"✗ TELOMERE failed: {e}")
@@ -299,6 +348,7 @@ class NervousSystem:
             from pulse.src import hypothalamus
             self._mod_hypothalamus = hypothalamus
             self.hypothalamus = hypothalamus
+            self._patch_module_state_dir(hypothalamus)
             logger.info("✓ HYPOTHALAMUS loaded")
         except Exception as e:
             logger.warning(f"✗ HYPOTHALAMUS failed: {e}")
@@ -308,6 +358,7 @@ class NervousSystem:
             from pulse.src import soma
             self._mod_soma = soma
             self.soma = soma
+            self._patch_module_state_dir(soma)
             logger.info("✓ SOMA loaded")
         except Exception as e:
             logger.warning(f"✗ SOMA failed: {e}")
@@ -317,6 +368,7 @@ class NervousSystem:
             from pulse.src import dendrite
             self._mod_dendrite = dendrite
             self.dendrite = dendrite
+            self._patch_module_state_dir(dendrite)
             logger.info("✓ DENDRITE loaded")
         except Exception as e:
             logger.warning(f"✗ DENDRITE failed: {e}")
@@ -326,6 +378,7 @@ class NervousSystem:
             from pulse.src import vestibular
             self._mod_vestibular = vestibular
             self.vestibular = vestibular
+            self._patch_module_state_dir(vestibular)
             logger.info("✓ VESTIBULAR loaded")
         except Exception as e:
             logger.warning(f"✗ VESTIBULAR failed: {e}")
@@ -335,6 +388,7 @@ class NervousSystem:
             from pulse.src import thymus
             self._mod_thymus = thymus
             self.thymus = thymus
+            self._patch_module_state_dir(thymus)
             logger.info("✓ THYMUS loaded")
         except Exception as e:
             logger.warning(f"✗ THYMUS failed: {e}")
@@ -344,6 +398,7 @@ class NervousSystem:
             from pulse.src import oximeter
             self._mod_oximeter = oximeter
             self.oximeter = oximeter
+            self._patch_module_state_dir(oximeter)
             logger.info("✓ OXIMETER loaded")
         except Exception as e:
             logger.warning(f"✗ OXIMETER failed: {e}")
@@ -353,6 +408,7 @@ class NervousSystem:
             from pulse.src import genome
             self._mod_genome = genome
             self.genome = genome
+            self._patch_module_state_dir(genome)
             logger.info("✓ GENOME loaded")
         except Exception as e:
             logger.warning(f"✗ GENOME failed: {e}")
@@ -362,6 +418,7 @@ class NervousSystem:
             from pulse.src import aura
             self._mod_aura = aura
             self.aura = aura
+            self._patch_module_state_dir(aura)
             logger.info("✓ AURA loaded")
         except Exception as e:
             logger.warning(f"✗ AURA failed: {e}")
@@ -371,6 +428,7 @@ class NervousSystem:
             from pulse.src import chronicle
             self._mod_chronicle = chronicle
             self.chronicle = chronicle
+            self._patch_module_state_dir(chronicle)
             logger.info("✓ CHRONICLE loaded")
         except Exception as e:
             logger.warning(f"✗ CHRONICLE failed: {e}")
@@ -379,6 +437,7 @@ class NervousSystem:
         try:
             from pulse.src import nephron
             self._mod_nephron = nephron
+            self._patch_module_state_dir(nephron)
             logger.info("✓ NEPHRON loaded")
         except Exception as e:
             logger.warning(f"✗ NEPHRON failed: {e}")
@@ -387,9 +446,19 @@ class NervousSystem:
         try:
             from pulse.src import germinal
             self._mod_germinal = germinal
+            self._patch_module_state_dir(germinal)
             logger.info("✓ GERMINAL loaded")
         except Exception as e:
             logger.warning(f"✗ GERMINAL failed: {e}")
+
+        # PARIETAL — world model / environment discovery
+        try:
+            from pulse.src.parietal import Parietal
+            self.parietal = Parietal(state_dir=self.state_dir)
+            self._mod_parietal = self.parietal
+            logger.info("✓ PARIETAL loaded")
+        except Exception as e:
+            logger.warning(f"✗ PARIETAL failed: {e}")
 
     def warm_up(self) -> dict:
         """Force every module to write initial state files so health dashboard shows all green."""
@@ -448,7 +517,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                learn_file = Path.home() / ".pulse" / "state" / "retina-learning.json"
+                learn_file = self.state_dir / "retina-learning.json"
                 if not learn_file.exists():
                     learn_file.parent.mkdir(parents=True, exist_ok=True)
                     learn_file.write_text(json.dumps({"outcomes": [], "adjustments": {}}, indent=2))
@@ -461,7 +530,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "amygdala-state.json"
+                state_file = self.state_dir / "amygdala-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"threats": [], "last_scan": None}, indent=2))
@@ -474,7 +543,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "cerebellum-state.json"
+                state_file = self.state_dir / "cerebellum-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"habits": [], "graduated": []}, indent=2))
@@ -487,7 +556,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "enteric-state.json"
+                state_file = self.state_dir / "enteric-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"patterns": [], "accuracy": {}}, indent=2))
@@ -500,7 +569,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "proprioception-state.json"
+                state_file = self.state_dir / "proprioception-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"capabilities": {}, "limits": {}}, indent=2))
@@ -513,7 +582,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "rem-state.json"
+                state_file = self.state_dir / "rem-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"session_count": 0, "last_session": None, "guard_active": False}, indent=2))
@@ -534,7 +603,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "hypothalamus-state.json"
+                state_file = self.state_dir / "hypothalamus-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"generated_drives": [], "need_signals": [], "retired": []}, indent=2))
@@ -547,7 +616,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "dendrite-state.json"
+                state_file = self.state_dir / "dendrite-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"entities": {"josh": {"trust": 1.0, "role": "primary", "interactions": 0}}, "graph": {}}, indent=2))
@@ -560,7 +629,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "vestibular-state.json"
+                state_file = self.state_dir / "vestibular-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"ratios": {"building_shipping": 0.5, "working_reflecting": 0.5, "autonomy_collaboration": 0.5}, "alerts": []}, indent=2))
@@ -573,7 +642,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "thymus-state.json"
+                state_file = self.state_dir / "thymus-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"skills": {}, "milestones": [], "plateaus": []}, indent=2))
@@ -586,7 +655,7 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "oximeter-state.json"
+                state_file = self.state_dir / "oximeter-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"metrics": {}, "perception_gap": 0.0}, indent=2))
@@ -599,13 +668,30 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
-                state_file = Path.home() / ".pulse" / "state" / "genome.json"
+                state_file = self.state_dir / "genome.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
                     state_file.write_text(json.dumps({"version": "1.0", "modules": {}, "personality": {}}, indent=2))
                 results["warmed"].append("genome")
             except Exception as e:
                 results["failed"].append(f"genome: {e}")
+
+        # PARIETAL
+        if self.parietal:
+            try:
+                import json
+                from pathlib import Path
+                state_file = self.state_dir / "parietal-state.json"
+                if not state_file.exists():
+                    state_file.parent.mkdir(parents=True, exist_ok=True)
+                    state_file.write_text(json.dumps({
+                        "world_model": {"projects": [], "deployments": [], "goal_conditions": [], "signal_weights": {}},
+                        "last_discovery": None,
+                        "discovery_count": 0,
+                    }, indent=2))
+                results["warmed"].append("parietal")
+            except Exception as e:
+                results["failed"].append(f"parietal: {e}")
 
         logger.info(f"🔥 Warm-up: {len(results['warmed'])} warmed, {len(results['failed'])} failed")
         return results
@@ -661,6 +747,8 @@ class NervousSystem:
             "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
             # V4 modules
             "nephron",
+            # V5 modules
+            "parietal",
         ]
         
         for name in modules:
@@ -1221,6 +1309,14 @@ class NervousSystem:
             except Exception as e:
                 logger.warning(f"post_loop GERMINAL failed: {e}")
 
+        # PARIETAL — re-scan world model every 200th loop (~6h at 30s intervals)
+        if self.parietal and self._loop_count % 200 == 0:
+            try:
+                self.parietal.scan(workspace_root=self.workspace_root)
+                result["parietal_rescanned"] = True
+            except Exception as e:
+                logger.warning(f"post_loop PARIETAL rescan failed: {e}")
+
         # CALLOSUM — bridge every 10th loop
         if self._mod_callosum and self._mod_callosum.should_run(self._loop_count):
             try:
@@ -1416,7 +1512,8 @@ class NervousSystem:
 
         # V3 modules — all auto-save, just note them
         for name in ["phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle"]:
+                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+                      "parietal"]:
             if getattr(self, name, None) is not None:
                 result["saved"].append(name)
 
@@ -1437,6 +1534,7 @@ class NervousSystem:
             # V3 modules
             "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
             "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+            "parietal",
         ]
         status = {}
         for name in modules:

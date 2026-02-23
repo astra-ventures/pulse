@@ -14,8 +14,8 @@ from typing import Callable, Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "amygdala-state.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "amygdala-state.json"
 
 FAST_PATH_THRESHOLD = 0.7
 MAX_HISTORY = 100
@@ -48,10 +48,10 @@ class Amygdala:
         self._register_builtins()
 
     def _load_state(self) -> dict:
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        if STATE_FILE.exists():
+        _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+        if _DEFAULT_STATE_FILE.exists():
             try:
-                return json.loads(STATE_FILE.read_text())
+                return json.loads(_DEFAULT_STATE_FILE.read_text())
             except (json.JSONDecodeError, OSError):
                 pass
         return {
@@ -62,8 +62,8 @@ class Amygdala:
         }
 
     def _save_state(self):
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        STATE_FILE.write_text(json.dumps(self.state, indent=2))
+        _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+        _DEFAULT_STATE_FILE.write_text(json.dumps(self.state, indent=2))
 
     def register_threat_pattern(self, name: str, detector: Callable, severity: float, action: str):
         """Register a new threat detector."""

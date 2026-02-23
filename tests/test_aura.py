@@ -12,10 +12,10 @@ from pulse.src import aura, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "aura.json"
-    with patch.object(aura, "STATE_DIR", tmp_path), \
-         patch.object(aura, "STATE_FILE", sf), \
-         patch.object(thalamus, "STATE_DIR", tmp_path), \
-         patch.object(thalamus, "BROADCAST_FILE", bf):
+    with patch.object(aura, "_DEFAULT_STATE_DIR", tmp_path), \
+         patch.object(aura, "_DEFAULT_STATE_FILE", sf), \
+         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
+         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
         yield tmp_path
 
 

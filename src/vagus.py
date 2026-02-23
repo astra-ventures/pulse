@@ -12,25 +12,25 @@ from typing import Optional
 
 from . import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "silence-state.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "silence-state.json"
 
 # Sources we track
 SOURCES = ["josh", "markets", "agents", "crons"]
 
 
 def _load_state() -> dict:
-    if STATE_FILE.exists():
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, KeyError):
             pass
     return {"timestamps": {}, "broadcast_flags": {}}
 
 
 def _save_state(state: dict):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def update_timestamp(source: str):

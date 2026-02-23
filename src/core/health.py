@@ -175,8 +175,13 @@ class HealthServer:
                 path = self.daemon.daily_sync._get_file()
                 self.daemon._mark_self_write(str(path))
                 now_str = __import__('datetime').datetime.now().strftime("%H:%M")
+                import fcntl
                 with open(path, "a") as f:
-                    f.write(f"- {now_str} 📨 Feedback: {outcome} — {summary[:100]}\n")
+                    fcntl.flock(f, fcntl.LOCK_EX)
+                    try:
+                        f.write(f"- {now_str} 📨 Feedback: {outcome} — {summary[:100]}\n")
+                    finally:
+                        fcntl.flock(f, fcntl.LOCK_UN)
             except OSError:
                 pass
 

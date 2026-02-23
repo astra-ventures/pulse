@@ -14,14 +14,14 @@ from typing import Any, Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-BUFFER_FILE = STATE_DIR / "buffer.json"
-ARCHIVE_DIR = STATE_DIR / "buffer-archive"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_BUFFER_FILE = _DEFAULT_STATE_DIR / "buffer.json"
+_DEFAULT_ARCHIVE_DIR = _DEFAULT_STATE_DIR / "buffer-archive"
 
 
 def _ensure_dirs():
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _empty_buffer() -> dict:
@@ -40,9 +40,9 @@ def _empty_buffer() -> dict:
 
 
 def _load() -> dict:
-    if BUFFER_FILE.exists():
+    if _DEFAULT_BUFFER_FILE.exists():
         try:
-            return json.loads(BUFFER_FILE.read_text())
+            return json.loads(_DEFAULT_BUFFER_FILE.read_text())
         except (json.JSONDecodeError, OSError):
             pass
     return _empty_buffer()
@@ -50,7 +50,7 @@ def _load() -> dict:
 
 def _save(buf: dict):
     _ensure_dirs()
-    BUFFER_FILE.write_text(json.dumps(buf, indent=2))
+    _DEFAULT_BUFFER_FILE.write_text(json.dumps(buf, indent=2))
 
 
 def capture(
@@ -158,7 +158,7 @@ def rotate() -> Optional[str]:
         return None
 
     ts = datetime.now().strftime("%Y-%m-%d-%H")
-    archive_path = ARCHIVE_DIR / f"{ts}.json"
+    archive_path = _DEFAULT_ARCHIVE_DIR / f"{ts}.json"
     archive_path.write_text(json.dumps(buf, indent=2))
 
     _save(_empty_buffer())

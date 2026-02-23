@@ -23,8 +23,8 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-STATE_DIR = Path.home() / ".pulse" / "state"
-STATE_FILE = STATE_DIR / "germinal-state.json"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "germinal-state.json"
 WORKSPACE = Path.home() / ".openclaw" / "workspace"
 PULSE_SRC = WORKSPACE / "pulse" / "src"
 
@@ -112,17 +112,17 @@ def _default_state() -> dict:
 
 
 def _load_state() -> dict:
-    if STATE_FILE.exists():
+    if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_DEFAULT_STATE_FILE.read_text())
         except (json.JSONDecodeError, OSError):
             pass
     return _default_state()
 
 
 def _save_state(state: dict):
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 # ─── Core Logic ─────────────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ def should_run(loop_count: int) -> bool:
 def scan_for_birth_candidates() -> list[dict]:
     """Find HYPOTHALAMUS drives that are persistent, unmet, and need a new organ."""
     try:
-        hypo_file = STATE_DIR / "hypothalamus-state.json"
+        hypo_file = _DEFAULT_STATE_DIR / "hypothalamus-state.json"
         if not hypo_file.exists():
             return []
         hypo = json.loads(hypo_file.read_text())

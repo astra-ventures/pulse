@@ -5,6 +5,7 @@ Appends trigger and mutation events to memory/YYYY-MM-DD.md so
 the agent can see what Pulse did when reviewing daily logs.
 """
 
+import fcntl
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -52,9 +53,13 @@ class DailyNoteSync:
             now = datetime.now().strftime("%H:%M")
             status = "✅" if success else "❌"
             with open(path, "a") as f:
-                self._ensure_header(f)
-                f.write(f"- {now} {status} Trigger #{turn}: {reason} "
-                        f"(drive: {top_drive}, pressure: {pressure:.2f})\n")
+                fcntl.flock(f, fcntl.LOCK_EX)
+                try:
+                    self._ensure_header(f)
+                    f.write(f"- {now} {status} Trigger #{turn}: {reason} "
+                            f"(drive: {top_drive}, pressure: {pressure:.2f})\n")
+                finally:
+                    fcntl.flock(f, fcntl.LOCK_UN)
         except OSError as e:
             logger.warning(f"Failed to sync trigger to daily notes: {e}")
 
@@ -62,6 +67,7 @@ class DailyNoteSync:
         """Log a mutation event."""
         try:
             path = self._get_file()
+            path.parent.mkdir(parents=True, exist_ok=True)
             now = datetime.now().strftime("%H:%M")
             mut_type = result.get("type", "unknown")
             detail = ""
@@ -71,7 +77,11 @@ class DailyNoteSync:
                 after = result.get("after") or result.get("weight", "?")
                 detail = f" {name}: {before} → {after}"
             with open(path, "a") as f:
-                self._ensure_header(f)
-                f.write(f"- {now} 🧬 Mutation: {mut_type}{detail}\n")
+                fcntl.flock(f, fcntl.LOCK_EX)
+                try:
+                    self._ensure_header(f)
+                    f.write(f"- {now} 🧬 Mutation: {mut_type}{detail}\n")
+                finally:
+                    fcntl.flock(f, fcntl.LOCK_UN)
         except OSError as e:
             logger.warning(f"Failed to sync mutation to daily notes: {e}")
