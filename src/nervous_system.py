@@ -133,6 +133,7 @@ class NervousSystem:
         self._mod_germinal = None
         self._mod_parietal = None
         self.parietal = None
+        self._mod_superego = None
 
         self._init_modules()
 
@@ -490,6 +491,15 @@ class NervousSystem:
             logger.info("✓ PARIETAL loaded")
         except Exception as e:
             logger.warning(f"✗ PARIETAL failed: {e}")
+
+        # SUPEREGO — runtime identity enforcement
+        try:
+            from pulse.src import superego as _superego_mod
+            self._mod_superego = _superego_mod
+            self._patch_module_state_dir(_superego_mod)
+            logger.info("✓ SUPEREGO loaded")
+        except Exception as e:
+            logger.warning(f"✗ SUPEREGO failed: {e}")
 
     def warm_up(self) -> dict:
         """Force every module to write initial state files so health dashboard shows all green."""
@@ -1300,6 +1310,64 @@ class NervousSystem:
                 logger.warning(f"post_trigger OXIMETER failed: {e}")
 
         return result
+
+    def scan_output(self, text: str, source: str = "unknown") -> dict:
+        """Scan an outgoing response for identity drift using SUPEREGO.
+
+        Call this whenever you have the text of an assistant response to check
+        identity alignment. Routes threats to AMYGDALA if drift is severe.
+
+        Returns the SUPEREGO scan result dict, or {} if SUPEREGO not loaded.
+        """
+        if not self._mod_superego or not text:
+            return {}
+
+        try:
+            result = self._mod_superego.scan_response(text, source=source)
+
+            # Route severe/moderate drift to AMYGDALA
+            if self.amygdala and result.get("assessment") in ("drift_severe", "drift_moderate"):
+                threat = self._mod_superego.amygdala_threat(result["assessment"])
+                if threat:
+                    try:
+                        self.amygdala.inject_threat(
+                            threat_type=threat["type"],
+                            intensity=threat["intensity"],
+                            source=threat["source"],
+                        )
+                    except Exception:
+                        pass  # AMYGDALA interface may differ; degrade gracefully
+
+            # Log to CHRONICLE
+            if self._mod_chronicle and result.get("assessment") != "clean":
+                try:
+                    self._mod_chronicle.record_event(
+                        source="SUPEREGO",
+                        event_type="identity_scan",
+                        data={
+                            "assessment": result["assessment"],
+                            "compliance_score": result["compliance_score"],
+                            "drift_labels": [f["label"] for f in result.get("drift_flags", [])],
+                            "summary": result["summary"],
+                        },
+                        salience=0.5 if result["assessment"] == "drift_moderate" else 0.8,
+                    )
+                except Exception:
+                    pass
+
+            return result
+        except Exception as e:
+            logger.warning(f"scan_output SUPEREGO failed: {e}")
+            return {}
+
+    def get_superego_status(self) -> dict:
+        """Return SUPEREGO compliance health status."""
+        if not self._mod_superego:
+            return {"status": "not_loaded"}
+        try:
+            return self._mod_superego.get_status()
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
 
     def post_loop(self) -> dict:
         """Called at the end of each loop iteration.
