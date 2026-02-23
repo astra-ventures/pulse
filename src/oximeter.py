@@ -4,6 +4,7 @@ Track engagement metrics (followers, likes, sentiment).
 Compare self-perception vs external. Detect gaps.
 """
 
+import copy
 import json
 import time
 from pathlib import Path
@@ -13,28 +14,39 @@ from pulse.src import thalamus
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "oximeter-state.json"
 
+_DEFAULT_STATE = {
+    "metrics": {
+        "followers": 0,
+        "likes": 0,
+        "replies": 0,
+        "sentiment": 0.5,  # 0=negative, 1=positive
+    },
+    "self_perception": {
+        "impact": 0.5,
+        "reception": 0.5,
+    },
+    "perception_gap": 0.0,
+    "history": [],
+    "last_update": 0,
+}
+
 
 def _load_state() -> dict:
     if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(_DEFAULT_STATE_FILE.read_text())
+            raw = json.loads(_DEFAULT_STATE_FILE.read_text())
+            # Migrate old schema — inject any missing top-level keys
+            for key, val in _DEFAULT_STATE.items():
+                if key not in raw:
+                    raw[key] = copy.deepcopy(val)
+            # Migrate old metrics — inject missing metric fields
+            for key, val in _DEFAULT_STATE["metrics"].items():
+                if key not in raw.get("metrics", {}):
+                    raw.setdefault("metrics", {})[key] = val
+            return raw
         except (json.JSONDecodeError, OSError):
             pass
-    return {
-        "metrics": {
-            "followers": 0,
-            "likes": 0,
-            "replies": 0,
-            "sentiment": 0.5,  # 0=negative, 1=positive
-        },
-        "self_perception": {
-            "impact": 0.5,
-            "reception": 0.5,
-        },
-        "perception_gap": 0.0,
-        "history": [],
-        "last_update": 0,
-    }
+    return copy.deepcopy(_DEFAULT_STATE)
 
 
 def _save_state(state: dict):
