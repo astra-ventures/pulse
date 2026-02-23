@@ -32,9 +32,15 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+try:
+    from fastapi import Depends, FastAPI, Header, HTTPException, Query, WebSocket, WebSocketDisconnect
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import HTMLResponse
+except ImportError as _e:
+    raise ImportError(
+        "Pulse Observation API requires optional dependencies. "
+        "Install with: pip install 'pulse-agent[observation]'"
+    ) from _e
 
 # ── Config ────────────────────────────────────────────────────────────────────
 

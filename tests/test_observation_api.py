@@ -7,6 +7,10 @@ import time
 from pathlib import Path
 
 import pytest
+
+# fastapi is an optional dependency (pip install pulse-agent[observation])
+# Skip this entire module if it isn't installed rather than error.
+fastapi = pytest.importorskip("fastapi", reason="fastapi not installed; run: pip install 'pulse-agent[observation]'")
 from fastapi.testclient import TestClient
 
 
