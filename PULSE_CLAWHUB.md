@@ -44,6 +44,6 @@ These aren't programmed behaviors. They *emerge* from 36 independent modules int
 - Mac / Linux / Docker / Raspberry Pi
 
 ## Links
-- GitHub: https://github.com/[ORG]/pulse
-- Docs: https://github.com/[ORG]/pulse/blob/main/docs/
-- Demo config: https://github.com/[ORG]/pulse/tree/main/examples
+- GitHub: https://github.com/astra-ventures/pulse
+- Docs: https://github.com/astra-ventures/pulse/blob/main/docs/
+- Demo config: https://github.com/astra-ventures/pulse/tree/main/examples
