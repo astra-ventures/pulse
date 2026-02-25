@@ -206,6 +206,10 @@ class ModelEvaluator:
             ],
             "max_tokens": self.model_config.max_tokens,
             "temperature": self.model_config.temperature,
+            # Ollama-specific: don't keep model loaded after response.
+            # Prevents 30GB idle memory pressure between evaluator calls.
+            # Non-Ollama backends will ignore this field.
+            "keep_alive": 0,
         }
 
         async with session.post(
