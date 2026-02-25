@@ -27,6 +27,7 @@ from pulse.src.evolution.mutator import Mutator
 from pulse.src.state.persistence import StatePersistence
 from pulse.src.core.health import HealthServer
 from pulse.src.core.webhook import OpenClawWebhook
+from pulse.src.core.task_router import TaskRouter
 from pulse.src.core.daily_sync import DailyNoteSync
 from pulse.src.core.events import EventBus, TRIGGER_SUCCESS, TRIGGER_FAILURE, MUTATION_APPLIED
 from pulse.src.integrations import Integration
@@ -80,6 +81,7 @@ class PulseDaemon:
         self.drives = DriveEngine(self.config, self.state)
         self.sensors = SensorManager(self.config)
         self.webhook = OpenClawWebhook(self.config)
+        self.router = TaskRouter(self.config)
         self.health = HealthServer(self, port=self.config.daemon.health_port)
         self.mutator = Mutator(self.config, self.drives, state=self.state)
         self.integration = _load_integration(self.config.daemon.integration)
@@ -395,8 +397,14 @@ class PulseDaemon:
             },
         )
 
-        # Fire webhook
-        success = await self.webhook.trigger(message)
+        # TASK ROUTER — pick model based on task type
+        routing = self.router.route(message)
+        logger.info(
+            f"🧭 ROUTER: tier={routing.tier}, model={routing.model}, reason={routing.reason}"
+        )
+
+        # Fire webhook with routed model
+        success = await self.webhook.trigger(message, model_override=routing.model)
 
         if success is True:
             self.drives.on_trigger_success(decision)

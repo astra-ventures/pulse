@@ -37,7 +37,7 @@ class OpenClawWebhook:
             self._session = aiohttp.ClientSession()
         return self._session
 
-    async def trigger(self, message: str, name: str = "Pulse") -> bool:
+    async def trigger(self, message: str, name: str = "Pulse", model_override: str = None) -> bool:
         """
         Trigger an agent turn via OpenClaw webhook.
         
@@ -70,8 +70,10 @@ class OpenClawWebhook:
         # In isolated mode, tell OpenClaw to spawn a separate session
         if self.session_mode == "isolated":
             payload["isolated"] = True
-            if self.isolated_model:
-                payload["model"] = self.isolated_model
+            # model_override (from TaskRouter) takes priority over config default
+            effective_model = model_override or self.isolated_model
+            if effective_model:
+                payload["model"] = effective_model
 
         try:
             async with session.post(
