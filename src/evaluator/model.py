@@ -145,6 +145,28 @@ class ModelEvaluator:
         if not use_model:
             return self._fallback_evaluate(drive_state, sensor_data)
 
+        # Guard: skip evaluator LLM call if memory pressure is critical.
+        # Loading any local LLM (via Ollama) when RAM < 300MB worsens memory pressure.
+        if self.model_config and "11434" in (self.model_config.base_url or ""):
+            try:
+                import subprocess
+                vm = subprocess.run(["vm_stat"], capture_output=True, text=True)
+                page_size = 16384
+                free_pages = 0
+                for line in vm.stdout.splitlines():
+                    if "Pages free:" in line:
+                        free_pages = int(line.split(":")[1].strip().rstrip("."))
+                        break
+                free_mb = free_pages * page_size / 1024 / 1024
+                if free_mb < 300:
+                    logger.warning(
+                        f"Evaluator LLM skipped: memory pressure ({free_mb:.0f} MB free) — "
+                        f"falling back to rules to avoid worsening RAM state."
+                    )
+                    return self._fallback_evaluate(drive_state, sensor_data)
+            except Exception as _me:
+                logger.debug(f"Evaluator memory check failed (non-critical): {_me}")
+
         # Build the context message
         user_prompt = self._build_prompt(drive_state, sensor_data, working_memory)
 
