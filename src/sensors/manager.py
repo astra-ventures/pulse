@@ -322,16 +322,31 @@ class SystemSensor(BaseSensor):
                     m = re.search(r'page size of (\d+)', lines[0])
                     if m:
                         page_size = int(m.group(1))
+                free_pages = 0
+                inactive_pages = 0
+                speculative_pages = 0
                 for line in lines:
                     if "Pages free" in line:
                         free_pages = int(line.split(":")[1].strip().rstrip("."))
-                        free_mb = (free_pages * page_size) / (1024 * 1024)
-                        if free_mb < 200:
-                            alerts.append({
-                                "type": "memory_pressure",
-                                "free_mb": round(free_mb),
-                                "severity": "high",
-                            })
+                    elif "Pages inactive" in line:
+                        inactive_pages = int(line.split(":")[1].strip().rstrip("."))
+                    elif "Pages speculative" in line:
+                        speculative_pages = int(line.split(":")[1].strip().rstrip("."))
+                # On macOS, inactive + speculative pages are immediately reclaimable.
+                # "Free only" is misleading — macOS uses inactive pages as disk cache.
+                # Real available = free + speculative + inactive.
+                truly_free_pages = free_pages + speculative_pages
+                reclaimable_pages = truly_free_pages + inactive_pages
+                free_mb = (truly_free_pages * page_size) / (1024 * 1024)
+                reclaimable_mb = (reclaimable_pages * page_size) / (1024 * 1024)
+                # Only alert if BOTH free AND reclaimable are critically low (genuine pressure)
+                if free_mb < 100 and reclaimable_mb < 500:
+                    alerts.append({
+                        "type": "memory_pressure",
+                        "free_mb": round(free_mb),
+                        "reclaimable_mb": round(reclaimable_mb),
+                        "severity": "high",
+                    })
         except (asyncio.TimeoutError, OSError):
             pass
 

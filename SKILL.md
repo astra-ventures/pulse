@@ -6,7 +6,7 @@ description: >
   (ENDOCRINE, CIRCADIAN, LIMBIC, REM, HYPOTHALAMUS, and more). Instead of waiting for crons or
   commands, your agent decides when to think. Use when setting up proactive autonomous behavior,
   persistent emotional state, or self-directed initiative for any OpenClaw agent.
-version: 0.3.1
+version: 0.3.2
 author: iris
 homepage: https://github.com/astra-ventures/pulse
 ---

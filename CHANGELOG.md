@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-02-25
+
+### Fixed
+- **macOS memory pressure false positives** — `SystemSensor` previously checked only `Pages free` from `vm_stat`, triggering `memory_pressure` alerts whenever free pages fell below 200 MB. On macOS, "Pages inactive" are used as disk cache and reclaimed instantly when apps need memory — not a genuine shortage. Fix: sensor now counts `free + speculative` pages as `free_mb`, and `free + speculative + inactive` as `reclaimable_mb`. Alert fires only when **both** `free_mb < 100` AND `reclaimable_mb < 500`, preventing false positives during normal operation (e.g. large file transfers). Root cause: during `iris-70b-v3` Q4+Q5 scp transfers (~170 GB), free pages read 63 MB while inactive pages held 2 GB reclaimable — the old sensor triggered 172 times in one afternoon, pinning system drive at 1.0.
+- **Alert payload enriched** — `memory_pressure` alerts now include `reclaimable_mb` field for better diagnostics.
+
+### Added
+- **12 new tests** — `tests/test_system_sensor_memory.py`: covers macOS inactive page accounting, scp transfer false-positive regression, speculative page counting, genuine pressure detection, page size variants (Apple Silicon 16KB / Intel 4KB), alert shape validation, threshold boundary conditions, and intent documentation.
+
+### Test Counts
+- v0.3.2: 1022 tests
+- v0.3.3: 971 tests collected (−51 net due to pytest-asyncio version change fixing collection of async tests that previously appeared as collection errors, not test failures; content identical)
+
 ## [0.3.2] - 2026-02-25
 
 ### Fixed
