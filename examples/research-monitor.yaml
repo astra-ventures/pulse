@@ -1,0 +1,162 @@
+# Research Monitor — Pulse Config Example
+#
+# Use case: AI agent monitoring academic papers, datasets, experiments
+# Triggers when:
+# - New papers appear in watched directories
+# - Experiments complete (flagged in notes)
+# - Learning pressure builds (curiosity about recent findings)
+#
+# Personality: Patient, thorough, intellectually curious
+
+# ==================================================
+# DRIVES — What motivates this agent
+# ==================================================
+drives:
+  # Lower threshold = more sensitive (fires sooner)
+  trigger_threshold: 4.0
+  
+  # Decay rates — how quickly drives fade after being addressed
+  decay:
+    success: 0.5        # 50% decay on successful action
+    partial: 0.25       # 25% decay on partial success
+    failure: 0.0        # No decay on failure (try again)
+  
+  categories:
+    # Primary: Learning & discovery
+    learning:
+      weight: 1.2       # Emphasize learning over other drives
+      sources:
+        - "papers/*.pdf"
+        - "experiments/*.md"
+        - "datasets/*.csv"
+    
+    # Secondary: Organize knowledge
+    goals:
+      weight: 0.9
+      sources:
+        - "research-goals.json"
+        - "hypotheses.json"
+    
+    # Tertiary: Share findings
+    curiosity:
+      weight: 0.8
+      sources:
+        - "questions.md"
+        - "open-problems.md"
+    
+    # Low priority: System maintenance
+    system:
+      weight: 0.4
+      sources: []       # Auto-tracked by SystemSensor
+
+# ==================================================
+# SENSORS — What the agent watches
+# ==================================================
+sensors:
+  # Watch for new papers, experiment results
+  filesystem:
+    watch_paths:
+      - "papers"        # New PDFs appear here
+      - "experiments"   # Experiment logs
+      - "datasets"      # New data
+      - "notes/*.md"    # Research notes
+    
+    # Check every 5 minutes (research isn't urgent)
+    poll_interval: 300
+    
+    # Ignore temp files
+    ignore_patterns:
+      - "*.tmp"
+      - "*.swp"
+      - ".DS_Store"
+  
+  # Don't interrupt during active research sessions
+  conversation:
+    session_file: "~/.openclaw/sessions/main.jsonl"
+    activity_threshold_seconds: 600  # 10 min silence = OK to trigger
+  
+  # Monitor daemon health
+  system:
+    memory_threshold_mb: 1024
+    disk_threshold_gb: 5
+
+# ==================================================
+# EVALUATOR — When to trigger
+# ==================================================
+evaluator:
+  # Use rules mode (no AI calls) for predictable behavior
+  mode: "rules"
+  
+  # Optional: model-based evaluation for context-aware decisions
+  # mode: "model"
+  # model: "llama3.2:3b"
+  # endpoint: "http://localhost:11434"
+
+# ==================================================
+# OPENCLAW INTEGRATION
+# ==================================================
+openclaw:
+  # Webhook endpoint (update for your setup)
+  webhook_url: "http://localhost:8080/hooks/agent"
+  webhook_token: "your-token-here"
+  
+  # Rate limits (research agent doesn't need to be chatty)
+  min_trigger_interval: 3600   # 1 hour cooldown
+  max_turns_per_hour: 4        # Max 4 triggers/hour
+  
+  # Session targeting
+  session_target: "isolated"   # Run in isolated sessions (don't clutter main)
+  
+  # Agent behavior
+  agent_id: "research-monitor"
+  thinking: "low"              # Saves tokens for straightforward tasks
+  timeout_seconds: 300         # 5 min timeout for analysis
+
+# ==================================================
+# STATE MANAGEMENT
+# ==================================================
+state:
+  path: "pulse-state.json"
+  backup_enabled: true
+  backup_path: "pulse-state.backup.json"
+
+# ==================================================
+# SELF-MODIFICATION
+# ==================================================
+mutator:
+  enabled: true
+  
+  # Allow agent to tune its own sensitivity
+  allowed_fields:
+    - "drives.trigger_threshold"
+    - "sensors.filesystem.poll_interval"
+  
+  # Guardrails
+  guardrails:
+    min_trigger_threshold: 2.0
+    max_trigger_threshold: 10.0
+  
+  # Audit trail
+  audit_log: "pulse-mutations.log"
+
+# ==================================================
+# LOGGING
+# ==================================================
+logging:
+  level: "INFO"
+  file: "pulse-research.log"
+  max_size_mb: 10
+  backup_count: 3
+
+# ==================================================
+# EXAMPLE WORKFLOW
+# ==================================================
+# 1. Researcher downloads new paper to papers/new-transformer-arch.pdf
+# 2. FileSystemSensor detects change → learning drive +2.0 pressure
+# 3. After 2 more papers, pressure crosses 4.0 threshold
+# 4. Evaluator triggers → webhook fires
+# 5. Agent receives CORTEX.md prompt with drive context
+# 6. Agent: "I notice 3 new papers on transformers. Summarizing..."
+# 7. Agent posts summary to research notes
+# 8. Feedback: success → learning drive decays 50%
+# 9. Cycle continues

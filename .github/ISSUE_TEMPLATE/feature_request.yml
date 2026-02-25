@@ -1,0 +1,67 @@
+name: Feature Request
+description: Suggest a new feature for Pulse
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! We'd love to hear your ideas.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Use Case
+      description: What problem does this solve? Why do you need this?
+      placeholder: "I want to monitor Discord channels for silence, but Pulse doesn't have a Discord sensor..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: What should Pulse do?
+      placeholder: |
+        Add a Discord sensor that:
+        - Monitors specified channels
+        - Tracks time since last message
+        - Triggers when silence exceeds threshold
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What workarounds exist today?
+      placeholder: "I could use cron jobs, but they don't understand context..."
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (your opinion)
+      description: How important is this to you?
+      options:
+        - Nice to have
+        - Would improve my workflow
+        - Blocking my use case
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      description: Would you be willing to contribute this?
+      options:
+        - label: I'd like to implement this feature
+        - label: I can help test this feature
+        - label: I can write documentation for this
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Mockups, examples, links, anything else
+      placeholder: "Similar to how X works..."

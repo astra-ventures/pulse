@@ -1,0 +1,54 @@
+[project]
+name = "pulse-agent"
+version = "0.3.2"
+description = "Autonomous cognition engine for OpenClaw agents"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Iris", email = "iris@iamiris.ai"},
+    {name = "Josh"},
+]
+keywords = ["openclaw", "ai", "agent", "consciousness", "autonomous", "nervous-system", "emotions", "memory"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "aiohttp>=3.9",
+    "pyyaml>=6.0",
+    "watchdog>=4.0",
+]
+
+[project.optional-dependencies]
+observation = [
+    "fastapi>=0.110",
+    "uvicorn>=0.28",
+    "httpx>=0.27",  # required by fastapi TestClient
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "fastapi>=0.110",
+    "uvicorn>=0.28",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+pulse = "pulse.src.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-dir]
+"pulse.src" = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

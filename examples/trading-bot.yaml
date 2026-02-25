@@ -1,0 +1,101 @@
+# Pulse Config — Trading Bot
+# High-frequency monitoring for automated trading systems
+# Priorities: market opportunities, system health, risk management
+
+openclaw:
+  webhook_url: "http://localhost:8080/hooks/agent"
+  webhook_token: "${PULSE_HOOK_TOKEN}"
+  min_trigger_interval: 300     # 5 min cooldown (faster response)
+  max_turns_per_hour: 20        # allow frequent checks
+
+daemon:
+  loop_interval_seconds: 10     # check every 10 seconds
+  health_port: 9719
+  integration: "default"
+  log_level: "INFO"
+
+drives:
+  trigger_threshold: 3.0         # lower = more sensitive
+  pressure_rate: 0.05            # fast accumulation
+  max_pressure: 20.0
+  decay_on_success: 0.7
+  decay_on_failure: 0.3
+
+  categories:
+    opportunities:
+      weight: 2.0                # HIGHEST priority
+      sources:
+        - "weather-edge/opportunities.json"
+        - "polymarket/alerts.json"
+    
+    risk:
+      weight: 1.8                # risk management critical
+      sources:
+        - "trading/positions.json"
+        - "trading/drawdown.json"
+    
+    system:
+      weight: 1.5                # system health matters
+      sources:
+        - "trading/bot-status.json"
+    
+    goals:
+      weight: 0.8                # lower priority during trading hours
+      sources:
+        - "goals.json"
+    
+    learning:
+      weight: 0.5
+      sources:
+        - "hypotheses.json"
+
+sensors:
+  filesystem:
+    enabled: true
+    watch_paths:
+      - "weather-edge/**/*.json"
+      - "polymarket/**/*.json"
+      - "trading/**/*.json"
+    ignore_patterns:
+      - "*.pyc"
+      - ".git/*"
+      - "*.log"
+    debounce_seconds: 1.0        # short debounce (fast response)
+  
+  conversation:
+    enabled: false               # no human interaction during trading
+  
+  system:
+    enabled: true
+    check_interval_seconds: 30   # frequent health checks
+    memory_threshold_mb: 500     # higher limit (complex calculations)
+    disk_threshold_gb: 5
+  
+  discord:
+    enabled: false
+
+evaluator:
+  mode: "model"                  # smarter context-aware triggering
+  model:
+    base_url: "http://localhost:11434/v1"
+    api_key: ""                  # Ollama (local, free)
+    model: "llama3.2:3b"
+    max_tokens: 100
+    temperature: 0.2             # deterministic
+    timeout_seconds: 3
+
+workspace:
+  root: "/home/trader/workspace"
+  resolve_paths: true
+
+state:
+  dir: "~/.pulse"
+  save_interval: 60              # save every minute (fast writes)
+  max_history_entries: 2000      # keep detailed history
+
+logging:
+  level: "INFO"
+  format: "structured"           # JSON for log aggregation
+  output: "/var/log/pulse/trading.log"
+  sync_to_daily_notes: true
+  daily_notes_dir: "memory"

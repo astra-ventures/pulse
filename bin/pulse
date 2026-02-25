@@ -1,0 +1,13 @@
+#!/bin/bash
+# Pulse CLI — autonomous cognition engine
+# Resolve symlinks to find the real script location
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+PULSE_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
+
+export PYTHONPATH="/Users/iris/.openclaw/workspace"
+exec "$PULSE_DIR/venv/bin/python3" -m pulse.src.cli "$@"
