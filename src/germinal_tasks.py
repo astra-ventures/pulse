@@ -204,6 +204,7 @@ async def _call_llm(user_prompt: str, model_config: dict) -> list:
         ],
         "max_tokens": max_tokens,
         "temperature": temperature,
+        "keep_alive": 0,  # Unload model immediately after call to prevent RAM pressure
     }
 
     async with aiohttp.ClientSession() as session:
