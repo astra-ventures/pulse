@@ -156,6 +156,22 @@ class ModelEvaluator:
                 logger.info("Model evaluator recovered!")
             self._consecutive_failures = 0
 
+            # Force unload Ollama model after evaluation.
+            # Note: keep_alive:0 in /v1/chat/completions is silently ignored by Ollama.
+            # Must call /api/generate with keep_alive=0 to actually release VRAM/RAM.
+            if "11434" in self.model_config.base_url:
+                try:
+                    ollama_base = self.model_config.base_url.replace("/v1", "")
+                    async with aiohttp.ClientSession() as unload_sess:
+                        await unload_sess.post(
+                            f"{ollama_base}/api/generate",
+                            json={"model": self.model_config.model, "keep_alive": 0, "prompt": ""},
+                            timeout=aiohttp.ClientTimeout(total=5),
+                        )
+                    logger.debug(f"Model evaluator: forced Ollama unload ({self.model_config.model})")
+                except Exception as _ue:
+                    logger.debug(f"Model evaluator: Ollama unload attempt failed (non-critical): {_ue}")
+
             # Handle suppress_minutes from model response
             max_suppress = self.config.evaluator.model.max_suppress_minutes
             suppress_min = min(self._extract_suppress_minutes(response), max_suppress)

@@ -556,6 +556,22 @@ class PulseDaemon:
             tasks = await germinal_generate(context, gen_config)
             self._last_generate_time = now
 
+            # Force unload Ollama model — keep_alive:0 in /v1/chat/completions is ignored by Ollama.
+            # Must use /api/generate endpoint to actually release VRAM/RAM after GENERATE step.
+            if mc.base_url and "11434" in mc.base_url:
+                try:
+                    import aiohttp as _aiohttp
+                    _ollama_base = mc.base_url.replace("/v1", "")
+                    async with _aiohttp.ClientSession() as _sess:
+                        await _sess.post(
+                            f"{_ollama_base}/api/generate",
+                            json={"model": mc.model, "keep_alive": 0, "prompt": ""},
+                            timeout=_aiohttp.ClientTimeout(total=5),
+                        )
+                    logger.debug(f"GENERATE: forced Ollama model unload ({mc.model})")
+                except Exception as _e:
+                    logger.debug(f"GENERATE: Ollama unload attempt failed (non-critical): {_e}")
+
             if tasks:
                 logger.info(f"GENERATE: {len(tasks)} tasks synthesized")
                 for t in tasks:
