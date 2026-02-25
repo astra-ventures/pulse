@@ -511,6 +511,30 @@ class PulseDaemon:
         if now - self._last_generate_time < min_idle:
             return
 
+        # Guard: skip GENERATE if memory pressure is critical — loading llama3.1:8b
+        # (21-30GB) during a memory_pressure event would worsen the very problem we're
+        # trying to resolve. Check free RAM before invoking any local LLM.
+        mc = self.config.evaluator.model
+        if mc and "11434" in (mc.base_url or ""):
+            try:
+                import subprocess
+                vm = subprocess.run(["vm_stat"], capture_output=True, text=True)
+                page_size = 16384
+                free_pages = 0
+                for line in vm.stdout.splitlines():
+                    if "Pages free:" in line:
+                        free_pages = int(line.split(":")[1].strip().rstrip("."))
+                        break
+                free_mb = free_pages * page_size / 1024 / 1024
+                if free_mb < 300:
+                    logger.warning(
+                        f"GENERATE skipped: memory pressure ({free_mb:.0f} MB free) — "
+                        f"loading {mc.model} would worsen RAM state. Will retry when stable."
+                    )
+                    return
+            except Exception as _me:
+                logger.debug(f"GENERATE memory check failed (non-critical): {_me}")
+
         try:
             # Build context from what Pulse already has
             goals = self._load_goals_list()
