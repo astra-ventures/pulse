@@ -291,7 +291,16 @@ class TestGenomeWiring:
             if ns._mod_genome:
                 assert result.get("genome_exported") is True
 
-    def test_genome_not_on_99th_loop(self, ns):
+    def test_genome_not_on_99th_loop(self, ns, tmp_path):
+        # Ensure telomere state file does NOT have a session_count divisible by 10,
+        # otherwise the telomere-milestone branch triggers genome export regardless of loop count.
+        import json as _json
+        state_dir = tmp_path / ".pulse" / "state"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        tel_file = state_dir / "telomere-state.json"
+        tel_file.write_text(_json.dumps({"session_count": 7}))  # 7 % 10 != 0
+        # Also redirect ns.state_dir to isolated tmp so live state files aren't read
+        ns.state_dir = state_dir
         ns._loop_count = 98
         result = ns.post_loop()
         assert result.get("genome_exported") is not True

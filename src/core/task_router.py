@@ -60,7 +60,7 @@ LOCAL_OVERRIDE_KEYWORDS = [
 
 @dataclass
 class RoutingDecision:
-    model: str          # Full model string e.g. "ollama/iris-70b-v3"
+    model: str          # Full model string e.g. "ollama/iris-70b-v3-tools:latest"
     tier: str           # "local" | "sonnet" | "opus"
     reason: str         # Why this tier was chosen
 
@@ -71,7 +71,7 @@ class TaskRouter:
     
     Configuration via pulse.yaml:
       openclaw:
-        isolated_model: "ollama/iris-70b-v3"   # default (local)
+        isolated_model: "ollama/iris-70b-v3-tools:latest"   # default (local)
         routing:
           sonnet_model: "anthropic/claude-sonnet-4-6"
           opus_model: "anthropic/claude-opus-4-6"
@@ -82,7 +82,7 @@ class TaskRouter:
         self.enabled = getattr(
             getattr(config.openclaw, "routing", None), "enabled", True
         )
-        self.local_model = config.openclaw.isolated_model or "ollama/iris-70b-v3"
+        self.local_model = config.openclaw.isolated_model or "ollama/iris-70b-v3-tools:latest"
         
         routing_cfg = getattr(config.openclaw, "routing", None)
         self.sonnet_model = (
