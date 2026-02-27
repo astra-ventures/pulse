@@ -274,19 +274,32 @@ def _parse_and_filter(
         recent_lower = [t.lower().strip() for t in recent_generated_titles if t]
 
     def _is_repeat(title: str) -> bool:
-        """Return True if title is too similar to a recently generated task."""
+        """Return True if title is too similar to a recently generated task.
+
+        Uses Jaccard similarity on word sets: overlap / union.
+        Threshold 0.4 catches rephrasing like:
+          'Update Goals Queue' vs 'Update Goals Queue with New Pulse Milestone'
+          'Refactor Pulse Codebase' vs 'Refactor Pulse Codebase for Improved Readability'
+        """
         t_lower = title.lower().strip()
         # Exact match
         if t_lower in recent_lower:
             return True
-        # Word-overlap match: if ≥60% of the new title's words appear in a recent title
         t_words = set(t_lower.split())
         if len(t_words) < 2:
             return False
         for recent in recent_lower:
             r_words = set(recent.split())
-            overlap = len(t_words & r_words)
-            if overlap / len(t_words) >= 0.6:
+            if not r_words:
+                continue
+            intersection = len(t_words & r_words)
+            union = len(t_words | r_words)
+            # Jaccard similarity: intersection / union
+            if union > 0 and intersection / union >= 0.4:
+                return True
+            # Also check: if ≥75% of the shorter title's words appear in the longer
+            shorter = t_words if len(t_words) <= len(r_words) else r_words
+            if len(shorter) > 0 and intersection / len(shorter) >= 0.75:
                 return True
         return False
 
