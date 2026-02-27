@@ -561,11 +561,22 @@ class PulseDaemon:
             except Exception:
                 pass
 
+            # Collect recent generated task titles for dedup (last 3 batches)
+            recent_generated_titles: list = []
+            try:
+                rgt = self.state.get("recent_generated_task_history", [])
+                for batch in rgt[-3:]:
+                    if isinstance(batch, list):
+                        recent_generated_titles.extend(batch)
+            except Exception:
+                pass
+
             context = {
                 "goals": goals,
                 "recent_memory": recent_memory,
                 "drives": drives_dict,
                 "thalamus_recent": thalamus_recent,
+                "recent_generated_titles": recent_generated_titles,
             }
 
             # Build config dict for germinal_tasks
@@ -630,6 +641,17 @@ class PulseDaemon:
 
                 # Store generated tasks in state for next CORTEX prompt
                 self.state.set("generated_tasks", tasks)
+
+                # Maintain rolling history of generated task titles for cascade dedup
+                # Keep last 10 batches — enough to detect repeating patterns
+                try:
+                    history = self.state.get("recent_generated_task_history", [])
+                    if not isinstance(history, list):
+                        history = []
+                    history.append([t["title"] for t in tasks])
+                    self.state.set("recent_generated_task_history", history[-10:])
+                except Exception:
+                    pass
 
                 # Broadcast to thalamus
                 try:

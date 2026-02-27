@@ -76,6 +76,10 @@ or waiting — do NOT include it.
 4. Do NOT suggest tasks already in the goals list.
 5. Prefer tasks that address the highest-pressure drives.
 6. "effort" should reflect actual work: low = <30 min, medium = 30-120 min, high = 2+ hours.
+7. CRITICAL — Anti-cascade rule: Do NOT repeat tasks from "Recently Generated Tasks" \
+section. If you see recent tasks there, your output MUST be meaningfully different. \
+Vague documentation/queue tasks that keep recurring are a cascade anti-pattern — break \
+the loop by finding genuinely new work.
 """
 
 
@@ -111,7 +115,12 @@ async def generate_tasks(context: dict, config: dict) -> List[dict]:
     model_config = config.get("model", {})
     try:
         raw_tasks = await _call_llm(user_prompt, model_config)
-        tasks = _parse_and_filter(raw_tasks, context.get("goals", []), max_tasks)
+        tasks = _parse_and_filter(
+            raw_tasks,
+            context.get("goals", []),
+            max_tasks,
+            recent_generated_titles=context.get("recent_generated_titles", []),
+        )
         if tasks:
             logger.info(f"GENERATE: synthesized {len(tasks)} tasks")
             return tasks
@@ -144,6 +153,17 @@ def _build_prompt(context: dict, config: dict) -> str:
         bar = "#" * int(float(pressure) * 10)
         parts.append(f"- {name}: {float(pressure):.2f} [{bar}]")
     parts.append("")
+
+    # Recently generated tasks — anti-cascade deduplication signal
+    recent_generated_titles = context.get("recent_generated_titles", [])
+    if recent_generated_titles:
+        parts.append("## Recently Generated Tasks (DO NOT REPEAT THESE)")
+        seen = set()
+        for title in recent_generated_titles:
+            if title.lower().strip() not in seen:
+                seen.add(title.lower().strip())
+                parts.append(f"- {title}")
+        parts.append("")
 
     # Recent memory
     recent_memory = context.get("recent_memory", "")
@@ -236,6 +256,7 @@ def _parse_and_filter(
     raw_tasks: list,
     existing_goals: list,
     max_tasks: int,
+    recent_generated_titles: Optional[List[str]] = None,
 ) -> list:
     """Filter tasks: remove external deps, duplicates, and cap count."""
     required_fields = {"title", "description", "rationale", "drive", "effort"}
@@ -243,6 +264,31 @@ def _parse_and_filter(
 
     # Normalize existing goals for dedup
     goal_lower = {g.lower().strip() for g in existing_goals if isinstance(g, str)}
+
+    # Normalize recently-generated titles for cascade dedup
+    # Use fuzzy match: if a new task title contains the same key words as a
+    # recent title, treat it as a repeat. This catches rephrasing like
+    # "Update Goals Queue" vs "Update Goals Queue Manager Documentation".
+    recent_lower: list = []
+    if recent_generated_titles:
+        recent_lower = [t.lower().strip() for t in recent_generated_titles if t]
+
+    def _is_repeat(title: str) -> bool:
+        """Return True if title is too similar to a recently generated task."""
+        t_lower = title.lower().strip()
+        # Exact match
+        if t_lower in recent_lower:
+            return True
+        # Word-overlap match: if ≥60% of the new title's words appear in a recent title
+        t_words = set(t_lower.split())
+        if len(t_words) < 2:
+            return False
+        for recent in recent_lower:
+            r_words = set(recent.split())
+            overlap = len(t_words & r_words)
+            if overlap / len(t_words) >= 0.6:
+                return True
+        return False
 
     filtered = []
     for task in raw_tasks:
@@ -263,6 +309,11 @@ def _parse_and_filter(
 
         # Dedup: skip if title matches an existing goal
         if task["title"].lower().strip() in goal_lower:
+            continue
+
+        # Anti-cascade dedup: skip if too similar to recently generated tasks
+        if _is_repeat(task["title"]):
+            logger.debug(f"GENERATE: filtered repeat task '{task['title']}' (anti-cascade)")
             continue
 
         # Remove the requires_external field from output (always False at this point)
