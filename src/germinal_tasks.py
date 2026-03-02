@@ -21,6 +21,75 @@ import aiohttp
 
 logger = logging.getLogger("pulse.germinal_tasks")
 
+# ─── Done-for-now cooldown ────────────────────────────────────────────────────
+# After GERMINAL generates a task in a category, suppress that category for
+# CATEGORY_COOLDOWN_SECONDS. Forces genuine variety instead of cycling through
+# the same buckets ("update docs", "review strategy", "manage queue").
+CATEGORY_COOLDOWN_SECONDS = 4 * 3600  # 4 hours
+
+_CATEGORY_STATE_FILE = Path.home() / ".pulse" / "state" / "germinal-category-cooldown.json"
+
+# Coarse category keywords — if a task title contains one of these, it belongs
+# to that category. Titles are lowercased before matching.
+_CATEGORY_KEYWORDS: Dict[str, List[str]] = {
+    "docs": ["doc", "documentation", "readme", "changelog", "comment"],
+    "goals_queue": ["goals queue", "goal queue", "manage goal", "update goal", "review goal"],
+    "polymarket": ["polymarket", "prediction market", "trading strategy", "market strateg"],
+    "reflection": ["reflect", "review current state", "identify next", "review progress"],
+    "x_twitter": ["tweet", "twitter", "x post", "x engag", "reply on x"],
+    "pulse_review": ["pulse docs", "pulse codebase", "pulse test", "pulse module", "pulse system"],
+    "journal": ["journal", "iamiris", "blog post", "blog entry"],
+    "memory": ["memory", "hippocampus", "working memory"],
+}
+
+
+def _load_category_cooldowns() -> Dict[str, float]:
+    """Return {category: expiry_timestamp} map."""
+    if _CATEGORY_STATE_FILE.exists():
+        try:
+            return json.loads(_CATEGORY_STATE_FILE.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {}
+
+
+def _save_category_cooldowns(cooldowns: Dict[str, float]):
+    _CATEGORY_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _CATEGORY_STATE_FILE.write_text(json.dumps(cooldowns, indent=2))
+
+
+def _classify_category(title: str) -> Optional[str]:
+    """Return the coarse category for a task title, or None if uncategorized."""
+    t = title.lower()
+    for category, keywords in _CATEGORY_KEYWORDS.items():
+        if any(kw in t for kw in keywords):
+            return category
+    return None
+
+
+def _is_category_cooled_down(title: str, cooldowns: Dict[str, float]) -> bool:
+    """Return True if this task's category is currently suppressed."""
+    category = _classify_category(title)
+    if category is None:
+        return False  # Unknown category → always allow
+    expiry = cooldowns.get(category, 0)
+    return time.time() < expiry
+
+
+def _record_category_used(titles: List[str]):
+    """Mark all categories represented in the generated titles as cooling down."""
+    cooldowns = _load_category_cooldowns()
+    now = time.time()
+    changed = False
+    for title in titles:
+        category = _classify_category(title)
+        if category and cooldowns.get(category, 0) < now:
+            cooldowns[category] = now + CATEGORY_COOLDOWN_SECONDS
+            logger.debug(f"GENERATE: category '{category}' suppressed for {CATEGORY_COOLDOWN_SECONDS//3600}h")
+            changed = True
+    if changed:
+        _save_category_cooldowns(cooldowns)
+
 # Default reflection task when LLM fails or is unavailable
 DEFAULT_REFLECTION_TASK = {
     "title": "Reflect on current state and identify next moves",
@@ -51,6 +120,8 @@ You will receive:
 - Current goals (what the agent is working toward)
 - Recent memory (what the agent has been doing/thinking)
 - Drive pressures (what motivates the agent right now)
+- Last 5 Agent Actions (what the agent JUST DID — do NOT repeat this work)
+- Recently Generated Tasks (titles GERMINAL already synthesized — do NOT repeat)
 - Recent broadcasts (what the nervous system is saying)
 - Optionally: roadmap/TODO content from project files
 
@@ -77,9 +148,11 @@ or waiting — do NOT include it.
 5. Prefer tasks that address the highest-pressure drives.
 6. "effort" should reflect actual work: low = <30 min, medium = 30-120 min, high = 2+ hours.
 7. CRITICAL — Anti-cascade rule: Do NOT repeat tasks from "Recently Generated Tasks" \
-section. If you see recent tasks there, your output MUST be meaningfully different. \
-Vague documentation/queue tasks that keep recurring are a cascade anti-pattern — break \
-the loop by finding genuinely new work.
+or "Last 5 Agent Actions" sections. If you see recent tasks there, your output MUST \
+be meaningfully different. Vague documentation/queue/reflection tasks that keep \
+recurring are a cascade anti-pattern — break the loop by finding genuinely new work. \
+When blocked goals dominate, pivot entirely: write code, explore a curiosity, publish \
+content, build a tool — anything that moves forward without external dependencies.
 """
 
 
@@ -113,6 +186,9 @@ async def generate_tasks(context: dict, config: dict) -> List[dict]:
 
     # Try LLM call
     model_config = config.get("model", {})
+    # Load current category cooldowns for done-for-now suppression
+    category_cooldowns = _load_category_cooldowns()
+
     try:
         raw_tasks = await _call_llm(user_prompt, model_config)
         tasks = _parse_and_filter(
@@ -120,12 +196,15 @@ async def generate_tasks(context: dict, config: dict) -> List[dict]:
             context.get("goals", []),
             max_tasks,
             recent_generated_titles=context.get("recent_generated_titles", []),
+            category_cooldowns=category_cooldowns,
         )
         if tasks:
             logger.info(f"GENERATE: synthesized {len(tasks)} tasks")
+            # Mark these categories as cooling down for next 4h
+            _record_category_used([t["title"] for t in tasks])
             return tasks
-        # LLM returned nothing usable
-        logger.warning("GENERATE: LLM returned no actionable tasks, using fallback")
+        # LLM returned nothing usable (all filtered by cooldowns / dedup)
+        logger.warning("GENERATE: LLM returned no non-cooled actionable tasks, using fallback")
         return [DEFAULT_REFLECTION_TASK]
     except Exception as e:
         logger.warning(f"GENERATE: LLM call failed ({e}), using fallback")
@@ -170,6 +249,19 @@ def _build_prompt(context: dict, config: dict) -> str:
     if recent_memory:
         parts.append("## Recent Memory")
         parts.append(recent_memory[:1000])
+        parts.append("")
+
+    # Recent agent turns — what the agent actually did last (richer than titles alone)
+    recent_actions_log = context.get("recent_actions_log", [])
+    if recent_actions_log:
+        parts.append("## Last 5 Agent Actions (DO NOT REPEAT THIS WORK)")
+        for action in recent_actions_log:
+            import datetime as _dt
+            ts = action.get("ts", 0)
+            age_min = int((time.time() - ts) / 60) if ts else 0
+            drive = action.get("top_drive", "?")
+            snippet = action.get("snippet", "")[:100]
+            parts.append(f"- [{age_min}m ago | drive:{drive}] {snippet}")
         parts.append("")
 
     # Thalamus broadcasts
@@ -257,8 +349,9 @@ def _parse_and_filter(
     existing_goals: list,
     max_tasks: int,
     recent_generated_titles: Optional[List[str]] = None,
+    category_cooldowns: Optional[Dict[str, float]] = None,
 ) -> list:
-    """Filter tasks: remove external deps, duplicates, and cap count."""
+    """Filter tasks: remove external deps, duplicates, cooled-down categories, and cap count."""
     required_fields = {"title", "description", "rationale", "drive", "effort"}
     valid_efforts = {"low", "medium", "high"}
 
@@ -327,6 +420,12 @@ def _parse_and_filter(
         # Anti-cascade dedup: skip if too similar to recently generated tasks
         if _is_repeat(task["title"]):
             logger.debug(f"GENERATE: filtered repeat task '{task['title']}' (anti-cascade)")
+            continue
+
+        # Done-for-now cooldown: skip if this category was recently generated
+        if category_cooldowns and _is_category_cooled_down(task["title"], category_cooldowns):
+            cat = _classify_category(task["title"])
+            logger.debug(f"GENERATE: filtered task '{task['title']}' (category '{cat}' cooling down)")
             continue
 
         # Remove the requires_external field from output (always False at this point)

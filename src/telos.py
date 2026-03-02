@@ -5,13 +5,20 @@ Drive pressure updates when goals are stuck (stale) or progressing.
 
 Priority 1 goals stale > 3 days → urgency signal.
 Any goal stale > 7 days → ship_something signal.
+
+Blocker tagging: goals with a "blocked_on" field are skipped entirely
+until unblocked (field removed or set to null). This prevents TELOS from
+endlessly pressuring drives for goals that can't move without human action.
 """
 
 import json
+import logging
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger("pulse.telos")
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "telos-state.json"
@@ -101,7 +108,21 @@ def scan_goals(hypothalamus_mod=None, endocrine_mod=None) -> dict:
     goals = _load_goals()
     state = _load_state()
 
-    active_goals = [g for g in goals if g.get("status") == "active"]
+    all_active = [g for g in goals if g.get("status") == "active"]
+
+    # Skip goals blocked on external dependencies — they can't move without human action.
+    # A goal is blocked if it has a non-empty "blocked_on" string field.
+    active_goals = [
+        g for g in all_active
+        if not g.get("blocked_on")
+    ]
+    blocked_goals = [g for g in all_active if g.get("blocked_on")]
+    if blocked_goals:
+        logger.debug(
+            "TELOS: skipping %d blocked goal(s): %s",
+            len(blocked_goals),
+            ", ".join(f"'{g.get('title','?')}' (blocked_on: {g.get('blocked_on')})" for g in blocked_goals),
+        )
 
     total = len(active_goals)
     stale_count = 0
@@ -182,17 +203,21 @@ def mark_progress(goal_id: str, note: str) -> bool:
     return False
 
 
-def get_active_goals(priority: Optional[int] = None) -> list:
+def get_active_goals(priority: Optional[int] = None, include_blocked: bool = False) -> list:
     """Return active goals, optionally filtered by priority.
 
     Args:
         priority: if set, only return goals with this priority level
+        include_blocked: if False (default), skip goals with a blocked_on tag
 
     Returns:
-        List of goal dicts (title, id, priority, last_updated, staleness_days).
+        List of goal dicts (title, id, priority, last_updated, staleness_days, blocked_on).
     """
     goals = _load_goals()
     active = [g for g in goals if g.get("status") == "active"]
+
+    if not include_blocked:
+        active = [g for g in active if not g.get("blocked_on")]
 
     if priority is not None:
         active = [g for g in active if g.get("priority") == priority]
@@ -207,9 +232,53 @@ def get_active_goals(priority: Optional[int] = None) -> list:
             "last_updated": g.get("last_updated"),
             "staleness_days": round(_staleness_days(g), 1),
             "type": g.get("type"),
+            "blocked_on": g.get("blocked_on"),
         })
 
     return result
+
+
+def get_blocked_goals() -> list:
+    """Return all active goals currently tagged as blocked.
+
+    Returns:
+        List of goal dicts with blocked_on field set.
+    """
+    goals = _load_goals()
+    blocked = [g for g in goals if g.get("status") == "active" and g.get("blocked_on")]
+    return [
+        {
+            "id": g.get("id"),
+            "title": g.get("title"),
+            "priority": g.get("priority"),
+            "blocked_on": g.get("blocked_on"),
+            "last_updated": g.get("last_updated"),
+        }
+        for g in blocked
+    ]
+
+
+def set_blocked(goal_id: str, blocker: Optional[str]) -> bool:
+    """Tag or untag a goal as blocked on an external dependency.
+
+    Args:
+        goal_id: e.g. "goal_001"
+        blocker: string describing what's blocking (e.g. "polymarket_funding"),
+                 or None / empty string to unblock.
+
+    Returns:
+        True if goal was found and updated, False otherwise.
+    """
+    goals = _load_goals()
+    for goal in goals:
+        if goal.get("id") == goal_id:
+            if blocker:
+                goal["blocked_on"] = blocker
+            else:
+                goal.pop("blocked_on", None)
+            _save_goals(goals)
+            return True
+    return False
 
 
 def should_run(loop_count: int) -> bool:

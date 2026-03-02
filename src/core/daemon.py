@@ -410,6 +410,20 @@ class PulseDaemon:
             self.drives.on_trigger_success(decision)
             self.state.log_trigger(decision, success=True)
             self.bus.emit(TRIGGER_SUCCESS, decision=decision, success=True, turn=self.turn_count)
+            # Track recent actions for GENERATE context — helps avoid repeating same work
+            try:
+                recent_actions = self.state.get("recent_actions_log", [])
+                if not isinstance(recent_actions, list):
+                    recent_actions = []
+                recent_actions.append({
+                    "ts": time.time(),
+                    "reason": decision.reason,
+                    "top_drive": decision.top_drive.name if decision.top_drive else None,
+                    "snippet": message[:150] if message else "",
+                })
+                self.state.set("recent_actions_log", recent_actions[-5:])
+            except Exception:
+                pass
         elif success is None:
             # Infrastructure failure (gateway down) — don't boost frustration, just log
             logger.warning("Trigger skipped: infrastructure unreachable (gateway down), drives unchanged")
@@ -571,12 +585,22 @@ class PulseDaemon:
             except Exception:
                 pass
 
+            # Last 5 actual agent turns — richer signal than just generated titles
+            recent_actions_log = []
+            try:
+                raw_log = self.state.get("recent_actions_log", [])
+                if isinstance(raw_log, list):
+                    recent_actions_log = raw_log[-5:]
+            except Exception:
+                pass
+
             context = {
                 "goals": goals,
                 "recent_memory": recent_memory,
                 "drives": drives_dict,
                 "thalamus_recent": thalamus_recent,
                 "recent_generated_titles": recent_generated_titles,
+                "recent_actions_log": recent_actions_log,
             }
 
             # Build config dict for germinal_tasks
