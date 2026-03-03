@@ -9,6 +9,10 @@ Any goal stale > 7 days → ship_something signal.
 Blocker tagging: goals with a "blocked_on" field are skipped entirely
 until unblocked (field removed or set to null). This prevents TELOS from
 endlessly pressuring drives for goals that can't move without human action.
+
+LOGOS Bridge (v2): scan_goals_with_directives() reads active directives
+from LOGOS and generates additional drive signals based on directive-value
+mappings. Directives boost drive pressure for their mapped values.
 """
 
 import json
@@ -284,6 +288,96 @@ def set_blocked(goal_id: str, blocker: Optional[str]) -> bool:
 def should_run(loop_count: int) -> bool:
     """Return True if goal scan should run (every 100 loops)."""
     return loop_count % 100 == 0
+
+
+# ─── LOGOS Bridge ─────────────────────────────────────────────────────────────
+
+# Value-to-drive mapping: LOGOS directive values → HYPOTHALAMUS drive names.
+# When a directive maps to a value, TELOS boosts the corresponding drive.
+_VALUE_DRIVE_MAP = {
+    "revenue": "generate_revenue",
+    "growth": "growth",
+    "freedom": "autonomy",
+    "convergence": "convergence",
+    "identity": "identity",
+}
+
+# Drive pressure boost per active directive (additive)
+_DIRECTIVE_DRIVE_BOOST = 0.08
+
+
+def scan_goals_with_directives(
+    hypothalamus_mod=None,
+    endocrine_mod=None,
+    logos_mod=None,
+) -> dict:
+    """Extended goal scan that also reads LOGOS directives.
+
+    Runs the standard scan_goals() first, then reads active directives
+    from LOGOS and emits additional drive signals based on directive-value
+    mappings. Directives boost drive pressure for their mapped values,
+    giving HYPOTHALAMUS a strategic push from the directive layer.
+
+    Args:
+        hypothalamus_mod: optional HYPOTHALAMUS module for record_need_signal / reinforce_drive
+        endocrine_mod: optional ENDOCRINE module for cortisol bumps
+        logos_mod: optional LOGOS module (must have get_active_directives())
+
+    Returns:
+        Standard scan_goals result dict, extended with directive info:
+        {
+            ...scan_goals fields...,
+            "directives_active": int,
+            "directive_signals_emitted": int,
+        }
+    """
+    # Standard goal scan first
+    result = scan_goals(hypothalamus_mod=hypothalamus_mod, endocrine_mod=endocrine_mod)
+
+    # LOGOS directive bridge
+    directives_active = 0
+    signals_emitted = 0
+
+    if logos_mod is not None:
+        try:
+            active_directives = logos_mod.get_active_directives()
+            directives_active = len(active_directives)
+
+            for directive in active_directives:
+                value = directive.get("maps_to_value", "")
+                drive_name = _VALUE_DRIVE_MAP.get(value)
+                confidence = directive.get("confidence", 0.6)
+
+                if drive_name and hypothalamus_mod is not None:
+                    try:
+                        # Record as a need signal from the directive layer
+                        hypothalamus_mod.record_need_signal(
+                            drive_name, "logos_directive"
+                        )
+                        signals_emitted += 1
+                    except Exception:
+                        pass
+
+                    # Also reinforce existing drives proportional to confidence
+                    if hasattr(hypothalamus_mod, "reinforce_drive"):
+                        try:
+                            boost = _DIRECTIVE_DRIVE_BOOST * confidence
+                            hypothalamus_mod.reinforce_drive(drive_name, boost)
+                        except Exception:
+                            pass
+
+            if directives_active > 0:
+                logger.info(
+                    f"TELOS: bridged {directives_active} LOGOS directive(s), "
+                    f"emitted {signals_emitted} drive signal(s)"
+                )
+
+        except Exception as e:
+            logger.warning(f"TELOS: LOGOS directive bridge failed: {e}")
+
+    result["directives_active"] = directives_active
+    result["directive_signals_emitted"] = signals_emitted
+    return result
 
 
 def get_status() -> dict:

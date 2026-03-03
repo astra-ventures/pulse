@@ -51,10 +51,11 @@ OPUS_KEYWORDS = [
 
 # Keywords that are firmly local regardless of other signals
 LOCAL_OVERRIDE_KEYWORDS = [
-    "heartbeat", "memory", "emotional", "how am i feeling",
-    "journal", "iamiris.ai", "reflect", "log this",
-    "drive state", "pulse state", "nervous system",
-    "send feedback", "cascade_stop", "heartbeat_ok",
+    "heartbeat", "heartbeat_ok", "cascade_stop",
+    "how am i feeling", "drive state", "pulse state",
+    "send feedback to pulse", "update memory", "update memory file",
+    "write to memory", "log to memory",
+    "emotional check-in", "read soul.md", "read heartbeat",
 ]
 
 

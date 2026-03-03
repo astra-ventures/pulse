@@ -139,6 +139,8 @@ class NervousSystem:
         self._mod_aurum = None
         self._mod_vesper = None
         self._mod_telos = None
+        # V7 modules
+        self._mod_logos = None
 
         self._init_modules()
 
@@ -544,6 +546,15 @@ class NervousSystem:
         except Exception as e:
             logger.warning(f"✗ TELOS failed: {e}")
 
+        # LOGOS — directive synthesis layer (Level 1)
+        try:
+            from pulse.src import logos as _logos_mod
+            self._mod_logos = _logos_mod
+            self._patch_module_state_dir(_logos_mod)
+            logger.info("✓ LOGOS loaded")
+        except Exception as e:
+            logger.warning(f"✗ LOGOS failed: {e}")
+
     def warm_up(self) -> dict:
         """Force every module to write initial state files so health dashboard shows all green."""
         results = {"warmed": [], "failed": []}
@@ -817,6 +828,14 @@ class NervousSystem:
                 results["warmed"].append("telos")
             except Exception as e:
                 results["failed"].append(f"telos: {e}")
+
+        # LOGOS
+        if self._mod_logos:
+            try:
+                self._mod_logos.get_status()
+                results["warmed"].append("logos")
+            except Exception as e:
+                results["failed"].append(f"logos: {e}")
 
         logger.info(f"🔥 Warm-up: {len(results['warmed'])} warmed, {len(results['failed'])} failed")
         return results
@@ -1933,6 +1952,51 @@ class NervousSystem:
                     )
             except Exception as e:
                 logger.warning(f"post_loop TELOS failed: {e}")
+
+        # LOGOS — directive synthesis every 500 loops (~4 hours)
+        if self._mod_logos and self._mod_logos.should_run(self._loop_count):
+            try:
+                import asyncio
+                logos_config = {}
+                if self.config and hasattr(self.config, "get"):
+                    # Reuse the generative model config if available
+                    gen_cfg = self.config.get("generative", {})
+                    logos_config = {"model": gen_cfg.get("model", {})}
+
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Already in async context — schedule as task
+                    asyncio.ensure_future(self._mod_logos.scan_for_directives(logos_config))
+                    result["logos_scheduled"] = True
+                else:
+                    logos_result = loop.run_until_complete(
+                        self._mod_logos.scan_for_directives(logos_config)
+                    )
+                    result["logos_activated"] = len(logos_result)
+                    if logos_result:
+                        logger.info(
+                            f"🧠 LOGOS: activated {len(logos_result)} directive(s): "
+                            f"{', '.join(d['title'] for d in logos_result)}"
+                        )
+            except Exception as e:
+                logger.warning(f"post_loop LOGOS failed: {e}")
+
+        # TELOS+LOGOS bridge — when TELOS runs, also bridge directives
+        if (self._mod_telos and self._mod_logos
+                and self._mod_telos.should_run(self._loop_count)
+                and hasattr(self._mod_telos, "scan_goals_with_directives")):
+            try:
+                bridge_result = self._mod_telos.scan_goals_with_directives(
+                    hypothalamus_mod=self._mod_hypothalamus,
+                    endocrine_mod=self._mod_endocrine,
+                    logos_mod=self._mod_logos,
+                )
+                result["telos_logos_bridge"] = {
+                    "directives_active": bridge_result.get("directives_active", 0),
+                    "signals_emitted": bridge_result.get("directive_signals_emitted", 0),
+                }
+            except Exception as e:
+                logger.warning(f"post_loop TELOS+LOGOS bridge failed: {e}")
 
         return result
 
