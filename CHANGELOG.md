@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SYNAPSE** module (`src/synapse.py`) — weighted inter-agent signal junction for the constellation architecture. Handles directional signal transmission (excitatory/inhibitory/modulatory) between agents with synaptic weight adjustment, short-term potentiation, depression decay, and pruning. 22 tests. Fills the gap between AURA (ambient broadcast) and DENDRITE (social graph): SYNAPSE is the actual weighted junction mechanics.
 
 ### Added
-- **PHASE2-ARCHITECTURE.md** — Complete design document for Phase 2 (Federation, Cloud, Monetization, Intelligence Loop). Four-pillar architecture: SYNAPSE/CORPUS/AXON federation modules, Fly.io + Supabase cloud layer, Free/Pro/Team/Enterprise tier model, and network intelligence loop. Revenue projections: $10.5k conservative → $37.8k moderate (12 months post-launch). Decision points for Josh: Federation-first vs Cloud-first, pricing, OSS strategy.
+- **PHASE2-ARCHITECTURE.md** — Complete design document for Phase 2 (Pneuma, Cloud, Monetization, Intelligence Loop). Four-pillar architecture: SYNAPSE/CORPUS/AXON pneuma modules, Fly.io + Supabase cloud layer, Free/Pro/Team/Enterprise tier model, and network intelligence loop. Revenue projections: $10.5k conservative → $37.8k moderate (12 months post-launch). Decision points for Josh: Pneuma-first vs Cloud-first, pricing, OSS strategy.
 
 ### Changed
 - **`nervous_system.py` — data-driven module registry** — `_init_modules` refactored from 387

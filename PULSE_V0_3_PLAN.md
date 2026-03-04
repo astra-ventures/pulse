@@ -218,7 +218,7 @@ No build step. No framework. Pure browser.
 
 ## What v0.3.0 Does NOT Include
 
-- Multi-agent federation (save for v0.4.0 — needs careful design)
+- Multi-agent pneuma (save for v0.4.0 — needs careful design)
 - Voice interface to Pulse (separate from ElevenLabs integration — nice but not core)
 - Mobile app (Shortcuts bridge covers Apple Watch; full app is overkill)
 - Training/fine-tuning on Pulse data (v0.4.0 territory)

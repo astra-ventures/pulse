@@ -212,7 +212,7 @@ openclaw:
 - Model-based evaluator improvements
 
 ### Phase 4: Advanced
-- Multi-agent federation (shared drives across machines)
+- Multi-agent pneuma (shared drives across machines)
 - Learning from feedback (RL-lite)
 - Prometheus metrics export
 - Mobile companion app integration

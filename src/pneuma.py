@@ -1,7 +1,7 @@
-"""FEDERATION — Cross-Machine Peer Discovery & Beacon Registry.
+"""PNEUMA — Cross-Machine Peer Discovery & Beacon Registry.
 
 In Phase 1, SYNAPSE handled intra-machine agent-to-agent signals inside a
-Constellation. FEDERATION is the Phase 2 layer that operates at network scale:
+Constellation. PNEUMA is the Phase 2 layer that operates at network scale:
 Pulse instances on different machines can discover each other, exchange state
 beacons, and coordinate across trust boundaries.
 
@@ -12,7 +12,7 @@ Architecture (per PHASE2-ARCHITECTURE.md):
   │  (local) │             │ (remote) │
   └────┬─────┘             └────┬─────┘
        │                         │
-       └─────────── FEDERATION ──┘
+       └─────────── PNEUMA ──┘
                   (this module)
 
 Key concepts:
@@ -26,12 +26,12 @@ This module is stateless daemon-callable — call update_beacon() every N loops,
 prune_stale_peers() periodically, and build_self_beacon() when responding to
 incoming beacon requests.
 
-Federation endpoints (added to observation_api.py in Phase 2):
-  POST /federation/register   → register a new peer
-  GET  /federation/peers      → list known peers with status
-  POST /federation/beacon     → receive a beacon from a peer
-  GET  /federation/beacon     → return this instance's current beacon
-  POST /federation/deregister → remove a peer
+Pneuma endpoints (added to observation_api.py in Phase 2):
+  POST /pneuma/register   → register a new peer
+  GET  /pneuma/peers      → list known peers with status
+  POST /pneuma/beacon     → receive a beacon from a peer
+  GET  /pneuma/beacon     → return this instance's current beacon
+  POST /pneuma/deregister → remove a peer
 
 This module handles the state layer. HTTP routing lives in observation_api.py.
 """
@@ -44,7 +44,7 @@ from typing import Optional
 
 from pulse.src import thalamus
 
-_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state" / "federation"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state" / "pneuma"
 _DEFAULT_PEERS_FILE = _DEFAULT_STATE_DIR / "peers.json"
 
 # Trust levels — governs what a peer can see / do
@@ -61,7 +61,7 @@ DEAD_TIMEOUT_SECS = 86400     # Prune entirely after 24 h offline
 # Beacon interval (how often this instance should broadcast)
 BEACON_INTERVAL_SECS = 60
 
-# Loop interval for federation duties (every N daemon loops)
+# Loop interval for pneuma duties (every N daemon loops)
 LOOP_INTERVAL = 60   # ~30 min at 30s loop cadence
 
 
@@ -127,7 +127,7 @@ def register_peer(
     if is_new:
         state["peers_registered"] = state.get("peers_registered", 0) + 1
         thalamus.append({
-            "source": "FEDERATION",
+            "source": "PNEUMA",
             "event": "peer_registered",
             "peer_id": peer_id,
             "display_name": display_name or peer_id,
@@ -147,7 +147,7 @@ def deregister_peer(peer_id: str) -> bool:
 
     del state["peers"][peer_id]
     thalamus.append({
-        "source": "FEDERATION",
+        "source": "PNEUMA",
         "event": "peer_deregistered",
         "peer_id": peer_id,
     })
@@ -207,7 +207,7 @@ def receive_beacon(beacon: dict) -> dict:
         }
         state["peers_registered"] = state.get("peers_registered", 0) + 1
         thalamus.append({
-            "source": "FEDERATION",
+            "source": "PNEUMA",
             "event": "peer_discovered",
             "peer_id": peer_id,
             "trust_level": TRUST_GUEST,
@@ -229,7 +229,7 @@ def receive_beacon(beacon: dict) -> dict:
 
     if was_offline:
         thalamus.append({
-            "source": "FEDERATION",
+            "source": "PNEUMA",
             "event": "peer_reconnected",
             "peer_id": peer_id,
         })
@@ -304,7 +304,7 @@ def mark_stale_peers() -> list:
                 peer["status"] = "offline"
                 newly_offline.append(peer_id)
                 thalamus.append({
-                    "source": "FEDERATION",
+                    "source": "PNEUMA",
                     "event": "peer_went_offline",
                     "peer_id": peer_id,
                     "idle_seconds": round(idle),
@@ -339,7 +339,7 @@ def prune_dead_peers() -> list:
         pruned.append(peer_id)
         state["peers_pruned"] = state.get("peers_pruned", 0) + 1
         thalamus.append({
-            "source": "FEDERATION",
+            "source": "PNEUMA",
             "event": "peer_pruned",
             "peer_id": peer_id,
         })
@@ -353,7 +353,7 @@ def prune_dead_peers() -> list:
 # ── Status & loop hooks ────────────────────────────────────────────────────────
 
 def get_status() -> dict:
-    """Return a summary of federation state for THALAMUS / observation API."""
+    """Return a summary of pneuma state for THALAMUS / observation API."""
     state = _load_state()
     peers = state.get("peers", {})
     online = [p for p in peers.values() if p.get("status") == "online"]
@@ -372,7 +372,7 @@ def get_status() -> dict:
 
 
 def should_run(loop_count: int) -> bool:
-    """Return True if it's time to run federation housekeeping this loop."""
+    """Return True if it's time to run pneuma housekeeping this loop."""
     return loop_count > 0 and loop_count % LOOP_INTERVAL == 0
 
 
@@ -391,7 +391,7 @@ def update(loop_count: int, instance_id: str = "iris-primary") -> Optional[dict]
 
     if status["total_peers"] > 0 or newly_offline or pruned:
         thalamus.append({
-            "source": "FEDERATION",
+            "source": "PNEUMA",
             "event": "housekeeping",
             "loop_count": loop_count,
             **status,
@@ -411,7 +411,7 @@ def _run_tests():
     with tempfile.TemporaryDirectory() as tmp:
         orig_dir = _DEFAULT_STATE_DIR
         orig_file = _DEFAULT_PEERS_FILE
-        _DEFAULT_STATE_DIR = Path(tmp) / "federation"
+        _DEFAULT_STATE_DIR = Path(tmp) / "pneuma"
         _DEFAULT_PEERS_FILE = _DEFAULT_STATE_DIR / "peers.json"
 
         try:
@@ -447,7 +447,7 @@ def _run_tests():
             assert ok
             assert len(list_peers()) == 1
 
-            print("FEDERATION smoke tests passed ✓")
+            print("PNEUMA smoke tests passed ✓")
 
         finally:
             _DEFAULT_STATE_DIR = orig_dir

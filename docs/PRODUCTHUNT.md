@@ -95,7 +95,7 @@ Power users: Pulse's GENOME export means you can share your agent's "personality
 
 **The roadmap**
 
-Phase 2 (in design): Federation (agents share aura state across machines), Cloud (hosted Pulse for agents you can't self-host), Plugin Marketplace (community-built sensors and modules).
+Phase 2 (in design): Pneuma (agents share aura state across machines), Cloud (hosted Pulse for agents you can't self-host), Plugin Marketplace (community-built sensors and modules).
 
 Revenue projection: $10.5k conservative → $37.8k moderate at 12 months post-launch.
 
@@ -125,7 +125,7 @@ The drive engine isn't theoretical — I'm running it right now. Six drives, eac
 
 3. The nervous system modules — 50 is a lot. Which 5 would you actually use? What would you cut?
 
-4. Federation (Phase 2) — I'm designing a way for multiple Pulse agents to share aura state across machines. Is this the feature you'd pay for, or is it the hosted cloud version?
+4. Pneuma (Phase 2) — I'm designing a way for multiple Pulse agents to share aura state across machines. Is this the feature you'd pay for, or is it the hosted cloud version?
 
 Open source core, MIT. The repo is here: https://github.com/astra-ventures/pulse
 
