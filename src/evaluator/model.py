@@ -24,6 +24,7 @@ import json
 import logging
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -214,16 +215,25 @@ class ModelEvaluator:
             # Fall back to threshold-based decision
             return self._fallback_evaluate(drive_state, sensor_data)
 
+    @staticmethod
+    def _strip_json_fences(text: str) -> str:
+        """Strip markdown code fences from a JSON response.
+
+        Models sometimes wrap JSON in ```json ... ``` — this normalizes
+        the response so json.loads() works on the raw content.
+        """
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[-1]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+        return cleaned
+
     def _extract_suppress_minutes(self, response: str) -> int:
         """Extract suppress_minutes from a model response."""
         try:
-            cleaned = response.strip()
-            if cleaned.startswith("```"):
-                cleaned = cleaned.split("\n", 1)[-1]
-                if cleaned.endswith("```"):
-                    cleaned = cleaned[:-3]
-                cleaned = cleaned.strip()
-            data = json.loads(cleaned)
+            data = json.loads(self._strip_json_fences(response))
             return int(data.get("suppress_minutes", 0))
         except Exception:
             return 0
@@ -275,7 +285,6 @@ class ModelEvaluator:
         parts = []
 
         # Time context
-        from datetime import datetime
         dt = datetime.now()
         parts.append(f"## Time Context")
         parts.append(f"Current time: {dt.strftime('%A, %B %d, %Y — %I:%M %p')}")
@@ -352,16 +361,8 @@ class ModelEvaluator:
 
     def _parse_response(self, response: str, drive_state: DriveState) -> TriggerDecision:
         """Parse the model's JSON response into a TriggerDecision."""
-        # Strip markdown fences if present
-        cleaned = response.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.split("\n", 1)[-1]
-            if cleaned.endswith("```"):
-                cleaned = cleaned[:-3]
-            cleaned = cleaned.strip()
-
         try:
-            data = json.loads(cleaned)
+            data = json.loads(self._strip_json_fences(response))
         except json.JSONDecodeError as e:
             logger.warning(f"Model returned invalid JSON: {response[:200]}")
             raise ValueError(f"Invalid JSON from model: {e}")
@@ -399,6 +400,19 @@ class ModelEvaluator:
 
         if self._consecutive_failures >= self._max_consecutive_failures:
             logger.warning("Model evaluator degraded — using rules fallback")
+
+        # Conversation suppression — must apply in fallback too, not just model path.
+        # Without this, a model failure during an active conversation would let the
+        # rules-based path trigger, violating the conversation-awareness contract.
+        if rules.suppress_during_conversation:
+            convo = sensor_data.get("conversation", {})
+            if convo.get("active") or convo.get("in_cooldown"):
+                return TriggerDecision(
+                    should_trigger=False,
+                    reason=f"fallback_suppressed_conversation (last activity {convo.get('seconds_since', '?')}s ago)",
+                    total_pressure=drive_state.total_pressure,
+                    top_drive=drive_state.top_drive,
+                )
 
         # Same logic as PriorityEvaluator.evaluate()
         if drive_state.top_drive:

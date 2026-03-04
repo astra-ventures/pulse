@@ -32,8 +32,26 @@ PULSE_SRC = WORKSPACE / "pulse" / "src"
 BIRTH_THRESHOLD_DAYS = 2       # Drive must persist this long before GERMINAL acts (lowered from 7)
 DRIVE_WEIGHT_THRESHOLD = 0.7   # Drive must maintain this weight (not decaying)
 COOLDOWN_DAYS = 7              # Max 1 new module per week
-MAX_TOTAL_MODULES = 50         # Safety ceiling
+MAX_TOTAL_MODULES = 50         # Safety ceiling — counts biological modules only (see _count_modules)
 LOOP_INTERVAL = 200            # Check every 200 loops (~100 minutes)
+
+# Infrastructure files that live in pulse/src/ but are NOT biological modules.
+# These are excluded from the MAX_TOTAL_MODULES ceiling count so GERMINAL
+# doesn't falsely trip the ceiling (e.g. 52 total .py files != 52 modules).
+_INFRA_FILES: frozenset = frozenset({
+    "__init__.py",
+    "__main__.py",
+    "cli.py",
+    "types.py",
+    "nervous_system.py",
+    "observation_api.py",
+    "plugin_registry.py",
+    "germinal.py",           # GERMINAL itself
+    "germinal_tasks.py",
+    "biosensor_bridge.py",
+    "biosensor_cache.py",
+    "memory_consolidation.py",
+})
 
 
 # ─── Drive → Module Archetype Mapping ───────────────────────────────────────
@@ -173,6 +191,18 @@ def scan_for_birth_candidates() -> list[dict]:
     return sorted(candidates, key=lambda x: x["weight"], reverse=True)
 
 
+def _count_modules() -> int:
+    """Count actual biological modules in pulse/src/, excluding infrastructure files.
+
+    Uses _INFRA_FILES to exclude cli.py, nervous_system.py, etc. so that the
+    MAX_TOTAL_MODULES ceiling reflects real module count, not total .py file count.
+    """
+    return sum(
+        1 for f in PULSE_SRC.glob("*.py")
+        if f.name not in _INFRA_FILES and not f.name.startswith("__")
+    )
+
+
 def _module_exists_for_drive(drive_name: str) -> bool:
     """Check if we already have a module that addresses this drive."""
     archetype = DRIVE_ARCHETYPES.get(drive_name)
@@ -242,10 +272,10 @@ def attempt_birth(drive_name: str) -> dict:
         remaining = (state["cooldown_until"] - now) / 3600
         return {"ok": False, "reason": f"cooldown ({remaining:.1f}h remaining)"}
 
-    # Check module ceiling
-    existing = list(PULSE_SRC.glob("*.py"))
-    if len(existing) >= MAX_TOTAL_MODULES:
-        return {"ok": False, "reason": f"module ceiling reached ({MAX_TOTAL_MODULES})"}
+    # Check module ceiling — count biological modules only, not infra files
+    module_count = _count_modules()
+    if module_count >= MAX_TOTAL_MODULES:
+        return {"ok": False, "reason": f"module ceiling reached ({module_count}/{MAX_TOTAL_MODULES})"}
 
     # Check not already in progress
     if state.get("in_progress"):

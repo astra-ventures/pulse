@@ -325,10 +325,10 @@ class Mutator:
 
     def _remove_drive(self, mutation: dict, reason: str) -> dict:
         name = mutation["drive"]
-        self.guardrails.validate_drive_removal(name)
-
+        # Existence check before guardrails — cleaner error when drive is simply missing
         if name not in self.drives.drives:
             raise ValueError(f"Drive '{name}' does not exist")
+        self.guardrails.validate_drive_removal(name)
 
         old_weight = self.drives.drives[name].weight
         del self.drives.drives[name]
