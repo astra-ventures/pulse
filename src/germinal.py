@@ -13,15 +13,22 @@ Safety rails:
 - Max 1 new module per COOLDOWN_DAYS (rate limiting)
 - Human notification on every birth
 - All births logged to CHRONICLE
+- Whitelist guard: only births modules for drives in DRIVE_ARCHETYPES (prevents
+  prompt injection / state-file tampering from triggering arbitrary module creation)
+- fcntl file locking on state reads/writes (race-safe for concurrent access)
 """
 
+import fcntl
 import json
+import logging
 import time
 import subprocess
 from pathlib import Path
 from typing import Optional
 
 from pulse.src import thalamus
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "germinal-state.json"
@@ -132,7 +139,12 @@ def _default_state() -> dict:
 def _load_state() -> dict:
     if _DEFAULT_STATE_FILE.exists():
         try:
-            return json.loads(_DEFAULT_STATE_FILE.read_text())
+            with open(_DEFAULT_STATE_FILE, "r") as f:
+                fcntl.flock(f, fcntl.LOCK_SH)
+                try:
+                    return json.loads(f.read())
+                finally:
+                    fcntl.flock(f, fcntl.LOCK_UN)
         except (json.JSONDecodeError, OSError):
             pass
     return _default_state()
@@ -140,7 +152,15 @@ def _load_state() -> dict:
 
 def _save_state(state: dict):
     _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
-    _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
+    mode = "r+" if _DEFAULT_STATE_FILE.exists() else "w"
+    with open(_DEFAULT_STATE_FILE, mode) as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            f.seek(0)
+            f.write(json.dumps(state, indent=2))
+            f.truncate()
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 # ─── Core Logic ─────────────────────────────────────────────────────────────
@@ -177,6 +197,18 @@ def scan_for_birth_candidates() -> list[dict]:
         if weight < DRIVE_WEIGHT_THRESHOLD:
             continue
 
+        # Whitelist guard: only birth modules for known archetypes.
+        # Unknown drive names (e.g. injected via external webhook) are skipped
+        # with a warning. This prevents external actors from triggering module
+        # creation by manipulating the HYPOTHALAMUS state file.
+        if drive_name not in DRIVE_ARCHETYPES:
+            logger.warning(
+                "GERMINAL: skipping unknown drive '%s' — not in DRIVE_ARCHETYPES whitelist. "
+                "Possible prompt injection or state tampering.",
+                drive_name,
+            )
+            continue
+
         # Check if a module already handles this drive
         if _module_exists_for_drive(drive_name):
             continue
@@ -204,10 +236,17 @@ def _count_modules() -> int:
 
 
 def _module_exists_for_drive(drive_name: str) -> bool:
-    """Check if we already have a module that addresses this drive."""
+    """Check if we already have a module that addresses this drive.
+
+    Returns True for unknown drives (not in DRIVE_ARCHETYPES) so they are
+    treated as 'already handled' and never reach the birth pipeline.
+    The whitelist guard in scan_for_birth_candidates is the primary gate;
+    this is a second layer of defense.
+    """
     archetype = DRIVE_ARCHETYPES.get(drive_name)
     if not archetype:
-        return False
+        # Unknown drive → treat as already handled; whitelist guard handles logging
+        return True
 
     # Check if module file already exists
     module_name = archetype["name"].lower().replace("_", "")
