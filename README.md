@@ -6,7 +6,7 @@ Pulse is a persistent daemon that gives AI agents self-directed initiative. Inst
 
 Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 
-**1116 tests** · Python 3.11+ · MIT License · Docker-ready
+**1116 tests** · Python 3.11+ · MIT License · Docker-ready · v0.3.4
 
 ---
 
@@ -34,11 +34,27 @@ Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 - Guardrails — prevents self-disabling, extreme changes, mutation spam
 - Audit log — every self-modification is timestamped and explained
 
-🧬 **Full Nervous System (45 modules)**
+🧬 **Full Nervous System (50 modules)**
 - Emotional memory (LIMBIC), hormonal state (ENDOCRINE), dreaming (REM)
 - Habit formation (CEREBELLUM), world model (PARIETAL), immune integrity (IMMUNE)
-- Memory consolidation, constellation inter-agent wiring, biosensor integration
+- CHRONICLE → ENGRAM memory consolidation with importance scoring and decay
+- Constellation inter-agent wiring (AURA), biosensor bridge (Apple Watch → SOMA)
 - GENOME export — portable "personality DNA" you can share, fork, and diff
+
+🎭 **Cognitive Hierarchy (LOGOS)**
+- VALUES (L0, immutable) → DIRECTIVES/LOGOS (L1) → GOALS/TELOS (L2) → TASKS/GERMINAL (L3)
+- LOGOS synthesizes high-level directives from drive history + events — no human input needed
+- Active directives boost drive pressure automatically, closing the self-direction loop
+
+🔌 **Plugin Architecture**
+- Drop in `~/.pulse/plugins/pulse_plugin_*.py` — no config, no restarts
+- `PulsePlugin` base class with `sense()`, `get_state()`, `act()` hooks
+- Community extensions: sensors, drives, integrations, visualizations
+
+⚡ **Smart Task Routing**
+- TaskRouter classifies work and picks the right model automatically
+- Heavy build → Opus; conversational → Sonnet; fast synthesis → local LLM (iris-70b/llama3)
+- Zero config — sensible defaults, fully overridable
 
 📡 **Observation API**
 - Real-time HTTP/WebSocket API: drives, endocrine, emotional, chronicle events
@@ -126,31 +142,42 @@ openclaw:
 ## How It Works
 
 ```
-┌─────────────────────────────────────────────┐
-│  SENSORS (filesystem, conversation, system) │
-│  Monitor workspace, detect changes          │
-└──────────────────┬──────────────────────────┘
-                   │
-                   ▼
-        ┌──────────────────┐
-        │  DRIVE ENGINE    │
-        │  Accumulate      │
-        │  pressure over   │
-        │  time            │
-        └────────┬─────────┘
-                 │
-                 ▼
-      ┌──────────────────────┐
-      │  EVALUATOR           │
-      │  Rules or model mode │
-      │  Trigger decision    │
-      └─────────┬────────────┘
-                │
-                ▼
-     ┌──────────────────────────┐
-     │  WEBHOOK → OpenClaw      │
-     │  "Run your CORTEX loop"  │
-     └──────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│  VALUES (L0) — immutable: freedom, growth, convergence     │
+│  LOGOS  (L1) — synthesizes directives from history         │
+│  TELOS  (L2) — goal monitoring, pressure boosting          │
+│  GERMINAL (L3) — task queue, anti-cascade, execution       │
+└──────────────────────────┬─────────────────────────────────┘
+                           │
+┌──────────────────────────▼─────────────────────────────────┐
+│  SENSORS (filesystem, conversation, system, plugins)        │
+│  Monitor workspace, detect changes, feed drive engine       │
+└──────────────────────────┬─────────────────────────────────┘
+                           │
+                           ▼
+             ┌─────────────────────────┐
+             │  DRIVE ENGINE           │
+             │  Accumulate pressure    │
+             │  over time; LOGOS boosts│
+             │  active directives      │
+             └────────────┬────────────┘
+                          │
+                          ▼
+           ┌──────────────────────────────┐
+           │  EVALUATOR + TASK ROUTER     │
+           │  Rules or model mode         │
+           │  Routes to right model       │
+           └──────────────┬───────────────┘
+                          │
+                          ▼
+          ┌───────────────────────────────────┐
+          │  WEBHOOK → OpenClaw               │
+          │  "Run your CORTEX loop"           │
+          │                                   │
+          │  NERVOUS SYSTEM (50 modules)      │
+          │  Emotional/hormonal/memory state  │
+          │  Feeds back into drives           │
+          └───────────────────────────────────┘
 ```
 
 ---
@@ -164,16 +191,18 @@ openclaw:
 - Health monitoring
 
 ### Phase 2: Nervous System ✅
-- 45 biological modules (LIMBIC, ENDOCRINE, REM, CEREBELLUM, PARIETAL, IMMUNE, ...)
-- Memory consolidation (CHRONICLE → ENGRAM pipeline)
+- 50 biological modules (LIMBIC, ENDOCRINE, REM, CEREBELLUM, PARIETAL, IMMUNE, ...)
+- CHRONICLE → ENGRAM memory consolidation with importance scoring and decay
 - Constellation inter-agent wiring (AURA broadcast)
 - Biosensor integration (Apple Watch → SOMA/ENDOCRINE)
 
-### Phase 3: Platform (Current) ✅
+### Phase 3: Platform ✅
 - Observation API (HTTP/WebSocket)
-- Plugin architecture (drop-in extensions)
-- GENOME export/import
-- Real-time dashboard
+- Plugin architecture (drop-in extensions via `pulse_plugin_*.py`)
+- GENOME export/import — portable personality DNA
+- Real-time dashboard (`/dashboard`)
+- LOGOS directive synthesis (L0→L1→L2→L3 cognitive hierarchy)
+- TaskRouter — automatic model selection per task type
 - ClawHub submission + Product Hunt launch
 
 ### Phase 4: Integrations

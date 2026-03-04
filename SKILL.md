@@ -2,7 +2,7 @@
 name: pulse
 description: >
   Autonomous cognition engine for OpenClaw agents. Pulse gives your agent a nervous system —
-  drives that accumulate pressure, self-wake triggers, a CORTEX loop, and 45 bio-mimetic modules
+  drives that accumulate pressure, self-wake triggers, a CORTEX loop, and 50 bio-mimetic modules
   (ENDOCRINE, CIRCADIAN, LIMBIC, REM, HYPOTHALAMUS, and more). Instead of waiting for crons or
   commands, your agent decides when to think. Use when setting up proactive autonomous behavior,
   persistent emotional state, or self-directed initiative for any OpenClaw agent.
@@ -79,7 +79,7 @@ it to run a CORTEX loop (SENSE → THINK → ACT → MEASURE → EVOLVE).
 
 The agent doesn't wait to be asked. It wakes up when it has something worth doing.
 
-## The Nervous System (45 Modules)
+## The Nervous System (50 Modules)
 
 Pulse ships a complete bio-mimetic nervous system:
 

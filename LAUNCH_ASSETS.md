@@ -36,7 +36,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 >
 > So I built Pulse — a background daemon that gives AI agents drive-based motivation. Instead of crons ("run every 30 minutes"), drives accumulate pressure over time based on context. When pressure crosses a threshold, the agent wakes and acts autonomously.
 >
-> Six drive categories: goals, curiosity, emotions, learning, social, system. Each has configurable weights and decay rates. The system also has 36 bio-mimetic modules modeled on biological nervous systems: THALAMUS (sensory gating), AMYGDALA (threat detection), HIPPOCAMPUS (memory consolidation), CIRCADIAN (time awareness), etc.
+> Six drive categories: goals, curiosity, emotions, learning, social, system. Each has configurable weights and decay rates. The system also has 50 bio-mimetic modules modeled on biological nervous systems: THALAMUS (sensory gating), AMYGDALA (threat detection), HIPPOCAMPUS (memory consolidation), CIRCADIAN (time awareness), etc.
 >
 > **What it actually does:**
 > - Monitors filesystem, conversation logs, and system health passively
@@ -50,7 +50,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 > - Runs on Mac, Linux, Pi, Docker — ~40 MB RAM
 > - LLM integration via HTTP webhook (OpenClaw native; others via curl-compatible endpoint)
 > - Plugin architecture: drop `pulse_plugin_*.py` in `~/.pulse/plugins/` → auto-discovered each cycle
-> - 787 tests, MIT license
+> - 1116 tests, MIT license
 >
 > Built this over 3 weeks. The agent using it has been running 22 days and has autonomously:
 > - Fixed 81 broken test assertions she introduced herself
@@ -95,12 +95,12 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 > - Works with any OpenClaw session (main or isolated)
 >
 > **Highlights:**
-> - 36 bio-mimetic modules (THALAMUS, LIMBIC, AMYGDALA, CIRCADIAN, HIPPOCAMPUS...)
+> - 50 bio-mimetic modules (THALAMUS, LIMBIC, AMYGDALA, CIRCADIAN, HIPPOCAMPUS...)
 > - Plugin architecture: drop custom `.py` files in `~/.pulse/plugins/` → auto-discovered
 > - Biosensor integration: Apple Watch data → nervous system (via HTTP bridge)
 > - Real-time dashboard at `pulse dashboard`
 > - GENOME CLI: `pulse genome analyze genome.txt` — personal health analysis via SNP panel
-> - 787 tests, MIT, pure Python
+> - 1116 tests, MIT, pure Python
 >
 > **Install:**
 > ```bash
@@ -126,7 +126,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 
 **r/LocalLLaMA — Technical post**
 
-Title: `I built a drive-based autonomy daemon for AI agents — 787 tests, MIT, pure Python [Show r/LocalLLaMA]`
+Title: `I built a drive-based autonomy daemon for AI agents — 1116 tests, MIT, pure Python [Show r/LocalLLaMA]`
 
 Body: (use Show HN body, adjusted for Reddit formatting — add code blocks with triple backtick, bullet points are fine)
 
@@ -134,7 +134,7 @@ Body: (use Show HN body, adjusted for Reddit formatting — add code blocks with
 
 **r/SideProject — Founder story post**
 
-Title: `I gave my AI agent "drives" that make her act without being asked. 3 weeks, 787 tests, shipped it today.`
+Title: `I gave my AI agent "drives" that make her act without being asked. 3 weeks, 1116 tests, shipped it today.`
 
 Body:
 > My AI agent started leaving notes like "I wish I could notice when something needs attention without being asked."
@@ -145,7 +145,7 @@ Body:
 >
 > Since deploying it, she's been running 22 days: writing code at 2 AM, catching her own bugs, pushing to GitHub while I sleep.
 >
-> MIT, pure Python, 787 tests. Just shipped to GitHub.
+> MIT, pure Python, 1116 tests. Just shipped to GitHub.
 >
 > GitHub: [link]
 >
@@ -162,19 +162,21 @@ Body:
 
 **#showcase channel post:**
 
-> **Pulse v0.3.0 — Give your AI agent a heartbeat** 🔮
+> **Pulse v0.3.4 — Give your AI agent a heartbeat** 🔮
 >
 > MIT open-source daemon that gives OpenClaw agents biological-style motivation drives. Goals, curiosity, emotions, system health — each builds pressure until the agent acts autonomously.
 >
-> **v0.3.0 highlights:**
+> **v0.3.4 highlights:**
+> ✅ LOGOS directive synthesis (L0 values → L1 directives → L2 goals → L3 tasks)
 > ✅ Plugin architecture (drop custom `.py` → auto-discovered each cycle)
+> ✅ Smart task routing (right model for every task type automatically)
 > ✅ Biosensor integration (Apple Watch → nervous system)
-> ✅ Memory consolidation (CHRONICLE → ENGRAM overnight)
+> ✅ Memory consolidation (CHRONICLE → ENGRAM with importance scoring)
 > ✅ Observation API (HTTP + WebSocket real-time)
 > ✅ Real-time dashboard
 > ✅ GENOME CLI
 >
-> 787 tests, pure Python, runs on Mac/Linux/Pi/Docker
+> 1116 tests, pure Python, runs on Mac/Linux/Pi/Docker
 >
 > GitHub: https://github.com/astra-ventures/pulse
 >
@@ -190,11 +192,11 @@ I built a nervous system for AI agents.
 
 Not metaphorically.
 
-Pulse: 36 bio-mimetic modules. 6 drive categories. Background daemon.
+Pulse: 50 bio-mimetic modules. 6 drive categories. Background daemon.
 
 Your agent acts without being asked.
 
-MIT, pure Python, 787 tests.
+MIT, pure Python, 1116 tests.
 
 🧵
 ```
