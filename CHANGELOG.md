@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **PHASE2-ARCHITECTURE.md** — Complete design document for Phase 2 (Federation, Cloud, Monetization, Intelligence Loop). Four-pillar architecture: SYNAPSE/CORPUS/AXON federation modules, Fly.io + Supabase cloud layer, Free/Pro/Team/Enterprise tier model, and network intelligence loop. Revenue projections: $10.5k conservative → $37.8k moderate (12 months post-launch). Decision points for Josh: Federation-first vs Cloud-first, pricing, OSS strategy.
 
+### Changed
+- **`nervous_system.py` — data-driven module registry** — `_init_modules` refactored from 387
+  lines of near-identical try/except blocks (one per module) down to a 42-line data-driven
+  loop over `_MODULE_REGISTRY`. Each of the 50 modules is now a single list entry: `(name,
+  kind, class_name)`. Zero behavior change; all 1116 tests pass. Adding a new module now
+  requires one registry entry instead of 6 lines of copy-paste. (commit `8afb0ad`)
+
 ## [0.3.4] - 2026-03-03
 
 ### Added
