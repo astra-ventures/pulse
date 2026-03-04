@@ -103,6 +103,8 @@ _MODULE_REGISTRY: List[tuple] = [
     ("TELOS",          "telos",          "mod_only",       None),
     # V7 — directive layer
     ("LOGOS",          "logos",          "mod_only",       None),
+    # V8 — constellation junction
+    ("SYNAPSE",        "synapse",        "mod_only",       None),
 ]
 
 
@@ -200,6 +202,8 @@ class NervousSystem:
         self._mod_telos = None
         # V7 modules
         self._mod_logos = None
+        # V8 modules
+        self._mod_synapse = None
 
         self._init_modules()
 
