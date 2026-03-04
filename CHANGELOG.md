@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **daemon.py — feedback file unlink ordering** — `feedback_path.unlink()` was called immediately
+  after `json.loads()`, BEFORE drive pressure decay was processed. If `drive.decay()` raised an
+  unexpected exception, feedback was silently lost (drive stayed at high pressure, triggering again).
+  Moved unlink into a `finally` block so it always runs after processing regardless of outcome.
+- **germinal_tasks.py — DEFAULT_REFLECTION_TASK cascade cooldown** — `generate_tasks()` returned
+  the fallback reflection task on both the empty-filter path and the LLM-exception path without
+  calling `_record_category_used()`. Consecutive LLM failures (or overcooled categories) would
+  cycle "Reflect on current state" indefinitely — the exact cascade pattern observed today.
+  Fix: `_record_category_used()` now called before returning the fallback on both paths.
+  8 tests in `tests/test_bug_fixes_036.py`. Total: 1174.
+
 ### Added
 - **SYNAPSE** module (`src/synapse.py`) — weighted inter-agent signal junction for the constellation architecture. Handles directional signal transmission (excitatory/inhibitory/modulatory) between agents with synaptic weight adjustment, short-term potentiation, depression decay, and pruning. 22 tests. Fills the gap between AURA (ambient broadcast) and DENDRITE (social graph): SYNAPSE is the actual weighted junction mechanics.
 
