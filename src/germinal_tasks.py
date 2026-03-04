@@ -205,9 +205,13 @@ async def generate_tasks(context: dict, config: dict) -> List[dict]:
             return tasks
         # LLM returned nothing usable (all filtered by cooldowns / dedup)
         logger.warning("GENERATE: LLM returned no non-cooled actionable tasks, using fallback")
+        # Apply cooldown to the fallback task so consecutive LLM failures don't
+        # cause infinite "Reflect on current state" cascade loops (Bug fix: #031).
+        _record_category_used([DEFAULT_REFLECTION_TASK["title"]])
         return [DEFAULT_REFLECTION_TASK]
     except Exception as e:
         logger.warning(f"GENERATE: LLM call failed ({e}), using fallback")
+        _record_category_used([DEFAULT_REFLECTION_TASK["title"]])
         return [DEFAULT_REFLECTION_TASK]
 
 

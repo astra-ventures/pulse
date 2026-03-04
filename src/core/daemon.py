@@ -487,7 +487,8 @@ class PulseDaemon:
 
         try:
             data = json.loads(feedback_path.read_text())
-            feedback_path.unlink()  # consume it
+            # NOTE: unlink happens AFTER processing, not before.
+            # If decay/processing raises, feedback is not silently lost.
 
             drives_addressed = data.get("drives_addressed", [])
             outcome = data.get("outcome", "success")
@@ -521,10 +522,9 @@ class PulseDaemon:
 
         except (json.JSONDecodeError, OSError) as e:
             logger.warning(f"Failed to process feedback file: {e}")
-            try:
-                feedback_path.unlink()
-            except OSError:
-                pass
+        finally:
+            # Always consume the file — even on partial failure, don't reprocess stale feedback.
+            feedback_path.unlink(missing_ok=True)
 
     async def _maybe_generate(self, drive_state, sensor_data):
         """Run GENERATE step if enough idle time has passed."""
