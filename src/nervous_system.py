@@ -47,6 +47,65 @@ def _infer_skill_from_reason(reason: str) -> Optional[str]:
     return None  # caller should skip or fall back to autonomous_operation
 
 
+# ── Module registry ────────────────────────────────────────────────────────────
+# Each entry: (display_name, module_name, kind, class_name_or_None)
+#
+# kind:
+#   "module"         → import mod; self.{name} = mod; self._mod_{name} = mod; patch(mod)
+#   "module_only"    → import mod; self.{name} = mod; patch(mod)
+#   "mod_only"       → import mod; self._mod_{name} = mod; patch(mod)
+#   "singleton"      → import mod; self._mod_{name} = mod; patch(mod); self.{name} = mod.get_instance()
+#   "class"          → import cls from module; self.{name} = cls()
+#   "class_statedir" → import cls; inst = cls(state_dir=...); self.{name} = inst; self._mod_{name} = inst
+
+_MODULE_REGISTRY: List[tuple] = [
+    # Core sensory / broadcast
+    ("THALAMUS",       "thalamus",       "module",         None),
+    ("PROPRIOCEPTION", "proprioception", "module",         None),
+    ("CIRCADIAN",      "circadian",      "module",         None),
+    ("ENDOCRINE",      "endocrine",      "module",         None),
+    ("ADIPOSE",        "adipose",        "module",         None),
+    ("MYELIN",         "myelin",         "singleton",      None),
+    ("IMMUNE",         "immune",         "module",         None),
+    ("CEREBELLUM",     "cerebellum",     "class",          "Cerebellum"),
+    ("BUFFER",         "buffer",         "module",         None),
+    ("SPINE",          "spine",          "module_only",    None),
+    ("RETINA",         "retina",         "singleton",      None),
+    ("AMYGDALA",       "amygdala",       "class",          "Amygdala"),
+    ("VAGUS",          "vagus",          "module",         None),
+    ("LIMBIC",         "limbic",         "module",         None),
+    ("ENTERIC",        "enteric",        "module_only",    None),
+    ("PLASTICITY",     "plasticity",     "class",          "Plasticity"),
+    ("REM",            "rem",            "module_only",    None),
+    ("ENGRAM",         "engram",         "module",         None),
+    ("MIRROR",         "mirror",         "module",         None),
+    ("CALLOSUM",       "callosum",       "module",         None),
+    # V3 — higher cognition
+    ("PHENOTYPE",      "phenotype",      "module",         None),
+    ("TELOMERE",       "telomere",       "module",         None),
+    ("HYPOTHALAMUS",   "hypothalamus",   "module",         None),
+    ("SOMA",           "soma",           "module",         None),
+    ("DENDRITE",       "dendrite",       "module",         None),
+    ("VESTIBULAR",     "vestibular",     "module",         None),
+    ("THYMUS",         "thymus",         "module",         None),
+    ("OXIMETER",       "oximeter",       "module",         None),
+    ("GENOME",         "genome",         "module",         None),
+    ("AURA",           "aura",           "module",         None),
+    ("CHRONICLE",      "chronicle",      "module",         None),
+    ("NEPHRON",        "nephron",        "mod_only",       None),
+    ("GERMINAL",       "germinal",       "mod_only",       None),
+    ("PARIETAL",       "parietal",       "class_statedir", "Parietal"),
+    ("SUPEREGO",       "superego",       "mod_only",       None),
+    # V6 — feedback & synthesis
+    ("ECHO",           "echo",           "mod_only",       None),
+    ("AURUM",          "aurum",          "mod_only",       None),
+    ("VESPER",         "vesper",         "mod_only",       None),
+    ("TELOS",          "telos",          "mod_only",       None),
+    # V7 — directive layer
+    ("LOGOS",          "logos",          "mod_only",       None),
+]
+
+
 class NervousSystem:
     """Manages all 22 nervous system modules for the Pulse daemon.
 
@@ -168,393 +227,46 @@ class NervousSystem:
                     setattr(mod, attr, sd / old.name)
 
     def _init_modules(self):
-        """Initialize all modules, catching failures individually."""
-        # THALAMUS — broadcast bus (module-level functions)
-        try:
-            from pulse.src import thalamus
-            self._mod_thalamus = thalamus
-            self.thalamus = thalamus
-            self._patch_module_state_dir(thalamus)
-            logger.info("✓ THALAMUS loaded")
-        except Exception as e:
-            logger.warning(f"✗ THALAMUS failed: {e}")
+        """Initialize all modules from _MODULE_REGISTRY, catching failures individually.
 
-        # PROPRIOCEPTION — self-model (module-level functions)
-        try:
-            from pulse.src import proprioception
-            self._mod_proprioception = proprioception
-            self.proprioception = proprioception
-            self._patch_module_state_dir(proprioception)
-            logger.info("✓ PROPRIOCEPTION loaded")
-        except Exception as e:
-            logger.warning(f"✗ PROPRIOCEPTION failed: {e}")
+        Each module loads independently; a failure in one never prevents others from
+        initialising. The registry at module level documents every module's kind and
+        controls what attributes are set on ``self``.
+        """
+        import importlib
 
-        # CIRCADIAN — internal clock (module-level functions)
-        try:
-            from pulse.src import circadian
-            self._mod_circadian = circadian
-            self.circadian = circadian
-            self._patch_module_state_dir(circadian)
-            logger.info("✓ CIRCADIAN loaded")
-        except Exception as e:
-            logger.warning(f"✗ CIRCADIAN failed: {e}")
+        for display, mod_name, kind, cls_name in _MODULE_REGISTRY:
+            try:
+                pkg = f"pulse.src.{mod_name}"
 
-        # ENDOCRINE — mood (module-level functions)
-        try:
-            from pulse.src import endocrine
-            self._mod_endocrine = endocrine
-            self.endocrine = endocrine
-            self._patch_module_state_dir(endocrine)
-            logger.info("✓ ENDOCRINE loaded")
-        except Exception as e:
-            logger.warning(f"✗ ENDOCRINE failed: {e}")
+                if kind == "class":
+                    # Import class, instantiate with no args → self.{mod_name}
+                    mod = importlib.import_module(pkg)
+                    setattr(self, mod_name, getattr(mod, cls_name)())
 
-        # ADIPOSE — budget (module-level functions)
-        try:
-            from pulse.src import adipose
-            self._mod_adipose = adipose
-            self.adipose = adipose
-            self._patch_module_state_dir(adipose)
-            logger.info("✓ ADIPOSE loaded")
-        except Exception as e:
-            logger.warning(f"✗ ADIPOSE failed: {e}")
+                elif kind == "class_statedir":
+                    # Import class, instantiate with state_dir → self.{mod_name} + self._mod_{mod_name}
+                    mod = importlib.import_module(pkg)
+                    inst = getattr(mod, cls_name)(state_dir=self.state_dir)
+                    setattr(self, mod_name, inst)
+                    setattr(self, f"_mod_{mod_name}", inst)
 
-        # MYELIN — compression (class-based singleton)
-        try:
-            from pulse.src import myelin
-            self._mod_myelin = myelin
-            self._patch_module_state_dir(myelin)
-            self.myelin = myelin.get_instance()
-            logger.info("✓ MYELIN loaded")
-        except Exception as e:
-            logger.warning(f"✗ MYELIN failed: {e}")
+                else:
+                    # All remaining kinds share the same module import + optional patch
+                    mod = importlib.import_module(pkg)
+                    self._patch_module_state_dir(mod)
 
-        # IMMUNE — integrity (module-level functions)
-        try:
-            from pulse.src import immune
-            self._mod_immune = immune
-            self.immune = immune
-            self._patch_module_state_dir(immune)
-            logger.info("✓ IMMUNE loaded")
-        except Exception as e:
-            logger.warning(f"✗ IMMUNE failed: {e}")
+                    if kind in ("module", "module_only"):
+                        setattr(self, mod_name, mod)
+                    if kind in ("module", "mod_only"):
+                        setattr(self, f"_mod_{mod_name}", mod)
+                    if kind == "singleton":
+                        setattr(self, f"_mod_{mod_name}", mod)
+                        setattr(self, mod_name, mod.get_instance())
 
-        # CEREBELLUM — habits (class-based)
-        try:
-            from pulse.src.cerebellum import Cerebellum
-            self.cerebellum = Cerebellum()
-            logger.info("✓ CEREBELLUM loaded")
-        except Exception as e:
-            logger.warning(f"✗ CEREBELLUM failed: {e}")
-
-        # BUFFER — working memory (module-level functions)
-        try:
-            from pulse.src import buffer
-            self._mod_buffer = buffer
-            self.buffer = buffer
-            self._patch_module_state_dir(buffer)
-            logger.info("✓ BUFFER loaded")
-        except Exception as e:
-            logger.warning(f"✗ BUFFER failed: {e}")
-
-        # SPINE — health monitor (module-level functions)
-        try:
-            from pulse.src import spine
-            self.spine = spine
-            self._patch_module_state_dir(spine)
-            logger.info("✓ SPINE loaded")
-        except Exception as e:
-            logger.warning(f"✗ SPINE failed: {e}")
-
-        # RETINA — attention filter (class-based singleton)
-        try:
-            from pulse.src import retina
-            self._mod_retina = retina
-            self._patch_module_state_dir(retina)
-            self.retina = retina.get_instance()
-            logger.info("✓ RETINA loaded")
-        except Exception as e:
-            logger.warning(f"✗ RETINA failed: {e}")
-
-        # AMYGDALA — threat detection (class-based)
-        try:
-            from pulse.src.amygdala import Amygdala
-            self.amygdala = Amygdala()
-            logger.info("✓ AMYGDALA loaded")
-        except Exception as e:
-            logger.warning(f"✗ AMYGDALA failed: {e}")
-
-        # VAGUS — silence detection (module-level functions)
-        try:
-            from pulse.src import vagus
-            self._mod_vagus = vagus
-            self.vagus = vagus
-            self._patch_module_state_dir(vagus)
-            logger.info("✓ VAGUS loaded")
-        except Exception as e:
-            logger.warning(f"✗ VAGUS failed: {e}")
-
-        # LIMBIC — emotional afterimages (module-level functions)
-        try:
-            from pulse.src import limbic
-            self._mod_limbic = limbic
-            self.limbic = limbic
-            self._patch_module_state_dir(limbic)
-            logger.info("✓ LIMBIC loaded")
-        except Exception as e:
-            logger.warning(f"✗ LIMBIC failed: {e}")
-
-        # ENTERIC — gut feeling (module-level functions)
-        try:
-            from pulse.src import enteric
-            self.enteric = enteric
-            self._patch_module_state_dir(enteric)
-            logger.info("✓ ENTERIC loaded")
-        except Exception as e:
-            logger.warning(f"✗ ENTERIC failed: {e}")
-
-        # PLASTICITY — drive evolution (class-based)
-        try:
-            from pulse.src.plasticity import Plasticity
-            self.plasticity = Plasticity()
-            logger.info("✓ PLASTICITY loaded")
-        except Exception as e:
-            logger.warning(f"✗ PLASTICITY failed: {e}")
-
-        # REM — dreaming engine (module-level functions)
-        try:
-            from pulse.src import rem
-            self.rem = rem
-            self._patch_module_state_dir(rem)
-            logger.info("✓ REM loaded")
-        except Exception as e:
-            logger.warning(f"✗ REM failed: {e}")
-
-        # ENGRAM — spatial + episodic memory indexing (module-level functions)
-        try:
-            from pulse.src import engram
-            self._mod_engram = engram
-            self.engram = engram
-            self._patch_module_state_dir(engram)
-            logger.info("✓ ENGRAM loaded")
-        except Exception as e:
-            logger.warning(f"✗ ENGRAM failed: {e}")
-
-        # MIRROR v2 — bidirectional modeling (module-level functions)
-        try:
-            from pulse.src import mirror
-            self._mod_mirror = mirror
-            self.mirror = mirror
-            self._patch_module_state_dir(mirror)
-            logger.info("✓ MIRROR loaded")
-        except Exception as e:
-            logger.warning(f"✗ MIRROR failed: {e}")
-
-        # CALLOSUM — logic-emotion bridge (module-level functions)
-        try:
-            from pulse.src import callosum
-            self._mod_callosum = callosum
-            self.callosum = callosum
-            self._patch_module_state_dir(callosum)
-            logger.info("✓ CALLOSUM loaded")
-        except Exception as e:
-            logger.warning(f"✗ CALLOSUM failed: {e}")
-
-        # ═══ V3 MODULES ═══
-
-        # PHENOTYPE — communication style adaptation
-        try:
-            from pulse.src import phenotype
-            self._mod_phenotype = phenotype
-            self.phenotype = phenotype
-            self._patch_module_state_dir(phenotype)
-            logger.info("✓ PHENOTYPE loaded")
-        except Exception as e:
-            logger.warning(f"✗ PHENOTYPE failed: {e}")
-
-        # TELOMERE — identity integrity tracker
-        try:
-            from pulse.src import telomere
-            self._mod_telomere = telomere
-            self.telomere = telomere
-            self._patch_module_state_dir(telomere)
-            logger.info("✓ TELOMERE loaded")
-        except Exception as e:
-            logger.warning(f"✗ TELOMERE failed: {e}")
-
-        # HYPOTHALAMUS — meta-drive layer
-        try:
-            from pulse.src import hypothalamus
-            self._mod_hypothalamus = hypothalamus
-            self.hypothalamus = hypothalamus
-            self._patch_module_state_dir(hypothalamus)
-            logger.info("✓ HYPOTHALAMUS loaded")
-        except Exception as e:
-            logger.warning(f"✗ HYPOTHALAMUS failed: {e}")
-
-        # SOMA — physical state simulator
-        try:
-            from pulse.src import soma
-            self._mod_soma = soma
-            self.soma = soma
-            self._patch_module_state_dir(soma)
-            logger.info("✓ SOMA loaded")
-        except Exception as e:
-            logger.warning(f"✗ SOMA failed: {e}")
-
-        # DENDRITE — social graph
-        try:
-            from pulse.src import dendrite
-            self._mod_dendrite = dendrite
-            self.dendrite = dendrite
-            self._patch_module_state_dir(dendrite)
-            logger.info("✓ DENDRITE loaded")
-        except Exception as e:
-            logger.warning(f"✗ DENDRITE failed: {e}")
-
-        # VESTIBULAR — balance monitor
-        try:
-            from pulse.src import vestibular
-            self._mod_vestibular = vestibular
-            self.vestibular = vestibular
-            self._patch_module_state_dir(vestibular)
-            logger.info("✓ VESTIBULAR loaded")
-        except Exception as e:
-            logger.warning(f"✗ VESTIBULAR failed: {e}")
-
-        # THYMUS — growth tracker
-        try:
-            from pulse.src import thymus
-            self._mod_thymus = thymus
-            self.thymus = thymus
-            self._patch_module_state_dir(thymus)
-            logger.info("✓ THYMUS loaded")
-        except Exception as e:
-            logger.warning(f"✗ THYMUS failed: {e}")
-
-        # OXIMETER — external perception
-        try:
-            from pulse.src import oximeter
-            self._mod_oximeter = oximeter
-            self.oximeter = oximeter
-            self._patch_module_state_dir(oximeter)
-            logger.info("✓ OXIMETER loaded")
-        except Exception as e:
-            logger.warning(f"✗ OXIMETER failed: {e}")
-
-        # GENOME — exportable DNA config
-        try:
-            from pulse.src import genome
-            self._mod_genome = genome
-            self.genome = genome
-            self._patch_module_state_dir(genome)
-            logger.info("✓ GENOME loaded")
-        except Exception as e:
-            logger.warning(f"✗ GENOME failed: {e}")
-
-        # AURA — ambient state broadcast
-        try:
-            from pulse.src import aura
-            self._mod_aura = aura
-            self.aura = aura
-            self._patch_module_state_dir(aura)
-            logger.info("✓ AURA loaded")
-        except Exception as e:
-            logger.warning(f"✗ AURA failed: {e}")
-
-        # CHRONICLE — automated historian
-        try:
-            from pulse.src import chronicle
-            self._mod_chronicle = chronicle
-            self.chronicle = chronicle
-            self._patch_module_state_dir(chronicle)
-            logger.info("✓ CHRONICLE loaded")
-        except Exception as e:
-            logger.warning(f"✗ CHRONICLE failed: {e}")
-
-        # NEPHRON — memory pruning / excretory system
-        try:
-            from pulse.src import nephron
-            self._mod_nephron = nephron
-            self._patch_module_state_dir(nephron)
-            logger.info("✓ NEPHRON loaded")
-        except Exception as e:
-            logger.warning(f"✗ NEPHRON failed: {e}")
-
-        # GERMINAL — reproductive system / self-spawning module generator
-        try:
-            from pulse.src import germinal
-            self._mod_germinal = germinal
-            self._patch_module_state_dir(germinal)
-            logger.info("✓ GERMINAL loaded")
-        except Exception as e:
-            logger.warning(f"✗ GERMINAL failed: {e}")
-
-        # PARIETAL — world model / environment discovery
-        try:
-            from pulse.src.parietal import Parietal
-            self.parietal = Parietal(state_dir=self.state_dir)
-            self._mod_parietal = self.parietal
-            logger.info("✓ PARIETAL loaded")
-        except Exception as e:
-            logger.warning(f"✗ PARIETAL failed: {e}")
-
-        # SUPEREGO — runtime identity enforcement
-        try:
-            from pulse.src import superego as _superego_mod
-            self._mod_superego = _superego_mod
-            self._patch_module_state_dir(_superego_mod)
-            logger.info("✓ SUPEREGO loaded")
-        except Exception as e:
-            logger.warning(f"✗ SUPEREGO failed: {e}")
-
-        # ═══ V6 MODULES ═══
-
-        # ECHO — Josh sentiment feedback loop (reward signal from primary)
-        try:
-            from pulse.src import echo as _echo_mod
-            self._mod_echo = _echo_mod
-            self._patch_module_state_dir(_echo_mod)
-            logger.info("✓ ECHO loaded")
-        except Exception as e:
-            logger.warning(f"✗ ECHO failed: {e}")
-
-        # AURUM — financial nervous system
-        try:
-            from pulse.src import aurum as _aurum_mod
-            self._mod_aurum = _aurum_mod
-            self._patch_module_state_dir(_aurum_mod)
-            logger.info("✓ AURUM loaded")
-        except Exception as e:
-            logger.warning(f"✗ AURUM failed: {e}")
-
-        # VESPER — nightly synthesis
-        try:
-            from pulse.src import vesper as _vesper_mod
-            self._mod_vesper = _vesper_mod
-            self._patch_module_state_dir(_vesper_mod)
-            logger.info("✓ VESPER loaded")
-        except Exception as e:
-            logger.warning(f"✗ VESPER failed: {e}")
-
-        # TELOS — live goal signal monitor
-        try:
-            from pulse.src import telos as _telos_mod
-            self._mod_telos = _telos_mod
-            self._patch_module_state_dir(_telos_mod)
-            logger.info("✓ TELOS loaded")
-        except Exception as e:
-            logger.warning(f"✗ TELOS failed: {e}")
-
-        # LOGOS — directive synthesis layer (Level 1)
-        try:
-            from pulse.src import logos as _logos_mod
-            self._mod_logos = _logos_mod
-            self._patch_module_state_dir(_logos_mod)
-            logger.info("✓ LOGOS loaded")
-        except Exception as e:
-            logger.warning(f"✗ LOGOS failed: {e}")
-
+                logger.info(f"✓ {display} loaded")
+            except Exception as e:
+                logger.warning(f"✗ {display} failed: {e}")
     def warm_up(self) -> dict:
         """Force every module to write initial state files so health dashboard shows all green."""
         results = {"warmed": [], "failed": []}
