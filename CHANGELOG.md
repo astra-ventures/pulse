@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **PHASE2-ARCHITECTURE.md** — Complete design document for Phase 2 (Federation, Cloud, Monetization, Intelligence Loop). Four-pillar architecture: SYNAPSE/CORPUS/AXON federation modules, Fly.io + Supabase cloud layer, Free/Pro/Team/Enterprise tier model, and network intelligence loop. Revenue projections: $10.5k conservative → $37.8k moderate (12 months post-launch). Decision points for Josh: Federation-first vs Cloud-first, pricing, OSS strategy.
+
 ## [0.3.4] - 2026-03-03
 
 ### Added
