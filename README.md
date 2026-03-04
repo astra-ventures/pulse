@@ -6,7 +6,7 @@ Pulse is a persistent daemon that gives AI agents self-directed initiative. Inst
 
 Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 
-**1116 tests** · Python 3.11+ · MIT License · Docker-ready · v0.3.4
+**1174 tests** · Python 3.11+ · MIT License · Docker-ready · v0.3.4
 
 ---
 
