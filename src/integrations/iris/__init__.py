@@ -257,12 +257,11 @@ class IrisIntegration(Integration):
                 "This is an isolated Pulse session. After completing your work:"
             )
             parts.append(
-                "1. Post a log entry to Discord #pulse-log (channel ID: 1473418272551469240) "
-                "with: trigger reason, what you did, drives addressed, and result."
+                "1. Log what you did in memory/YYYY-MM-DD.md (today's date)."
             )
             parts.append(
-                "2. If you completed meaningful work, your summary will also be "
-                "announced to Signal. If nothing notable, respond with NO_REPLY."
+                "2. If you completed meaningful work, send a brief summary to Josh via Signal "
+                "(use the message tool with channel='signal'). If nothing notable, respond with NO_REPLY."
             )
 
         return "\n".join(parts)
