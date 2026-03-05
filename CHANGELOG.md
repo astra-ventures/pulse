@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-03-05
+
+### Changed
+- **Biological naming convention** — All 50 modules now follow strict anatomical naming. Added
+  `CONVENTIONS.md` documenting the standard: every module must be named after a biological
+  structure, physiological process, or anatomical system.
+- **6 module renames** (commits `66ab442`): `challenger` → `raphe` (raphe nuclei: novelty drive),
+  `aurum` → `adrenal` (adrenal gland: stress/survival), `vesper` → `pineal` (pineal gland:
+  nightly synthesis), `telos` → `basal_ganglia` (goal-directed behavior), `logos` → `broca`
+  (Broca's area: language/directive parsing), `chronicle` → `hippocampus` (memory timeline).
+  51 files updated across src/, tests/, docs/, scripts/.
+- **`superego` → `prefrontal`** (commit `97bdcb8`): Final off-theme module renamed. Prefrontal
+  cortex: executive control and decision override. All references updated across 5 files.
+- **Module count corrected** (commit `346caf1`): Fixed stale "43 modules" references to accurate
+  count across CLI, README, launch docs, and integration status.
+- **1388/1388 tests passing** — all renames verified by full test suite.
+
 ## [0.3.7] - 2026-03-05
 
 ### Added
