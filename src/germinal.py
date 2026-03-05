@@ -303,6 +303,18 @@ def attempt_birth(drive_name: str) -> dict:
     Returns status dict. Actual code generation requires spawning a sub-agent
     (done by NervousSystem.post_loop which calls this and then handles the spawn).
     """
+    # Whitelist guard — belt-and-suspenders at the execution layer.
+    # scan_for_birth_candidates() already filters, but attempt_birth() can be
+    # called directly (e.g. from tests or external code). Never write unknown
+    # drive names to the production state file.
+    if drive_name not in DRIVE_ARCHETYPES:
+        logger.warning(
+            "GERMINAL: attempt_birth rejected unknown drive '%s' — not in whitelist. "
+            "State file not modified.",
+            drive_name,
+        )
+        return {"ok": False, "reason": f"drive '{drive_name}' not in DRIVE_ARCHETYPES whitelist"}
+
     state = _load_state()
     now = time.time()
 

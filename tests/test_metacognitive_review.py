@@ -66,19 +66,33 @@ class TestGerminalModuleCount:
         assert room >= 5, f"Only {room} slots left — GERMINAL has almost no room to grow"
 
     def test_attempt_birth_not_ceiling_blocked(self):
-        """attempt_birth should NOT be blocked by ceiling with correct counting."""
-        from pulse.src import germinal
-        # Set up clean state (no cooldown, no in_progress)
-        state = germinal._default_state()
-        germinal._save_state(state)
+        """attempt_birth should NOT be blocked by ceiling with correct counting.
         
-        result = germinal.attempt_birth("definitely_not_a_real_drive_xyz_test")
-        # Should succeed (or fail for other reasons, NOT ceiling)
-        if not result["ok"]:
-            assert "ceiling" not in result["reason"].lower(), (
-                f"Birth blocked by ceiling: {result['reason']}. "
-                f"The _count_modules fix didn't work!"
-            )
+        Uses a whitelisted drive (generate_revenue) and mocks the state file
+        so we never write to the production ~/.pulse/state/germinal-state.json.
+        """
+        import tempfile, os
+        from unittest.mock import patch
+        from pulse.src import germinal
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            tmp_path = f.name
+
+        try:
+            # Patch the state file path so tests never touch production state
+            with patch.object(germinal, "_DEFAULT_STATE_FILE", __import__("pathlib").Path(tmp_path)):
+                state = germinal._default_state()
+                germinal._save_state(state)
+
+                # Use a real whitelisted drive — this tests the ceiling, not injection
+                result = germinal.attempt_birth("generate_revenue")
+                if not result["ok"]:
+                    assert "ceiling" not in result["reason"].lower(), (
+                        f"Birth blocked by ceiling: {result['reason']}. "
+                        f"The _count_modules fix didn't work!"
+                    )
+        finally:
+            os.unlink(tmp_path)
 
 
 # ─── ModelEvaluator: JSON Fence Stripping ───────────────────────────────────
