@@ -1,4 +1,4 @@
-"""VESPER — Nightly Synthesis Module for Pulse.
+"""PINEAL — Nightly Synthesis Module for Pulse.
 
 Overnight consolidation: synthesize the day, reset fatigue, process what mattered.
 Runs during deep_night circadian mode at 300-loop intervals (≈2.5h at 30s/loop).
@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Optional
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
-_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "vesper-state.json"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "pineal-state.json"
 
 _WORKSPACE_ROOT = Path.home() / ".openclaw" / "workspace"
 _DAILY_SYNTH_DIR = _WORKSPACE_ROOT / "memory" / "self" / "daily-synthesis"
@@ -64,7 +64,7 @@ def should_run(circadian_mode: str, loop_count: int) -> bool:
 
 
 def run_restoration(
-    chronicle_mod=None,
+    hippocampus_mod=None,
     engram_mod=None,
     endocrine_mod=None,
     memory_dir: Optional[Path] = None,
@@ -72,7 +72,7 @@ def run_restoration(
     """Run overnight synthesis and restoration.
 
     Steps:
-    1. Read today's chronicle entries
+    1. Read today's hippocampus entries
     2. Read today's memory file (last 2KB)
     3. Synthesize: count shipped events, emotional peaks, conversations
     4. Write synthesis to daily-synthesis/YYYY-MM-DD.json
@@ -98,11 +98,11 @@ def run_restoration(
         "synthesis_file": None,
     }
 
-    # 1. Read chronicle entries for today
-    chronicle_entries = []
-    if chronicle_mod is not None:
+    # 1. Read hippocampus entries for today
+    hippocampus_entries = []
+    if hippocampus_mod is not None:
         try:
-            chronicle_entries = chronicle_mod.query_by_date(today)
+            hippocampus_entries = hippocampus_mod.query_by_date(today)
         except Exception:
             pass
 
@@ -135,8 +135,8 @@ def run_restoration(
     key_events = []
     emotion_scores = []
 
-    # Process chronicle entries
-    for entry in chronicle_entries:
+    # Process hippocampus entries
+    for entry in hippocampus_entries:
         etype = entry.get("type", "")
         data = entry.get("data", {})
         summary = data.get("summary", "")
@@ -208,7 +208,7 @@ def run_restoration(
     synthesis_text = (
         f"Day {today}: {shipped_count} shipped events, "
         f"{conversation_count} conversations, peak emotion: {peak_emotion}. "
-        f"Chronicle entries: {len(chronicle_entries)}."
+        f"Hippocampus entries: {len(hippocampus_entries)}."
     )
     if key_events:
         synthesis_text += " Key: " + "; ".join(
@@ -221,7 +221,7 @@ def run_restoration(
         "peak_emotion": peak_emotion,
         "key_events": key_events[:10],
         "conversation_count": conversation_count,
-        "chronicle_entries": len(chronicle_entries),
+        "hippocampus_entries": len(hippocampus_entries),
         "synthesis_text": synthesis_text,
         "generated_at": now,
     }

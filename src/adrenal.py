@@ -1,4 +1,4 @@
-"""AURUM — Financial Nervous System for Pulse.
+"""ADRENAL — Financial Nervous System for Pulse.
 
 Pulse has drive pressure based on financial state, not just token budgets.
 Financial pressure is a real physiological signal: low revenue = high cortisol.
@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
-_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "aurum-state.json"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "adrenal-state.json"
 
 _GOALS_FILE = Path.home() / ".openclaw" / "workspace" / "memory" / "self" / "goals.json"
 

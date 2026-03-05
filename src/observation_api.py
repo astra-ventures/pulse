@@ -12,7 +12,7 @@ Endpoints:
     GET  /state/endocrine            → hormone levels
     GET  /state/circadian            → energy, sleep phase, time profile
     GET  /state/soma                 → physical/energy state
-    GET  /chronicle/recent?n=20      → last N CHRONICLE events
+    GET  /hippocampus/recent?n=20      → last N HIPPOCAMPUS events
     GET  /engram/search?q=text       → search memory engrams
     WS   /stream                     → WebSocket live state updates (5s intervals)
 
@@ -124,10 +124,10 @@ def get_health(_: None = Depends(require_auth)):
     """Pulse daemon health — uptime indicator, module freshness, warnings."""
     # Check drive file age as a proxy for "daemon is running"
     drive_age = _file_age_seconds("drive-performance.json")
-    chronicle_age = _file_age_seconds("chronicle.jsonl")
+    hippocampus_age = _file_age_seconds("hippocampus.jsonl")
 
-    # Read recent chronicle for warnings
-    recent = _read_jsonl_tail("chronicle.jsonl", n=5)
+    # Read recent hippocampus for warnings
+    recent = _read_jsonl_tail("hippocampus.jsonl", n=5)
     errors = [e for e in recent if e.get("level") in ("error", "warning")]
 
     daemon_alive = drive_age is not None and drive_age < 300  # seen in last 5 min
@@ -136,7 +136,7 @@ def get_health(_: None = Depends(require_auth)):
         "status":        "ok" if daemon_alive else "stale",
         "daemon_alive":  daemon_alive,
         "drive_file_age_seconds":     drive_age,
-        "chronicle_file_age_seconds": chronicle_age,
+        "hippocampus_file_age_seconds": hippocampus_age,
         "recent_errors": errors,
         "state_dir":     str(STATE_DIR),
         "timestamp":     time.time(),
@@ -254,15 +254,15 @@ def get_soma(_: None = Depends(require_auth)):
     return _get_soma_data()
 
 
-# ── Chronicle ─────────────────────────────────────────────────────────────────
+# ── Hippocampus ─────────────────────────────────────────────────────────────────
 
-@app.get("/chronicle/recent")
-def get_chronicle_recent(
+@app.get("/hippocampus/recent")
+def get_hippocampus_recent(
     n: int = Query(default=20, ge=1, le=200),
     _: None = Depends(require_auth),
 ):
-    """Last N CHRONICLE events, newest first."""
-    events = _read_jsonl_tail("chronicle.jsonl", n=n)
+    """Last N HIPPOCAMPUS events, newest first."""
+    events = _read_jsonl_tail("hippocampus.jsonl", n=n)
     return {"events": events, "count": len(events), "timestamp": time.time()}
 
 
@@ -423,9 +423,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   .dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
   .dot-red   { background: var(--red);   box-shadow: 0 0 6px var(--red); }
   .dot-amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
-  .chronicle-feed { font-size: 0.78rem; color: var(--dim); line-height: 1.6; max-height: 200px; overflow-y: auto; }
-  .chronicle-feed .event { padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
-  .chronicle-feed .event:last-child { border-bottom: none; }
+  .hippocampus-feed { font-size: 0.78rem; color: var(--dim); line-height: 1.6; max-height: 200px; overflow-y: auto; }
+  .hippocampus-feed .event { padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
+  .hippocampus-feed .event:last-child { border-bottom: none; }
   .ts { color: #444466; margin-right: 0.4rem; }
   .updated { font-size: 0.72rem; color: #444466; margin-top: 0.5rem; }
   #status-bar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; font-size: 0.85rem; }
@@ -460,8 +460,8 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   </div>
 </div>
 <div class="card" style="margin-bottom:1rem">
-  <div class="card-title">Chronicle — Recent Events</div>
-  <div class="chronicle-feed" id="chronicle-feed"></div>
+  <div class="card-title">Hippocampus — Recent Events</div>
+  <div class="hippocampus-feed" id="hippocampus-feed"></div>
 </div>
 <script>
 const TOKEN = new URLSearchParams(window.location.search).get('token') || '';
@@ -515,19 +515,19 @@ function renderCircadian(data, soma) {
     <div style="font-size:0.78rem;color:#6666a0;margin-top:0.5rem">Phase: ${data.sleep_phase || '—'}${data.is_resting ? ' (resting)' : ''}</div>`;
 }
 
-function renderChronicle(events) {
+function renderHippocampus(events) {
   const html = (events || []).slice(0, 15).map(e => {
     const ts = e.timestamp ? new Date(e.timestamp * 1000).toLocaleTimeString() : '';
     const msg = (e.message || e.event || JSON.stringify(e)).slice(0, 90);
     return `<div class="event"><span class="ts">${ts}</span>${msg}</div>`;
   }).join('');
-  document.getElementById('chronicle-feed').innerHTML = html || '<span style="color:#444466">No events</span>';
+  document.getElementById('hippocampus-feed').innerHTML = html || '<span style="color:#444466">No events</span>';
 }
 
-async function fetchChronicle() {
+async function fetchHippocampus() {
   try {
-    const r = await fetch(`${BASE}/chronicle/recent?n=15`, { headers: TOKEN ? {Authorization:'Bearer '+TOKEN} : {} });
-    if (r.ok) { const d = await r.json(); renderChronicle(d.events); }
+    const r = await fetch(`${BASE}/hippocampus/recent?n=15`, { headers: TOKEN ? {Authorization:'Bearer '+TOKEN} : {} });
+    if (r.ok) { const d = await r.json(); renderHippocampus(d.events); }
   } catch(_) {}
 }
 
@@ -549,8 +549,8 @@ function connect() {
 }
 
 connect();
-fetchChronicle();
-setInterval(fetchChronicle, 10000);
+fetchHippocampus();
+setInterval(fetchHippocampus, 10000);
 </script>
 </body>
 </html>"""

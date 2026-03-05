@@ -58,7 +58,7 @@ All 22 nervous system modules are fully integrated into the daemon loop via the 
 | **Buffer** | Working memory snapshots | ✅ | — |
 | **Plasticity** | Drive performance tracking | ✅ | — |
 | **Engram** | Episodic memory encoding | ✅ | — |
-| **Chronicle** | Event historian | ✅ | — |
+| **Hippocampus** | Event historian | ✅ | — |
 
 ### Maintenance (post_loop)
 | Module | Purpose | Active | Test Count |

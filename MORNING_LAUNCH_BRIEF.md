@@ -11,7 +11,7 @@ Tonight's audit session closed all 11 P0+P1 issues. PyPI pre-flight passed. The 
 
 **1388 tests passing. twine check passed. pulse-agent name is available on PyPI right now.**
 
-*(Updated 6:47 AM Mar 5 — v0.3.7 built with MOTORIC + CHALLENGER modules. 1138 → 1166 → 1328 → 1388 tests across overnight sessions.)*
+*(Updated 6:47 AM Mar 5 — v0.3.7 built with MOTORIC + RAPHE modules. 1138 → 1166 → 1328 → 1388 tests across overnight sessions.)*
 
 ---
 

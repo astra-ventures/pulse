@@ -94,16 +94,16 @@ class TestNephronBasics:
         finally:
             endo_file.write_text(original)
 
-    def test_chronicle_no_recent_pruning(self):
-        """Recent chronicle entries should not be pruned."""
-        chronicle_file = nephron._DEFAULT_STATE_DIR / "chronicle.jsonl"
-        if not chronicle_file.exists():
+    def test_hippocampus_no_recent_pruning(self):
+        """Recent hippocampus entries should not be pruned."""
+        hippocampus_file = nephron._DEFAULT_STATE_DIR / "hippocampus.jsonl"
+        if not hippocampus_file.exists():
             return
         
-        original = chronicle_file.read_text()
+        original = hippocampus_file.read_text()
         try:
             lines = [json.dumps({"ts": time.time() - 100, "event": "test"}) for _ in range(5)]
-            chronicle_file.write_text("\n".join(lines) + "\n")
-            assert nephron._prune_chronicle() == 0
+            hippocampus_file.write_text("\n".join(lines) + "\n")
+            assert nephron._prune_hippocampus() == 0
         finally:
-            chronicle_file.write_text(original)
+            hippocampus_file.write_text(original)

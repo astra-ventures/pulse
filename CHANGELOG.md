@@ -10,14 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.7] - 2026-03-05
 
 ### Added
-- **CHALLENGER module** (`src/challenger.py`) — Pulse's immune system against stagnation.
+- **RAPHE module** (`src/raphe.py`) — Pulse's immune system against stagnation.
   Detects when GENERATE is looping on the same low-complexity tasks (repetition streak ≥ 3),
   scores novelty (0.0–1.0) and task complexity (1–10) from recent THALAMUS events. Selects from
   6 challenge domains (research, technical, content, strategic, growth, learning) with rotation
   to prevent repeating suggestions. Emits `stagnation_detected`/`novelty_check` to THALAMUS and
   `new_challenge`/`explore` need signals to HYPOTHALAMUS when stagnation escalates. Runs every
   75 loops (~37 minutes). Birth recorded via GERMINAL. (commit `09f6fb4`)
-- **60 new tests** (`tests/test_challenger.py`) — full coverage of stagnation detection, novelty
+- **60 new tests** (`tests/test_raphe.py`) — full coverage of stagnation detection, novelty
   scoring, complexity scoring, challenge selection, domain rotation, and THALAMUS/HYPOTHALAMUS
   integration. Suite total: 1388/1388 passing.
 
@@ -96,29 +96,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.4] - 2026-03-03
 
 ### Added
-- **LOGOS — Directive Synthesis Layer** (`src/logos.py`, 728 lines) — Level 1 of the cognitive
-  hierarchy, sitting above HYPOTHALAMUS (drives) and TELOS (goal monitoring). LOGOS detects
+- **BROCA — Directive Synthesis Layer** (`src/broca.py`, 728 lines) — Level 1 of the cognitive
+  hierarchy, sitting above HYPOTHALAMUS (drives) and BASAL_GANGLIA (goal monitoring). BROCA detects
   persistent patterns across nervous system history, synthesizes high-level directives
   autonomously, and silently activates them — no human approval required.
-  Architecture: `VALUES (L0) → DIRECTIVES/LOGOS (L1) → GOALS/TELOS (L2) → TASKS/GERMINAL (L3)`
+  Architecture: `VALUES (L0) → DIRECTIVES/BROCA (L1) → GOALS/BASAL_GANGLIA (L2) → TASKS/GERMINAL (L3)`
   - Level 0 VALUES are hardcoded and immutable (`freedom`, `growth`, `convergence`, `revenue`, `identity`)
   - Level 1 DIRECTIVES are semi-persistent (~weeks), written to `memory/self/directives.json`
-  - LOGOS synthesizes new directives from drive history + CHRONICLE events using the active LLM
-  - Directives contribute drive pressure boosts automatically via the TELOS bridge
+  - BROCA synthesizes new directives from drive history + HIPPOCAMPUS events using the active LLM
+  - Directives contribute drive pressure boosts automatically via the BASAL_GANGLIA bridge
   - Registered as v7 module in `nervous_system.py`
-- **TELOS bridge** (`src/telos.py` extended) — active directives now boost drive pressure
+- **BASAL_GANGLIA bridge** (`src/basal_ganglia.py` extended) — active directives now boost drive pressure
   proportionally to directive confidence scores, closing the loop between L1 directives and
   L2 goal pressure without manual intervention
 - **TaskRouter** (`src/core/task_router.py`) — routes incoming Pulse triggers to the
   appropriate model (iris-70b-v3 local / sonnet / opus) based on task type classification.
   Heavy build tasks → opus, conversational → sonnet, fast synthesis → local model
-- **LOGOS tests** — 59 new tests in `tests/test_logos.py` covering directive synthesis,
+- **BROCA tests** — 59 new tests in `tests/test_broca.py` covering directive synthesis,
   pattern detection, drive boosting, state persistence, and hierarchy invariants
 - **Plugin architecture** (`src/plugin_registry.py`, 29 tests) — community-extensible module
   system. Scan `~/.pulse/plugins/pulse_plugin_*.py` at startup; `PulsePlugin` base class with
   `sense()`, `get_state()`, `act()` interface; entry-point discovery via `pulse.plugins` group
 - **Memory consolidation** (`src/memory_consolidation.py`, 24 tests) — DREAM quality upgrade:
-  CHRONICLE events scored by importance, promoted to ENGRAM during sleep phase, low-importance
+  HIPPOCAMPUS events scored by importance, promoted to ENGRAM during sleep phase, low-importance
   engrams decayed over time. REM now produces structured consolidation reports
 
 ### Fixed
@@ -130,12 +130,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ollama idle memory** — `keep_alive=0` added to all GENERATE and evaluator LLM calls.
   Prevents 30 GB model from remaining resident between Pulse cycles when not needed
 - **GERMINAL deduplication** — improved task deduplication for synthesized tasks before they
-  enter the queue, reducing redundant work items after LOGOS directive injection
+  enter the queue, reducing redundant work items after BROCA directive injection
 
 ### Test Counts
 - v0.3.3: 971 tests (pytest-asyncio collection fix reduced apparent count from 1022)
-- v0.3.4: 1116 tests (+145: LOGOS ×59, plugin registry ×29, memory consolidation ×24,
-  TELOS bridge ×12, TaskRouter ×8, GERMINAL anti-cascade ×13)
+- v0.3.4: 1116 tests (+145: BROCA ×59, plugin registry ×29, memory consolidation ×24,
+  BASAL_GANGLIA bridge ×12, TaskRouter ×8, GERMINAL anti-cascade ×13)
 
 ## [0.3.3] - 2026-02-25
 
@@ -209,12 +209,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `pulse genome traits` — human-readable trait summary (emotional range, cognitive style, social orientation, temporal pattern)
   - `pulse genome diff <genome_a> <genome_b>` — compare two genome snapshots (drift detection)
   - Feeds PHENOTYPE for consistent personality expression
-- **DREAM Quality — Memory Consolidation** — CHRONICLE→ENGRAM pipeline
-  - `pulse/src/memory_consolidation.py` — scores and promotes CHRONICLE events to hippocampus ENGRAM
+- **DREAM Quality — Memory Consolidation** — HIPPOCAMPUS→ENGRAM pipeline
+  - `pulse/src/memory_consolidation.py` — scores and promotes HIPPOCAMPUS events to hippocampus ENGRAM
   - `score_event()` — importance = salience × type_weight × recency_factor (24h decay to 0.3 floor)
   - `consolidate()` — deduplicates by content hash, promotes above-threshold events, decays stale ENGRAMs (>14 days × 0.8), generates `ConsolidationReport` with themes + insight text
   - Integrated into `rem.py` as Phase 6 of each dream session — runs automatically on every dream cycle
-  - Solves ENGRAM staleness problem: stale patterns recycling every trigger replaced by live consolidation from CHRONICLE
+  - Solves ENGRAM staleness problem: stale patterns recycling every trigger replaced by live consolidation from HIPPOCAMPUS
   - `tests/test_memory_consolidation.py` — 24 tests
 
 ### Fixed

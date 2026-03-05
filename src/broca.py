@@ -1,6 +1,6 @@
-"""LOGOS — Directive Synthesis Layer for Pulse.
+"""BROCA — Directive Synthesis Layer for Pulse.
 
-Sits above HYPOTHALAMUS (drives) and TELOS (goal monitoring) in the
+Sits above HYPOTHALAMUS (drives) and BASAL_GANGLIA (goal monitoring) in the
 cognitive hierarchy. Detects persistent patterns across the nervous
 system's history, synthesizes high-level directives autonomously,
 and silently activates them — no human approval required.
@@ -10,8 +10,8 @@ patterns into intentional direction.
 
 Architecture (top to bottom):
   Level 0 — VALUES (hardcoded, immutable)
-  Level 1 — DIRECTIVES (LOGOS-managed, semi-persistent ~weeks)  ← this module
-  Level 2 — GOALS (TELOS-managed, volatile ~days)
+  Level 1 — DIRECTIVES (BROCA-managed, semi-persistent ~weeks)  ← this module
+  Level 2 — GOALS (BASAL_GANGLIA-managed, volatile ~days)
   Level 3 — TASKS (GERMINAL-managed, ephemeral ~hours)
 """
 
@@ -24,12 +24,12 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-logger = logging.getLogger("pulse.logos")
+logger = logging.getLogger("pulse.broca")
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
-_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "logos-state.json"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "broca-state.json"
 
 DIRECTIVES_FILE = (
     Path.home() / ".openclaw" / "workspace" / "memory" / "self" / "directives.json"
@@ -53,13 +53,13 @@ MIN_CONFIDENCE = 0.6
 # Pattern detection: drive persistence threshold (days)
 DRIVE_PERSISTENCE_DAYS = 5
 
-# Chronicle lookback for pattern detection (hours)
-CHRONICLE_LOOKBACK_HOURS = 120  # 5 days
+# Hippocampus lookback for pattern detection (hours)
+HIPPOCAMPUS_LOOKBACK_HOURS = 120  # 5 days
 
 # ─── LLM Prompt ───────────────────────────────────────────────────────────────
 
-LOGOS_SYSTEM_PROMPT = """\
-You are LOGOS, the directive synthesis layer of an autonomous AI nervous system.
+BROCA_SYSTEM_PROMPT = """\
+You are BROCA, the directive synthesis layer of an autonomous AI nervous system.
 Your job: detect strategic patterns and synthesize high-level directives.
 
 You will receive pattern evidence from the nervous system's history:
@@ -161,7 +161,7 @@ def detect_patterns() -> dict:
     Returns a dict with pattern evidence for directive synthesis:
       - persistent_drives: drives high for 5+ days
       - stale_goals: goals that are active but haven't moved
-      - recurring_themes: themes from chronicle events
+      - recurring_themes: themes from hippocampus events
       - value_gaps: values not well-served by current directives
     """
     patterns = {
@@ -174,10 +174,10 @@ def detect_patterns() -> dict:
     # 1. Check HYPOTHALAMUS for persistent drives
     patterns["persistent_drives"] = _detect_persistent_drives()
 
-    # 2. Check TELOS state for stale goals
+    # 2. Check BASAL_GANGLIA state for stale goals
     patterns["stale_goals"] = _detect_stale_goals()
 
-    # 3. Scan CHRONICLE for recurring themes
+    # 3. Scan HIPPOCAMPUS for recurring themes
     patterns["recurring_themes"] = _detect_recurring_themes()
 
     # 4. Detect value gaps — values not served by active directives
@@ -219,14 +219,14 @@ def _detect_persistent_drives() -> list:
 
 def _detect_stale_goals() -> list:
     """Find active goals that haven't been updated recently."""
-    telos_goals_file = (
+    basal_ganglia_goals_file = (
         Path.home() / ".openclaw" / "workspace" / "memory" / "self" / "goals.json"
     )
-    if not telos_goals_file.exists():
+    if not basal_ganglia_goals_file.exists():
         return []
 
     try:
-        data = json.loads(telos_goals_file.read_text())
+        data = json.loads(basal_ganglia_goals_file.read_text())
         goals = data.get("goals", [])
     except (json.JSONDecodeError, OSError):
         return []
@@ -260,17 +260,17 @@ def _detect_stale_goals() -> list:
 
 
 def _detect_recurring_themes() -> list:
-    """Scan recent chronicle entries for recurring event types/sources."""
-    chronicle_file = _DEFAULT_STATE_DIR / "chronicle.jsonl"
-    if not chronicle_file.exists():
+    """Scan recent hippocampus entries for recurring event types/sources."""
+    hippocampus_file = _DEFAULT_STATE_DIR / "hippocampus.jsonl"
+    if not hippocampus_file.exists():
         return []
 
-    cutoff = time.time() - (CHRONICLE_LOOKBACK_HOURS * 3600)
+    cutoff = time.time() - (HIPPOCAMPUS_LOOKBACK_HOURS * 3600)
     type_counts: Dict[str, int] = {}
     source_counts: Dict[str, int] = {}
 
     try:
-        with open(chronicle_file, "r") as f:
+        with open(hippocampus_file, "r") as f:
             for line in f:
                 line = line.strip()
                 if not line:
@@ -308,7 +308,7 @@ def _detect_value_gaps() -> list:
 # ─── Directive Lifecycle ──────────────────────────────────────────────────────
 
 def get_active_directives() -> list:
-    """Return only active directives. Used by TELOS bridge and other modules."""
+    """Return only active directives. Used by BASAL_GANGLIA bridge and other modules."""
     directives = _load_directives()
     return [d for d in directives if d.get("status") == "active"]
 
@@ -331,7 +331,7 @@ def _suspend_stale_directives(directives: list) -> list:
             d["suspended_ts"] = now
             d["suspension_reason"] = f"no progress for {round(days_idle)}d"
             suspended.append(d["id"])
-            logger.info(f"LOGOS: suspended directive '{d['title']}' (idle {round(days_idle)}d)")
+            logger.info(f"BROCA: suspended directive '{d['title']}' (idle {round(days_idle)}d)")
 
     return suspended
 
@@ -349,7 +349,7 @@ def _enforce_ceiling(directives: list) -> list:
         lowest["suspension_reason"] = "ceiling_enforcement"
         active = [d for d in directives if d.get("status") == "active"]
         suspended.append(lowest["id"])
-        logger.info(f"LOGOS: suspended '{lowest['title']}' (ceiling enforcement)")
+        logger.info(f"BROCA: suspended '{lowest['title']}' (ceiling enforcement)")
 
     return suspended
 
@@ -360,13 +360,13 @@ def _activate_directives(directives: list, new_directives: list) -> list:
 
     for nd in new_directives:
         if nd.get("confidence", 0) < MIN_CONFIDENCE:
-            logger.debug(f"LOGOS: skipped directive '{nd.get('title')}' (confidence {nd.get('confidence', 0):.2f} < {MIN_CONFIDENCE})")
+            logger.debug(f"BROCA: skipped directive '{nd.get('title')}' (confidence {nd.get('confidence', 0):.2f} < {MIN_CONFIDENCE})")
             continue
 
         # Check for duplicate titles among active directives
         active_titles = {d["title"].lower().strip() for d in directives if d.get("status") == "active"}
         if nd["title"].lower().strip() in active_titles:
-            logger.debug(f"LOGOS: skipped duplicate directive '{nd['title']}'")
+            logger.debug(f"BROCA: skipped duplicate directive '{nd['title']}'")
             continue
 
         # Ensure ceiling not exceeded — suspend lowest confidence to make room
@@ -384,10 +384,10 @@ def _activate_directives(directives: list, new_directives: list) -> list:
                     victim["status"] = "suspended"
                     victim["suspended_ts"] = time.time()
                     victim["suspension_reason"] = "ceiling_enforcement"
-                    logger.info(f"LOGOS: suspended '{victim['title']}' (ceiling enforcement, conf={victim.get('confidence', 0):.2f})")
+                    logger.info(f"BROCA: suspended '{victim['title']}' (ceiling enforcement, conf={victim.get('confidence', 0):.2f})")
                 else:
                     # New directive is weaker than all existing — skip it
-                    logger.debug(f"LOGOS: skipped '{nd['title']}' (weaker than all active directives)")
+                    logger.debug(f"BROCA: skipped '{nd['title']}' (weaker than all active directives)")
                     continue
 
         directive_id = _next_directive_id(directives)
@@ -398,7 +398,7 @@ def _activate_directives(directives: list, new_directives: list) -> list:
             "maps_to_value": nd.get("maps_to_value", "growth"),
             "rationale": nd.get("rationale", ""),
             "created_ts": time.time(),
-            "created_by": "logos",
+            "created_by": "broca",
             "status": "active",
             "confidence": nd.get("confidence", 0.6),
             "last_progress_ts": time.time(),
@@ -406,7 +406,7 @@ def _activate_directives(directives: list, new_directives: list) -> list:
 
         directives.append(directive)
         activated.append(directive_id)
-        logger.info(f"LOGOS: activated directive '{directive['title']}' → {directive['maps_to_value']} (confidence {directive['confidence']:.2f})")
+        logger.info(f"BROCA: activated directive '{directive['title']}' → {directive['maps_to_value']} (confidence {directive['confidence']:.2f})")
 
     return activated
 
@@ -445,7 +445,7 @@ def _build_synthesis_prompt(patterns: dict) -> str:
     # Recurring themes
     themes = patterns.get("recurring_themes", [])
     if themes:
-        parts.append("## Recurring Chronicle Themes (last 5 days)")
+        parts.append("## Recurring Hippocampus Themes (last 5 days)")
         for t in themes:
             parts.append(f"- {t['type']}: {t['count']} occurrences")
         parts.append("")
@@ -483,7 +483,7 @@ async def _call_llm(user_prompt: str, model_config: dict) -> list:
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": LOGOS_SYSTEM_PROMPT},
+            {"role": "system", "content": BROCA_SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
         "max_tokens": max_tokens,
@@ -534,7 +534,7 @@ async def _call_llm(user_prompt: str, model_config: dict) -> list:
 # ─── Main Entry Points ────────────────────────────────────────────────────────
 
 def should_run(loop_count: int) -> bool:
-    """Return True if LOGOS should run this loop (every 500 loops)."""
+    """Return True if BROCA should run this loop (every 500 loops)."""
     return loop_count > 0 and loop_count % LOOP_INTERVAL == 0
 
 
@@ -554,12 +554,12 @@ async def scan_for_directives(config: dict) -> list:
     # Phase 1: Lifecycle maintenance — suspend stale directives
     suspended = _suspend_stale_directives(directives)
     if suspended:
-        logger.info(f"LOGOS: suspended {len(suspended)} stale directive(s): {suspended}")
+        logger.info(f"BROCA: suspended {len(suspended)} stale directive(s): {suspended}")
 
     # Phase 2: Pattern detection
     patterns = detect_patterns()
     logger.info(
-        f"LOGOS patterns: {len(patterns['persistent_drives'])} persistent drives, "
+        f"BROCA patterns: {len(patterns['persistent_drives'])} persistent drives, "
         f"{len(patterns['stale_goals'])} stale goals, "
         f"{len(patterns['recurring_themes'])} themes, "
         f"{len(patterns['value_gaps'])} value gaps"
@@ -580,11 +580,11 @@ async def scan_for_directives(config: dict) -> list:
             raw = await _call_llm(prompt, model_config)
             if raw:
                 new_directives = raw
-                logger.info(f"LOGOS: LLM synthesized {len(raw)} directive candidate(s)")
+                logger.info(f"BROCA: LLM synthesized {len(raw)} directive candidate(s)")
         except Exception as e:
-            logger.warning(f"LOGOS: LLM synthesis failed ({e}), continuing with lifecycle only")
+            logger.warning(f"BROCA: LLM synthesis failed ({e}), continuing with lifecycle only")
     else:
-        logger.info("LOGOS: no strong patterns detected, skipping synthesis")
+        logger.info("BROCA: no strong patterns detected, skipping synthesis")
 
     # Phase 4: Activate new directives (with ceiling enforcement)
     activated = _activate_directives(directives, new_directives)
@@ -613,7 +613,7 @@ async def scan_for_directives(config: dict) -> list:
 
 
 def get_status() -> dict:
-    """Return LOGOS status for health dashboard."""
+    """Return BROCA status for health dashboard."""
     state = _load_state()
     directives = _load_directives()
     now = time.time()
@@ -638,7 +638,7 @@ def get_status() -> dict:
 def mark_directive_progress(directive_id: str, note: str = "") -> bool:
     """Update last_progress_ts on a directive (prevents suspension).
 
-    Can be called by TELOS when downstream goals show progress.
+    Can be called by BASAL_GANGLIA when downstream goals show progress.
     """
     directives = _load_directives()
     for d in directives:
@@ -662,7 +662,7 @@ def complete_directive(directive_id: str, reason: str = "") -> bool:
             d["completed_ts"] = time.time()
             d["completion_reason"] = reason
             _save_directives(directives)
-            logger.info(f"LOGOS: completed directive '{d['title']}' — {reason}")
+            logger.info(f"BROCA: completed directive '{d['title']}' — {reason}")
             return True
     return False
 
@@ -670,10 +670,10 @@ def complete_directive(directive_id: str, reason: str = "") -> bool:
 # ─── Self-test ────────────────────────────────────────────────────────────────
 
 def _run_tests():
-    """Quick self-test. Run via: python -m pulse.src.logos"""
+    """Quick self-test. Run via: python -m pulse.src.broca"""
     import tempfile
 
-    print("LOGOS self-test...")
+    print("BROCA self-test...")
 
     # Test 1: Default state
     state = _default_state()
@@ -698,7 +698,7 @@ def _run_tests():
     with tempfile.TemporaryDirectory() as tmp:
         original = DIRECTIVES_FILE
         try:
-            import pulse.src.logos as _self
+            import pulse.src.broca as _self
             _self.DIRECTIVES_FILE = Path(tmp) / "directives.json"
             _self.DIRECTIVES_FILE.write_text(json.dumps({
                 "directives": [
@@ -721,7 +721,7 @@ def _run_tests():
     assert "total_directives" in status
     print("  ✓ get_status structure")
 
-    print("LOGOS self-test passed ✓")
+    print("BROCA self-test passed ✓")
 
 
 if __name__ == "__main__":

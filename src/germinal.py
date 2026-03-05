@@ -12,7 +12,7 @@ Safety rails:
 - Rollback on test failure
 - Max 1 new module per COOLDOWN_DAYS (rate limiting)
 - Human notification on every birth
-- All births logged to CHRONICLE
+- All births logged to HIPPOCAMPUS
 - Whitelist guard: only births modules for drives in DRIVE_ARCHETYPES (prevents
   prompt injection / state-file tampering from triggering arbitrary module creation)
 - fcntl file locking on state reads/writes (race-safe for concurrent access)
@@ -114,7 +114,7 @@ DRIVE_ARCHETYPES = {
         "interval": 200,
     },
     "new_challenge": {
-        "name": "CHALLENGER",
+        "name": "RAPHE",
         "latin": "provocator",
         "purpose": "Goal expansion, complexity escalation, stagnation detection and response",
         "hook": "post_loop",

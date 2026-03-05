@@ -1,4 +1,4 @@
-"""TELOS — Live Goal Signal Monitor for Pulse.
+"""BASAL_GANGLIA — Live Goal Signal Monitor for Pulse.
 
 Goals in memory/self/goals.json are live signals, not static files.
 Drive pressure updates when goals are stuck (stale) or progressing.
@@ -7,11 +7,11 @@ Priority 1 goals stale > 3 days → urgency signal.
 Any goal stale > 7 days → ship_something signal.
 
 Blocker tagging: goals with a "blocked_on" field are skipped entirely
-until unblocked (field removed or set to null). This prevents TELOS from
+until unblocked (field removed or set to null). This prevents BASAL_GANGLIA from
 endlessly pressuring drives for goals that can't move without human action.
 
-LOGOS Bridge (v2): scan_goals_with_directives() reads active directives
-from LOGOS and generates additional drive signals based on directive-value
+BROCA Bridge (v2): scan_goals_with_directives() reads active directives
+from BROCA and generates additional drive signals based on directive-value
 mappings. Directives boost drive pressure for their mapped values.
 """
 
@@ -22,10 +22,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-logger = logging.getLogger("pulse.telos")
+logger = logging.getLogger("pulse.basal_ganglia")
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
-_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "telos-state.json"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "basal_ganglia-state.json"
 
 GOALS_FILE = Path.home() / ".openclaw" / "workspace" / "memory" / "self" / "goals.json"
 
@@ -123,7 +123,7 @@ def scan_goals(hypothalamus_mod=None, endocrine_mod=None) -> dict:
     blocked_goals = [g for g in all_active if g.get("blocked_on")]
     if blocked_goals:
         logger.debug(
-            "TELOS: skipping %d blocked goal(s): %s",
+            "BASAL_GANGLIA: skipping %d blocked goal(s): %s",
             len(blocked_goals),
             ", ".join(f"'{g.get('title','?')}' (blocked_on: {g.get('blocked_on')})" for g in blocked_goals),
         )
@@ -290,10 +290,10 @@ def should_run(loop_count: int) -> bool:
     return loop_count % 100 == 0
 
 
-# ─── LOGOS Bridge ─────────────────────────────────────────────────────────────
+# ─── BROCA Bridge ─────────────────────────────────────────────────────────────
 
-# Value-to-drive mapping: LOGOS directive values → HYPOTHALAMUS drive names.
-# When a directive maps to a value, TELOS boosts the corresponding drive.
+# Value-to-drive mapping: BROCA directive values → HYPOTHALAMUS drive names.
+# When a directive maps to a value, BASAL_GANGLIA boosts the corresponding drive.
 _VALUE_DRIVE_MAP = {
     "revenue": "generate_revenue",
     "growth": "growth",
@@ -309,19 +309,19 @@ _DIRECTIVE_DRIVE_BOOST = 0.08
 def scan_goals_with_directives(
     hypothalamus_mod=None,
     endocrine_mod=None,
-    logos_mod=None,
+    broca_mod=None,
 ) -> dict:
-    """Extended goal scan that also reads LOGOS directives.
+    """Extended goal scan that also reads BROCA directives.
 
     Runs the standard scan_goals() first, then reads active directives
-    from LOGOS and emits additional drive signals based on directive-value
+    from BROCA and emits additional drive signals based on directive-value
     mappings. Directives boost drive pressure for their mapped values,
     giving HYPOTHALAMUS a strategic push from the directive layer.
 
     Args:
         hypothalamus_mod: optional HYPOTHALAMUS module for record_need_signal / reinforce_drive
         endocrine_mod: optional ENDOCRINE module for cortisol bumps
-        logos_mod: optional LOGOS module (must have get_active_directives())
+        broca_mod: optional BROCA module (must have get_active_directives())
 
     Returns:
         Standard scan_goals result dict, extended with directive info:
@@ -334,13 +334,13 @@ def scan_goals_with_directives(
     # Standard goal scan first
     result = scan_goals(hypothalamus_mod=hypothalamus_mod, endocrine_mod=endocrine_mod)
 
-    # LOGOS directive bridge
+    # BROCA directive bridge
     directives_active = 0
     signals_emitted = 0
 
-    if logos_mod is not None:
+    if broca_mod is not None:
         try:
-            active_directives = logos_mod.get_active_directives()
+            active_directives = broca_mod.get_active_directives()
             directives_active = len(active_directives)
 
             for directive in active_directives:
@@ -352,7 +352,7 @@ def scan_goals_with_directives(
                     try:
                         # Record as a need signal from the directive layer
                         hypothalamus_mod.record_need_signal(
-                            drive_name, "logos_directive"
+                            drive_name, "broca_directive"
                         )
                         signals_emitted += 1
                     except Exception:
@@ -368,12 +368,12 @@ def scan_goals_with_directives(
 
             if directives_active > 0:
                 logger.info(
-                    f"TELOS: bridged {directives_active} LOGOS directive(s), "
+                    f"BASAL_GANGLIA: bridged {directives_active} BROCA directive(s), "
                     f"emitted {signals_emitted} drive signal(s)"
                 )
 
         except Exception as e:
-            logger.warning(f"TELOS: LOGOS directive bridge failed: {e}")
+            logger.warning(f"BASAL_GANGLIA: BROCA directive bridge failed: {e}")
 
     result["directives_active"] = directives_active
     result["directive_signals_emitted"] = signals_emitted

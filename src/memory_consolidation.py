@@ -1,12 +1,12 @@
 """
-Memory Consolidation — CHRONICLE → ENGRAM pipeline for Pulse v0.3.0.
+Memory Consolidation — HIPPOCAMPUS → ENGRAM pipeline for Pulse v0.3.0.
 
-During REM (dreaming), Pulse consolidates recent CHRONICLE events into
+During REM (dreaming), Pulse consolidates recent HIPPOCAMPUS events into
 long-term ENGRAM memories — mirroring how human sleep consolidates
 short-term experiences into long-term memory.
 
 Algorithm:
-  1. Read last N CHRONICLE events
+  1. Read last N HIPPOCAMPUS events
   2. Score each by importance (salience × recency × event_type weight)
   3. Promote high-importance events to ENGRAM (dedup by content hash)
   4. Decay stale low-importance ENGRAMs (reduce score over time)
@@ -30,7 +30,7 @@ from typing import List, Optional
 logger = logging.getLogger("pulse.memory_consolidation")
 
 _DEFAULT_STATE_DIR  = Path.home() / ".pulse" / "state"
-_DEFAULT_CHRONICLE  = _DEFAULT_STATE_DIR / "chronicle.jsonl"
+_DEFAULT_HIPPOCAMPUS  = _DEFAULT_STATE_DIR / "hippocampus.jsonl"
 _DEFAULT_ENGRAM_DIR = Path.home() / ".pulse" / "hippocampus"
 _DEFAULT_ENGRAM_FILE = _DEFAULT_ENGRAM_DIR / "learnings.jsonl"
 _CONSOLIDATION_LOG  = _DEFAULT_STATE_DIR / "consolidation-log.jsonl"
@@ -66,7 +66,7 @@ ENGRAM_DECAY_FACTOR   = 0.8  # multiply importance by this after decay age
 
 @dataclass
 class ConsolidatedMemory:
-    """A CHRONICLE event that has been promoted to long-term ENGRAM."""
+    """A HIPPOCAMPUS event that has been promoted to long-term ENGRAM."""
     source_event_id: str
     content: str
     importance: float
@@ -127,12 +127,12 @@ class ConsolidationReport:
 
 # ── Core pipeline ─────────────────────────────────────────────────────────────
 
-def read_chronicle_recent(
+def read_hippocampus_recent(
     n: int = 50,
-    chronicle_file: Optional[Path] = None,
+    hippocampus_file: Optional[Path] = None,
 ) -> List[dict]:
-    """Read the last N events from chronicle.jsonl."""
-    path = chronicle_file or _DEFAULT_CHRONICLE
+    """Read the last N events from hippocampus.jsonl."""
+    path = hippocampus_file or _DEFAULT_HIPPOCAMPUS
     if not path.exists():
         return []
     try:
@@ -152,7 +152,7 @@ def read_chronicle_recent(
 
 
 def score_event(event: dict, now: Optional[float] = None) -> float:
-    """Compute an importance score [0.0–2.0] for a CHRONICLE event.
+    """Compute an importance score [0.0–2.0] for a HIPPOCAMPUS event.
 
     Score = salience × type_weight × recency_factor
     """
@@ -176,7 +176,7 @@ def score_event(event: dict, now: Optional[float] = None) -> float:
 
 
 def _extract_content(event: dict) -> str:
-    """Extract a human-readable content string from a CHRONICLE event."""
+    """Extract a human-readable content string from a HIPPOCAMPUS event."""
     data = event.get("data", {})
     # Try common fields in priority order; "reason" covers trigger events
     for field_name in ("summary", "message", "description", "text", "content", "label", "reason"):
@@ -190,7 +190,7 @@ def _extract_content(event: dict) -> str:
 
 
 def _extract_tags(event: dict) -> List[str]:
-    """Extract tags from a CHRONICLE event."""
+    """Extract tags from a HIPPOCAMPUS event."""
     tags = []
     event_type = event.get("type", "")
     if event_type:
@@ -302,16 +302,16 @@ def _generate_insight(memories: List[ConsolidatedMemory], events_read: int) -> s
 def consolidate(
     n_events: int = 50,
     importance_threshold: float = PROMOTION_THRESHOLD,
-    chronicle_file: Optional[Path] = None,
+    hippocampus_file: Optional[Path] = None,
     engram_file: Optional[Path] = None,
     now: Optional[float] = None,
 ) -> ConsolidationReport:
-    """Run the full CHRONICLE → ENGRAM consolidation pipeline.
+    """Run the full HIPPOCAMPUS → ENGRAM consolidation pipeline.
 
     Args:
-        n_events: how many recent CHRONICLE events to consider
+        n_events: how many recent HIPPOCAMPUS events to consider
         importance_threshold: score cutoff for ENGRAM promotion
-        chronicle_file: override default chronicle path (for testing)
+        hippocampus_file: override default hippocampus path (for testing)
         engram_file: override default engram path (for testing)
         now: override current time (for testing)
 
@@ -321,12 +321,12 @@ def consolidate(
     report = ConsolidationReport(run_at=now or time.time())
     efile = engram_file or _DEFAULT_ENGRAM_FILE
 
-    # 1. Read CHRONICLE
-    events = read_chronicle_recent(n_events, chronicle_file)
+    # 1. Read HIPPOCAMPUS
+    events = read_hippocampus_recent(n_events, hippocampus_file)
     report.events_read = len(events)
 
     if not events:
-        report.dream_insight = "Chronicle empty — nothing to consolidate."
+        report.dream_insight = "Hippocampus empty — nothing to consolidate."
         return report
 
     # 2. Score events
@@ -369,7 +369,7 @@ def consolidate(
     # 5. Write new ENGRAMs
     if new_memories:
         _append_engrams(new_memories, efile)
-        logger.info(f"Promoted {len(new_memories)} new ENGRAMs from CHRONICLE")
+        logger.info(f"Promoted {len(new_memories)} new ENGRAMs from HIPPOCAMPUS")
 
     # 6. Decay old ENGRAMs
     report.decayed = decay_old_engrams(efile)

@@ -377,7 +377,7 @@ class TestGracefulDegradation:
                       "enteric", "plasticity", "rem", "engram", "mirror",
                       "callosum",
                       "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+                      "vestibular", "thymus", "oximeter", "genome", "aura", "hippocampus",
                       "parietal"]:
             setattr(ns, attr, None)
         for attr in ["_mod_thalamus", "_mod_circadian", "_mod_adipose",
@@ -388,7 +388,7 @@ class TestGracefulDegradation:
                       "_mod_phenotype", "_mod_telomere", "_mod_hypothalamus",
                       "_mod_soma", "_mod_dendrite", "_mod_vestibular",
                       "_mod_thymus", "_mod_oximeter", "_mod_genome",
-                      "_mod_aura", "_mod_chronicle",
+                      "_mod_aura", "_mod_hippocampus",
                       "_mod_parietal"]:
             setattr(ns, attr, None)
         

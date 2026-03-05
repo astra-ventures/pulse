@@ -8,7 +8,7 @@ from typing import List
 import pytest
 
 from pulse.src.memory_consolidation import (
-    read_chronicle_recent,
+    read_hippocampus_recent,
     score_event,
     consolidate,
     decay_old_engrams,
@@ -41,7 +41,7 @@ def make_event(
     }
 
 
-def write_chronicle(events: List[dict], path: Path):
+def write_hippocampus(events: List[dict], path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w") as f:
         for e in events:
@@ -62,32 +62,32 @@ def read_engrams(path: Path) -> List[dict]:
     return result
 
 
-# ── read_chronicle_recent ─────────────────────────────────────────────────────
+# ── read_hippocampus_recent ─────────────────────────────────────────────────────
 
-class TestReadChronicleRecent:
+class TestReadHippocampusRecent:
 
     def test_returns_empty_when_file_missing(self, tmp_path):
-        result = read_chronicle_recent(10, chronicle_file=tmp_path / "missing.jsonl")
+        result = read_hippocampus_recent(10, hippocampus_file=tmp_path / "missing.jsonl")
         assert result == []
 
     def test_returns_last_n_events(self, tmp_path):
-        chronicle = tmp_path / "chronicle.jsonl"
+        hippocampus = tmp_path / "hippocampus.jsonl"
         events = [make_event(summary=f"event {i}") for i in range(20)]
-        write_chronicle(events, chronicle)
-        result = read_chronicle_recent(5, chronicle_file=chronicle)
+        write_hippocampus(events, hippocampus)
+        result = read_hippocampus_recent(5, hippocampus_file=hippocampus)
         assert len(result) == 5
 
     def test_returns_all_when_fewer_than_n(self, tmp_path):
-        chronicle = tmp_path / "chronicle.jsonl"
+        hippocampus = tmp_path / "hippocampus.jsonl"
         events = [make_event(summary=f"event {i}") for i in range(3)]
-        write_chronicle(events, chronicle)
-        result = read_chronicle_recent(10, chronicle_file=chronicle)
+        write_hippocampus(events, hippocampus)
+        result = read_hippocampus_recent(10, hippocampus_file=hippocampus)
         assert len(result) == 3
 
     def test_skips_invalid_json_lines(self, tmp_path):
-        chronicle = tmp_path / "chronicle.jsonl"
-        chronicle.write_text('{"valid": true}\nnot json\n{"valid": true}\n')
-        result = read_chronicle_recent(10, chronicle_file=chronicle)
+        hippocampus = tmp_path / "hippocampus.jsonl"
+        hippocampus.write_text('{"valid": true}\nnot json\n{"valid": true}\n')
+        result = read_hippocampus_recent(10, hippocampus_file=hippocampus)
         assert len(result) == 2
 
 
@@ -168,71 +168,71 @@ class TestExtractTags:
 
 class TestConsolidate:
 
-    def test_empty_chronicle_returns_empty_report(self, tmp_path):
+    def test_empty_hippocampus_returns_empty_report(self, tmp_path):
         report = consolidate(
-            chronicle_file=tmp_path / "missing.jsonl",
+            hippocampus_file=tmp_path / "missing.jsonl",
             engram_file=tmp_path / "engrams.jsonl",
         )
         assert report.events_read == 0
         assert report.promoted == 0
 
     def test_high_importance_events_get_promoted(self, tmp_path):
-        chronicle = tmp_path / "chronicle.jsonl"
+        hippocampus = tmp_path / "hippocampus.jsonl"
         engram = tmp_path / "engrams.jsonl"
         events = [
             make_event(event_type="goal_achieved", salience=1.0, summary="Achieved major goal"),
             make_event(event_type="milestone", salience=0.9, summary="Shipped feature"),
         ]
-        write_chronicle(events, chronicle)
-        report = consolidate(chronicle_file=chronicle, engram_file=engram)
+        write_hippocampus(events, hippocampus)
+        report = consolidate(hippocampus_file=hippocampus, engram_file=engram)
         assert report.promoted >= 1
         engrams = read_engrams(engram)
         assert len(engrams) >= 1
 
     def test_low_importance_events_not_promoted(self, tmp_path):
-        chronicle = tmp_path / "chronicle.jsonl"
+        hippocampus = tmp_path / "hippocampus.jsonl"
         engram = tmp_path / "engrams.jsonl"
         events = [make_event(event_type="mood_update", salience=0.1, summary="Minor mood shift")]
-        write_chronicle(events, chronicle)
+        write_hippocampus(events, hippocampus)
         report = consolidate(
-            chronicle_file=chronicle,
+            hippocampus_file=hippocampus,
             engram_file=engram,
             importance_threshold=0.9,  # very high threshold
         )
         assert report.promoted == 0
 
     def test_duplicate_events_not_re_promoted(self, tmp_path):
-        chronicle = tmp_path / "chronicle.jsonl"
+        hippocampus = tmp_path / "hippocampus.jsonl"
         engram = tmp_path / "engrams.jsonl"
         event = make_event(event_type="goal_achieved", salience=1.0, summary="Same important event")
-        write_chronicle([event], chronicle)
+        write_hippocampus([event], hippocampus)
 
         # First run — should promote
-        report1 = consolidate(chronicle_file=chronicle, engram_file=engram)
+        report1 = consolidate(hippocampus_file=hippocampus, engram_file=engram)
         assert report1.promoted == 1
 
         # Second run — same content hash, should not re-promote
-        report2 = consolidate(chronicle_file=chronicle, engram_file=engram)
+        report2 = consolidate(hippocampus_file=hippocampus, engram_file=engram)
         assert report2.already_known >= 1
         assert report2.promoted == 0
 
     def test_report_contains_themes(self, tmp_path):
-        chronicle = tmp_path / "chronicle.jsonl"
+        hippocampus = tmp_path / "hippocampus.jsonl"
         engram = tmp_path / "engrams.jsonl"
         events = [
             make_event(event_type="milestone", salience=0.9, summary="Pulse v0.3.0 shipped"),
             make_event(event_type="goal_achieved", salience=0.95, summary="Goal complete"),
         ]
-        write_chronicle(events, chronicle)
-        report = consolidate(chronicle_file=chronicle, engram_file=engram)
+        write_hippocampus(events, hippocampus)
+        report = consolidate(hippocampus_file=hippocampus, engram_file=engram)
         assert isinstance(report.top_themes, list)
 
     def test_engram_importance_scaled_correctly(self, tmp_path):
-        chronicle = tmp_path / "chronicle.jsonl"
+        hippocampus = tmp_path / "hippocampus.jsonl"
         engram = tmp_path / "engrams.jsonl"
         event = make_event(event_type="goal_achieved", salience=1.0, summary="Important milestone")
-        write_chronicle([event], chronicle)
-        consolidate(chronicle_file=chronicle, engram_file=engram)
+        write_hippocampus([event], hippocampus)
+        consolidate(hippocampus_file=hippocampus, engram_file=engram)
         engrams = read_engrams(engram)
         assert len(engrams) >= 1
         # Importance should be in 1-10 range

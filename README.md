@@ -37,13 +37,13 @@ Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 🧬 **Full Nervous System (50 modules)**
 - Emotional memory (LIMBIC), hormonal state (ENDOCRINE), dreaming (REM)
 - Habit formation (CEREBELLUM), world model (PARIETAL), immune integrity (IMMUNE)
-- CHRONICLE → ENGRAM memory consolidation with importance scoring and decay
+- HIPPOCAMPUS → ENGRAM memory consolidation with importance scoring and decay
 - Constellation inter-agent wiring (AURA), biosensor bridge (Apple Watch → SOMA)
 - GENOME export — portable "personality DNA" you can share, fork, and diff
 
-🎭 **Cognitive Hierarchy (LOGOS)**
-- VALUES (L0, immutable) → DIRECTIVES/LOGOS (L1) → GOALS/TELOS (L2) → TASKS/GERMINAL (L3)
-- LOGOS synthesizes high-level directives from drive history + events — no human input needed
+🎭 **Cognitive Hierarchy (BROCA)**
+- VALUES (L0, immutable) → DIRECTIVES/BROCA (L1) → GOALS/BASAL_GANGLIA (L2) → TASKS/GERMINAL (L3)
+- BROCA synthesizes high-level directives from drive history + events — no human input needed
 - Active directives boost drive pressure automatically, closing the self-direction loop
 
 🔌 **Plugin Architecture**
@@ -57,7 +57,7 @@ Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 - Zero config — sensible defaults, fully overridable
 
 📡 **Observation API**
-- Real-time HTTP/WebSocket API: drives, endocrine, emotional, chronicle events
+- Real-time HTTP/WebSocket API: drives, endocrine, emotional, hippocampus events
 - Live dashboard at `/dashboard` — see inside the nervous system as it runs
 - Constellation endpoints for multi-agent aura sharing
 
@@ -144,8 +144,8 @@ openclaw:
 ```
 ┌────────────────────────────────────────────────────────────┐
 │  VALUES (L0) — immutable: freedom, growth, convergence     │
-│  LOGOS  (L1) — synthesizes directives from history         │
-│  TELOS  (L2) — goal monitoring, pressure boosting          │
+│  BROCA  (L1) — synthesizes directives from history         │
+│  BASAL_GANGLIA  (L2) — goal monitoring, pressure boosting          │
 │  GERMINAL (L3) — task queue, anti-cascade, execution       │
 └──────────────────────────┬─────────────────────────────────┘
                            │
@@ -158,7 +158,7 @@ openclaw:
              ┌─────────────────────────┐
              │  DRIVE ENGINE           │
              │  Accumulate pressure    │
-             │  over time; LOGOS boosts│
+             │  over time; BROCA boosts│
              │  active directives      │
              └────────────┬────────────┘
                           │
@@ -192,7 +192,7 @@ openclaw:
 
 ### Phase 2: Nervous System ✅
 - 50 biological modules (LIMBIC, ENDOCRINE, REM, CEREBELLUM, PARIETAL, IMMUNE, ...)
-- CHRONICLE → ENGRAM memory consolidation with importance scoring and decay
+- HIPPOCAMPUS → ENGRAM memory consolidation with importance scoring and decay
 - Constellation inter-agent wiring (AURA broadcast)
 - Biosensor integration (Apple Watch → SOMA/ENDOCRINE)
 
@@ -201,7 +201,7 @@ openclaw:
 - Plugin architecture (drop-in extensions via `pulse_plugin_*.py`)
 - GENOME export/import — portable personality DNA
 - Real-time dashboard (`/dashboard`)
-- LOGOS directive synthesis (L0→L1→L2→L3 cognitive hierarchy)
+- BROCA directive synthesis (L0→L1→L2→L3 cognitive hierarchy)
 - TaskRouter — automatic model selection per task type
 - ClawHub submission + Product Hunt launch
 

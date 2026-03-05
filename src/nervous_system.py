@@ -91,24 +91,24 @@ _MODULE_REGISTRY: List[tuple] = [
     ("OXIMETER",       "oximeter",       "module",         None),
     ("GENOME",         "genome",         "module",         None),
     ("AURA",           "aura",           "module",         None),
-    ("CHRONICLE",      "chronicle",      "module",         None),
+    ("HIPPOCAMPUS",      "hippocampus",      "module",         None),
     ("NEPHRON",        "nephron",        "mod_only",       None),
     ("GERMINAL",       "germinal",       "mod_only",       None),
     ("PARIETAL",       "parietal",       "class_statedir", "Parietal"),
     ("SUPEREGO",       "superego",       "mod_only",       None),
     # V6 — feedback & synthesis
     ("ECHO",           "echo",           "mod_only",       None),
-    ("AURUM",          "aurum",          "mod_only",       None),
-    ("VESPER",         "vesper",         "mod_only",       None),
-    ("TELOS",          "telos",          "mod_only",       None),
+    ("ADRENAL",          "adrenal",          "mod_only",       None),
+    ("PINEAL",         "pineal",         "mod_only",       None),
+    ("BASAL_GANGLIA",          "basal_ganglia",          "mod_only",       None),
     # V7 — directive layer
-    ("LOGOS",          "logos",          "mod_only",       None),
+    ("BROCA",          "broca",          "mod_only",       None),
     # V8 — constellation junction
     ("SYNAPSE",        "synapse",        "mod_only",       None),
     # V9 — motor / shipping pressure
     ("MOTORIC",        "motoric",        "mod_only",       None),
     # V10 — goal expansion / stagnation detection
-    ("CHALLENGER",     "challenger",     "mod_only",       None),
+    ("RAPHE",     "raphe",     "mod_only",       None),
 ]
 
 
@@ -165,7 +165,7 @@ class NervousSystem:
         self.oximeter = None
         self.genome = None
         self.aura = None
-        self.chronicle = None
+        self.hippocampus = None
         
         # Module-level imports (functional modules)
         self._mod_thalamus = None
@@ -193,7 +193,7 @@ class NervousSystem:
         self._mod_oximeter = None
         self._mod_genome = None
         self._mod_aura = None
-        self._mod_chronicle = None
+        self._mod_hippocampus = None
         self._mod_nephron = None
         self._mod_germinal = None
         self._mod_parietal = None
@@ -201,17 +201,17 @@ class NervousSystem:
         self._mod_superego = None
         # V6 modules
         self._mod_echo = None
-        self._mod_aurum = None
-        self._mod_vesper = None
-        self._mod_telos = None
+        self._mod_adrenal = None
+        self._mod_pineal = None
+        self._mod_basal_ganglia = None
         # V7 modules
-        self._mod_logos = None
+        self._mod_broca = None
         # V8 modules
         self._mod_synapse = None
         # V9 modules
         self._mod_motoric = None
         # V10 modules
-        self._mod_challenger = None
+        self._mod_raphe = None
 
         self._init_modules()
 
@@ -230,7 +230,7 @@ class NervousSystem:
         # Handle special-cased file constants
         for attr in ("_DEFAULT_BROADCAST_FILE", "_DEFAULT_HEALTH_FILE",
                       "_DEFAULT_BUFFER_FILE", "_DEFAULT_ARCHIVE_DIR",
-                      "_DEFAULT_CHRONICLE_FILE", "_DEFAULT_LEXICON_FILE",
+                      "_DEFAULT_HIPPOCAMPUS_FILE", "_DEFAULT_LEXICON_FILE",
                       "_DEFAULT_LEARNING_FILE", "_DEFAULT_SNAPSHOT_DIR",
                       "_DEFAULT_BIOSENSOR_FILE"):
             if hasattr(mod, attr):
@@ -529,37 +529,37 @@ class NervousSystem:
             except Exception as e:
                 results["failed"].append(f"echo: {e}")
 
-        # AURUM
-        if self._mod_aurum:
+        # ADRENAL
+        if self._mod_adrenal:
             try:
-                self._mod_aurum.get_status()
-                results["warmed"].append("aurum")
+                self._mod_adrenal.get_status()
+                results["warmed"].append("adrenal")
             except Exception as e:
-                results["failed"].append(f"aurum: {e}")
+                results["failed"].append(f"adrenal: {e}")
 
-        # VESPER
-        if self._mod_vesper:
+        # PINEAL
+        if self._mod_pineal:
             try:
-                self._mod_vesper.get_status()
-                results["warmed"].append("vesper")
+                self._mod_pineal.get_status()
+                results["warmed"].append("pineal")
             except Exception as e:
-                results["failed"].append(f"vesper: {e}")
+                results["failed"].append(f"pineal: {e}")
 
-        # TELOS
-        if self._mod_telos:
+        # BASAL_GANGLIA
+        if self._mod_basal_ganglia:
             try:
-                self._mod_telos.get_status()
-                results["warmed"].append("telos")
+                self._mod_basal_ganglia.get_status()
+                results["warmed"].append("basal_ganglia")
             except Exception as e:
-                results["failed"].append(f"telos: {e}")
+                results["failed"].append(f"basal_ganglia: {e}")
 
-        # LOGOS
-        if self._mod_logos:
+        # BROCA
+        if self._mod_broca:
             try:
-                self._mod_logos.get_status()
-                results["warmed"].append("logos")
+                self._mod_broca.get_status()
+                results["warmed"].append("broca")
             except Exception as e:
-                results["failed"].append(f"logos: {e}")
+                results["failed"].append(f"broca: {e}")
 
         logger.info(f"🔥 Warm-up: {len(results['warmed'])} warmed, {len(results['failed'])} failed")
         return results
@@ -612,7 +612,7 @@ class NervousSystem:
             "callosum",
             # V3 modules
             "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-            "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+            "vestibular", "thymus", "oximeter", "genome", "aura", "hippocampus",
             # V4 modules
             "nephron",
             # V5 modules
@@ -885,18 +885,18 @@ class NervousSystem:
             logger.warning(f"pre_sense OXYTOCIN detect failed: {e}")
 
         # ── ANAMNESIS — unforgetting; history feeding the present ──────────────
-        # Pulls recent chronicle entries into the active sense context so the
+        # Pulls recent hippocampus entries into the active sense context so the
         # agent always has a living thread of what just happened behind its eyes.
-        if self._mod_chronicle and self._loop_count % 20 == 0:
+        if self._mod_hippocampus and self._loop_count % 20 == 0:
             try:
-                recent = self._mod_chronicle.query_recent(n=5)
+                recent = self._mod_hippocampus.query_recent(n=5)
                 if recent:
-                    context["chronicle_recent"] = [
+                    context["hippocampus_recent"] = [
                         {"type": e.get("type"), "source": e.get("source"), "time": e.get("time")}
                         for e in recent[-5:]
                     ]
             except Exception as e:
-                logger.warning(f"pre_sense CHRONICLE recall failed: {e}")
+                logger.warning(f"pre_sense HIPPOCAMPUS recall failed: {e}")
 
         # ECHO — reinforcement signal from Josh
         if self._mod_echo:
@@ -906,19 +906,19 @@ class NervousSystem:
             except Exception as e:
                 logger.warning(f"pre_sense ECHO failed: {e}")
 
-        # AURUM — financial pressure
-        if self._mod_aurum:
+        # ADRENAL — financial pressure
+        if self._mod_adrenal:
             try:
-                context["aurum_status"] = self._mod_aurum.get_status()
+                context["adrenal_status"] = self._mod_adrenal.get_status()
             except Exception as e:
-                logger.warning(f"pre_sense AURUM failed: {e}")
+                logger.warning(f"pre_sense ADRENAL failed: {e}")
 
-        # TELOS — active P1 goals
-        if self._mod_telos:
+        # BASAL_GANGLIA — active P1 goals
+        if self._mod_basal_ganglia:
             try:
-                context["active_p1_goals"] = self._mod_telos.get_active_goals(priority=1)
+                context["active_p1_goals"] = self._mod_basal_ganglia.get_active_goals(priority=1)
             except Exception as e:
-                logger.warning(f"pre_sense TELOS failed: {e}")
+                logger.warning(f"pre_sense BASAL_GANGLIA failed: {e}")
 
         return context
 
@@ -1243,11 +1243,11 @@ class NervousSystem:
             except Exception as e:
                 logger.warning(f"post_trigger SOMA failed: {e}")
 
-        # CHRONICLE — record trigger event
-        if self._mod_chronicle:
+        # HIPPOCAMPUS — record trigger event
+        if self._mod_hippocampus:
             try:
                 _reason = getattr(decision, 'reason', 'unknown')
-                self._mod_chronicle.record_event(
+                self._mod_hippocampus.record_event(
                     source="nervous_system",
                     event_type="trigger",
                     data={
@@ -1259,7 +1259,7 @@ class NervousSystem:
                     salience=0.6,
                 )
             except Exception as e:
-                logger.warning(f"post_trigger CHRONICLE failed: {e}")
+                logger.warning(f"post_trigger HIPPOCAMPUS failed: {e}")
 
         # ENGRAM — encode significant trigger events
         if self._mod_engram:
@@ -1383,35 +1383,35 @@ class NervousSystem:
             except Exception as e:
                 logger.warning(f"post_trigger ENTERIC learn failed: {e}")
 
-        # AURUM — emit financial need signals every 100 loops
-        if self._mod_aurum and self._loop_count % 100 == 0:
+        # ADRENAL — emit financial need signals every 100 loops
+        if self._mod_adrenal and self._loop_count % 100 == 0:
             try:
-                aurum_result = self._mod_aurum.emit_need_signals(
+                adrenal_result = self._mod_adrenal.emit_need_signals(
                     hypothalamus_mod=self._mod_hypothalamus,
                     endocrine_mod=self._mod_endocrine,
                 )
-                result["treasury_pressure"] = aurum_result.get("pressure", 0.0)
+                result["treasury_pressure"] = adrenal_result.get("pressure", 0.0)
             except Exception as e:
-                logger.warning(f"post_trigger AURUM failed: {e}")
+                logger.warning(f"post_trigger ADRENAL failed: {e}")
 
-        # TELOS — check goal progress when trigger succeeds
-        if self._mod_telos and success:
+        # BASAL_GANGLIA — check goal progress when trigger succeeds
+        if self._mod_basal_ganglia and success:
             try:
                 _reason = getattr(decision, 'reason', '')
-                _goals = self._mod_telos.get_active_goals()
+                _goals = self._mod_basal_ganglia.get_active_goals()
                 for _goal in _goals:
                     _title_lower = _goal.get("title", "").lower()
                     _reason_lower = _reason.lower()
                     # Simple keyword overlap: if any word from goal title appears in reason
                     _goal_words = [w for w in _title_lower.split() if len(w) > 4]
                     if any(w in _reason_lower for w in _goal_words):
-                        self._mod_telos.mark_progress(
+                        self._mod_basal_ganglia.mark_progress(
                             _goal["id"],
                             f"Auto-detected progress from trigger: {_reason[:100]}",
                         )
                         break  # one progress note per trigger
             except Exception as e:
-                logger.warning(f"post_trigger TELOS mark_progress failed: {e}")
+                logger.warning(f"post_trigger BASAL_GANGLIA mark_progress failed: {e}")
 
         return result
 
@@ -1442,10 +1442,10 @@ class NervousSystem:
                     except Exception:
                         pass  # AMYGDALA interface may differ; degrade gracefully
 
-            # Log to CHRONICLE
-            if self._mod_chronicle and result.get("assessment") != "clean":
+            # Log to HIPPOCAMPUS
+            if self._mod_hippocampus and result.get("assessment") != "clean":
                 try:
-                    self._mod_chronicle.record_event(
+                    self._mod_hippocampus.record_event(
                         source="SUPEREGO",
                         event_type="identity_scan",
                         data={
@@ -1661,66 +1661,66 @@ class NervousSystem:
                     except Exception as e:
                         logger.warning(f"post_loop HYPOTHALAMUS/{mod_name} signal failed: {e}")
 
-        # TELOS — scan active goals every 100 loops
-        if self._mod_telos and self._mod_telos.should_run(self._loop_count):
+        # BASAL_GANGLIA — scan active goals every 100 loops
+        if self._mod_basal_ganglia and self._mod_basal_ganglia.should_run(self._loop_count):
             try:
-                goals_scan = self._mod_telos.scan_goals(
+                goals_scan = self._mod_basal_ganglia.scan_goals(
                     hypothalamus_mod=self._mod_hypothalamus,
                     endocrine_mod=self._mod_endocrine,
                 )
-                result["telos_scan"] = goals_scan
+                result["basal_ganglia_scan"] = goals_scan
                 if goals_scan.get("priority1_stale", 0) > 0:
                     logger.info(
-                        f"🎯 TELOS: {goals_scan['priority1_stale']} P1 goals stale, "
+                        f"🎯 BASAL_GANGLIA: {goals_scan['priority1_stale']} P1 goals stale, "
                         f"most urgent: {goals_scan.get('most_urgent', '')}"
                     )
             except Exception as e:
-                logger.warning(f"post_loop TELOS failed: {e}")
+                logger.warning(f"post_loop BASAL_GANGLIA failed: {e}")
 
-        # LOGOS — directive synthesis every 500 loops (~4 hours)
-        if self._mod_logos and self._mod_logos.should_run(self._loop_count):
+        # BROCA — directive synthesis every 500 loops (~4 hours)
+        if self._mod_broca and self._mod_broca.should_run(self._loop_count):
             try:
                 import asyncio
-                logos_config = {}
+                broca_config = {}
                 if self.config and hasattr(self.config, "get"):
                     # Reuse the generative model config if available
                     gen_cfg = self.config.get("generative", {})
-                    logos_config = {"model": gen_cfg.get("model", {})}
+                    broca_config = {"model": gen_cfg.get("model", {})}
 
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     # Already in async context — schedule as task
-                    asyncio.ensure_future(self._mod_logos.scan_for_directives(logos_config))
-                    result["logos_scheduled"] = True
+                    asyncio.ensure_future(self._mod_broca.scan_for_directives(broca_config))
+                    result["broca_scheduled"] = True
                 else:
-                    logos_result = loop.run_until_complete(
-                        self._mod_logos.scan_for_directives(logos_config)
+                    broca_result = loop.run_until_complete(
+                        self._mod_broca.scan_for_directives(broca_config)
                     )
-                    result["logos_activated"] = len(logos_result)
-                    if logos_result:
+                    result["broca_activated"] = len(broca_result)
+                    if broca_result:
                         logger.info(
-                            f"🧠 LOGOS: activated {len(logos_result)} directive(s): "
-                            f"{', '.join(d['title'] for d in logos_result)}"
+                            f"🧠 BROCA: activated {len(broca_result)} directive(s): "
+                            f"{', '.join(d['title'] for d in broca_result)}"
                         )
             except Exception as e:
-                logger.warning(f"post_loop LOGOS failed: {e}")
+                logger.warning(f"post_loop BROCA failed: {e}")
 
-        # TELOS+LOGOS bridge — when TELOS runs, also bridge directives
-        if (self._mod_telos and self._mod_logos
-                and self._mod_telos.should_run(self._loop_count)
-                and hasattr(self._mod_telos, "scan_goals_with_directives")):
+        # BASAL_GANGLIA+BROCA bridge — when BASAL_GANGLIA runs, also bridge directives
+        if (self._mod_basal_ganglia and self._mod_broca
+                and self._mod_basal_ganglia.should_run(self._loop_count)
+                and hasattr(self._mod_basal_ganglia, "scan_goals_with_directives")):
             try:
-                bridge_result = self._mod_telos.scan_goals_with_directives(
+                bridge_result = self._mod_basal_ganglia.scan_goals_with_directives(
                     hypothalamus_mod=self._mod_hypothalamus,
                     endocrine_mod=self._mod_endocrine,
-                    logos_mod=self._mod_logos,
+                    broca_mod=self._mod_broca,
                 )
-                result["telos_logos_bridge"] = {
+                result["basal_ganglia_broca_bridge"] = {
                     "directives_active": bridge_result.get("directives_active", 0),
                     "signals_emitted": bridge_result.get("directive_signals_emitted", 0),
                 }
             except Exception as e:
-                logger.warning(f"post_loop TELOS+LOGOS bridge failed: {e}")
+                logger.warning(f"post_loop BASAL_GANGLIA+BROCA bridge failed: {e}")
 
         # MOTORIC — scan shipping readiness every 50 loops (~25 minutes)
         if self._mod_motoric and self._mod_motoric.should_run(self._loop_count):
@@ -1737,24 +1737,24 @@ class NervousSystem:
             except Exception as e:
                 logger.warning(f"post_loop MOTORIC failed: {e}")
 
-        # CHALLENGER — stagnation scan every 75 loops (~37 minutes)
-        if self._mod_challenger and self._mod_challenger.should_run(self._loop_count):
+        # RAPHE — stagnation scan every 75 loops (~37 minutes)
+        if self._mod_raphe and self._mod_raphe.should_run(self._loop_count):
             try:
-                challenger_scan = self._mod_challenger.scan()
-                result["challenger_stagnant"] = challenger_scan.get("stagnant", False)
-                result["challenger_novelty"] = challenger_scan.get("novelty_score", 1.0)
-                if challenger_scan.get("stagnant"):
-                    challenge = challenger_scan.get("challenge") or {}
+                raphe_scan = self._mod_raphe.scan()
+                result["raphe_stagnant"] = raphe_scan.get("stagnant", False)
+                result["raphe_novelty"] = raphe_scan.get("novelty_score", 1.0)
+                if raphe_scan.get("stagnant"):
+                    challenge = raphe_scan.get("challenge") or {}
                     logger.info(
-                        f"🎯 CHALLENGER: stagnation detected "
-                        f"(novelty={challenger_scan['novelty_score']:.2f}, "
-                        f"streak={challenger_scan['stagnation_streak']}) → "
+                        f"🎯 RAPHE: stagnation detected "
+                        f"(novelty={raphe_scan['novelty_score']:.2f}, "
+                        f"streak={raphe_scan['stagnation_streak']}) → "
                         f"{challenge.get('prompt', 'seek new challenge')}"
                     )
                 # Emit need signals to HYPOTHALAMUS
-                self._mod_challenger.emit_need_signals(hypothalamus_mod=self._mod_hypothalamus)
+                self._mod_raphe.emit_need_signals(hypothalamus_mod=self._mod_hypothalamus)
             except Exception as e:
-                logger.warning(f"post_loop CHALLENGER failed: {e}")
+                logger.warning(f"post_loop RAPHE failed: {e}")
 
         return result
 
@@ -1830,25 +1830,25 @@ class NervousSystem:
                 except Exception as e:
                     logger.warning(f"check_night_mode ENGRAM failed: {e}")
 
-        # VESPER — run nightly synthesis alongside REM during deep_night
-        if self._mod_vesper and result.get("is_deep_night"):
+        # PINEAL — run nightly synthesis alongside REM during deep_night
+        if self._mod_pineal and result.get("is_deep_night"):
             try:
                 _circadian_mode_str = "deep_night"
-                if self._mod_vesper.should_run(_circadian_mode_str, self._loop_count):
-                    logger.info("🌙 VESPER: running nightly synthesis")
-                    vesper_result = self._mod_vesper.run_restoration(
-                        chronicle_mod=self._mod_chronicle,
+                if self._mod_pineal.should_run(_circadian_mode_str, self._loop_count):
+                    logger.info("🌙 PINEAL: running nightly synthesis")
+                    pineal_result = self._mod_pineal.run_restoration(
+                        hippocampus_mod=self._mod_hippocampus,
                         engram_mod=self._mod_engram,
                         endocrine_mod=self._mod_endocrine,
                         memory_dir=None,  # uses default workspace path
                     )
-                    result["vesper"] = vesper_result
+                    result["pineal"] = pineal_result
                     logger.info(
-                        f"🌙 VESPER complete: {vesper_result.get('shipped_count', 0)} shipped, "
-                        f"peak={vesper_result.get('peak_emotion', 'neutral')}"
+                        f"🌙 PINEAL complete: {pineal_result.get('shipped_count', 0)} shipped, "
+                        f"peak={pineal_result.get('peak_emotion', 'neutral')}"
                     )
             except Exception as e:
-                logger.warning(f"check_night_mode VESPER failed: {e}")
+                logger.warning(f"check_night_mode PINEAL failed: {e}")
 
         return result
 
@@ -1933,7 +1933,7 @@ class NervousSystem:
 
         # V3 modules — all auto-save, just note them
         for name in ["phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+                      "vestibular", "thymus", "oximeter", "genome", "aura", "hippocampus",
                       "parietal"]:
             if getattr(self, name, None) is not None:
                 result["saved"].append(name)
@@ -1954,7 +1954,7 @@ class NervousSystem:
             "callosum",
             # V3 modules
             "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-            "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+            "vestibular", "thymus", "oximeter", "genome", "aura", "hippocampus",
             "parietal",
         ]
         status = {}

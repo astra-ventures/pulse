@@ -104,7 +104,7 @@ MODULES = [
     ("OXIMETER", "oximeter-state.json", None),
     ("GENOME", "genome.json", None),
     ("AURA", "aura.json", "mood"),
-    ("CHRONICLE", "chronicle.jsonl", None),
+    ("HIPPOCAMPUS", "hippocampus.jsonl", None),
     ("NEPHRON", "nephron-state.json", None),
 ]
 

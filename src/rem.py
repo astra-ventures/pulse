@@ -68,7 +68,7 @@ class PonsSession:
     creative_output: Optional[str] = None
     creative_type: Optional[str] = None  # "poem", "hypothesis", "question", "insight"
     themes: List[str] = field(default_factory=list)
-    consolidation_report: Optional[dict] = None  # Phase 6: CHRONICLE→ENGRAM results
+    consolidation_report: Optional[dict] = None  # Phase 6: HIPPOCAMPUS→ENGRAM results
 
     @property
     def duration_seconds(self) -> float:
@@ -452,7 +452,7 @@ def run_rem_session_internal(
             all_tags.extend(frag.tags)
         session.themes = list(set(all_tags))[:10]
 
-        # Phase 6 — Memory Consolidation (CHRONICLE → ENGRAM)
+        # Phase 6 — Memory Consolidation (HIPPOCAMPUS → ENGRAM)
         try:
             from pulse.src.memory_consolidation import consolidate
             consolidation = consolidate()

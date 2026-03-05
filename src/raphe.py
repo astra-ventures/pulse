@@ -1,8 +1,8 @@
-"""CHALLENGER — Goal Expansion / Stagnation Sentinel.
+"""RAPHE — Goal Expansion / Stagnation Sentinel.
 
 Named after the cognitive drive to seek new challenges and resist complacency.
 
-CHALLENGER watches for stagnation patterns and pushes toward complexity escalation:
+RAPHE watches for stagnation patterns and pushes toward complexity escalation:
 - Detects when recent GENERATE output is repetitive / low-complexity
 - Tracks challenge history and scores novelty
 - Identifies domains where new challenges can be found
@@ -11,7 +11,7 @@ CHALLENGER watches for stagnation patterns and pushes toward complexity escalati
 
 What it watches:
 - THALAMUS recent events for repetition patterns
-- ENGRAM/CHRONICLE for task variety (novelty scoring)
+- ENGRAM/HIPPOCAMPUS for task variety (novelty scoring)
 - Drive state — how long has `new_challenge` been elevated?
 - Output diversity (how many distinct task categories in recent N triggers?)
 
@@ -33,9 +33,9 @@ from typing import Optional
 from pulse.src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
-_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "challenger-state.json"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "raphe-state.json"
 _THALAMUS_FILE = _DEFAULT_STATE_DIR / "thalamus.jsonl"
-_CHRONICLE_FILE = _DEFAULT_STATE_DIR / "chronicle.jsonl"
+_HIPPOCAMPUS_FILE = _DEFAULT_STATE_DIR / "hippocampus.jsonl"
 
 # How many recent THALAMUS entries to scan for patterns
 THALAMUS_SCAN_WINDOW = 50
@@ -343,7 +343,7 @@ def scan() -> dict:
 
         # Emit to THALAMUS — stagnation detected
         thalamus.append({
-            "source": "challenger",
+            "source": "raphe",
             "type": "stagnation_detected",
             "salience": 0.75,
             "data": {
@@ -361,7 +361,7 @@ def scan() -> dict:
 
         # Emit a light novelty-check signal for HYPOTHALAMUS
         thalamus.append({
-            "source": "challenger",
+            "source": "raphe",
             "type": "novelty_check",
             "salience": 0.2,
             "data": {
@@ -402,14 +402,14 @@ def emit_need_signals(hypothalamus_mod=None) -> dict:
 
     if streak >= 1:
         try:
-            hypothalamus_mod.record_need_signal("new_challenge", "challenger")
+            hypothalamus_mod.record_need_signal("new_challenge", "raphe")
             signals.append("new_challenge")
         except Exception:
             pass
 
     if streak >= 3:
         try:
-            hypothalamus_mod.record_need_signal("explore", "challenger")
+            hypothalamus_mod.record_need_signal("explore", "raphe")
             signals.append("explore")
         except Exception:
             pass
@@ -418,7 +418,7 @@ def emit_need_signals(hypothalamus_mod=None) -> dict:
 
 
 def get_status() -> dict:
-    """Return current CHALLENGER status."""
+    """Return current RAPHE status."""
     state = _load_state()
     entries = _read_recent_thalamus(THALAMUS_SCAN_WINDOW)
     novelty_score = compute_novelty_score(entries)
@@ -442,8 +442,8 @@ def get_status() -> dict:
 # ── Self-tests ──────────────────────────────────────────────────────────────────
 
 def _run_tests():
-    """Basic self-tests for CHALLENGER."""
-    print("Testing CHALLENGER...")
+    """Basic self-tests for RAPHE."""
+    print("Testing RAPHE...")
 
     # Test default state
     state = _default_state()
@@ -535,7 +535,7 @@ def _run_tests():
     assert "signals_emitted" in result2
     print(f"  ✅ emit_need_signals (no hm): streak={result2['stagnation_streak']}")
 
-    print("\n  All CHALLENGER tests passed! ✅")
+    print("\n  All RAPHE tests passed! ✅")
 
 
 if __name__ == "__main__":

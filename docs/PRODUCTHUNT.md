@@ -77,7 +77,7 @@ Pulse ships with a complete nervous system — 50 interconnected modules:
 - **PARIETAL** — world model: tracks predictions, learns from outcomes
 - **REM** — dreaming: consolidates memory during low-activity windows
 - **GENOME** — exportable "personality DNA" you can share, fork, and diff
-- **LOGOS** — autonomous directive synthesis: the agent develops its own strategic intentions
+- **BROCA** — autonomous directive synthesis: the agent develops its own strategic intentions
 
 Every module is observable via HTTP/WebSocket API. Live dashboard included.
 

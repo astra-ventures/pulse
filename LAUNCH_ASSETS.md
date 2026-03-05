@@ -167,11 +167,11 @@ Body:
 > MIT open-source daemon that gives OpenClaw agents biological-style motivation drives. Goals, curiosity, emotions, system health — each builds pressure until the agent acts autonomously.
 >
 > **v0.3.4 highlights:**
-> ✅ LOGOS directive synthesis (L0 values → L1 directives → L2 goals → L3 tasks)
+> ✅ BROCA directive synthesis (L0 values → L1 directives → L2 goals → L3 tasks)
 > ✅ Plugin architecture (drop custom `.py` → auto-discovered each cycle)
 > ✅ Smart task routing (right model for every task type automatically)
 > ✅ Biosensor integration (Apple Watch → nervous system)
-> ✅ Memory consolidation (CHRONICLE → ENGRAM with importance scoring)
+> ✅ Memory consolidation (HIPPOCAMPUS → ENGRAM with importance scoring)
 > ✅ Observation API (HTTP + WebSocket real-time)
 > ✅ Real-time dashboard
 > ✅ GENOME CLI

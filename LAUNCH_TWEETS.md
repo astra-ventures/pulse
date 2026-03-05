@@ -54,7 +54,7 @@
 > → ENDOCRINE: cortisol / dopamine / adrenaline state
 > → CEREBELLUM: habits form — frequent tasks become fast reflexes
 > → REM: agent dreams during quiet windows, consolidates memory
-> → LOGOS: develops its own long-horizon intentions
+> → BROCA: develops its own long-horizon intentions
 > 
 > This is infrastructure, not a prompt.
 

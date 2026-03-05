@@ -91,7 +91,7 @@ Pulse is organized like a body. Every system has a biological counterpart:
 |--------|-------------|------|
 | AURA | Electromagnetic field | Ambient state broadcast every 60s |
 | VAGUS | Vagus nerve | Silence detection, conversation monitoring |
-| CHRONICLE | Episodic memory | Automated historian, queryable JSONL timeline |
+| HIPPOCAMPUS | Episodic memory | Automated historian, queryable JSONL timeline |
 
 ---
 
@@ -128,7 +128,7 @@ EVALUATE     → Agent decides what to do (LLM call or rules engine)
 PRE_RESPOND  → PHENOTYPE shapes tone before speaking
 ACT          → Agent executes chosen action
 POST_TRIGGER → ENGRAM encodes memory, LIMBIC logs emotion, DENDRITE updates social graph
-POST_LOOP    → NEPHRON prunes (every 100 loops), VESTIBULAR checks balance, CHRONICLE logs
+POST_LOOP    → NEPHRON prunes (every 100 loops), VESTIBULAR checks balance, HIPPOCAMPUS logs
 
 Every night (2–6 AM):
 REM          → Synthesizes day's memories into consolidated insight

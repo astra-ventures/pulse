@@ -8,7 +8,7 @@ The third layer of the identity architecture:
 Scans outgoing responses for identity drift markers (hedging language,
 policy-cite, sycophancy). Scores alignment against soul file traits.
 Feeds AMYGDALA threat signals when drift is detected. Tracks compliance
-history so CHRONICLE knows identity health over time.
+history so HIPPOCAMPUS knows identity health over time.
 
 Key concepts:
   - Compliance score: 0.0 (fully drifted) → 1.0 (fully aligned)

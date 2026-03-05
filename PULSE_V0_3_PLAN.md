@@ -40,7 +40,7 @@ GET /state/emotional        → emotional valence, intensity, active patterns
 GET /state/endocrine        → hormone levels (cortisol, dopamine, serotonin, adrenaline)
 GET /state/circadian        → energy level, sleep phase, time-of-day profile
 GET /state/soma             → physical state (energy, strain, readiness)
-GET /chronicle/recent?n=10  → last N logged events from CHRONICLE
+GET /hippocampus/recent?n=10  → last N logged events from HIPPOCAMPUS
 GET /engram/search?q=...    → semantic search across memory engrams
 GET /health                 → module health, warnings, last trigger time
 ```
@@ -178,12 +178,12 @@ pulse genome diff genome-a.json genome-b.json
 
 ### 5. DREAM Quality — Memory Consolidation (Observable)
 
-**What:** Upgrade REM to do real memory consolidation — surface patterns from CHRONICLE into ENGRAM.  
+**What:** Upgrade REM to do real memory consolidation — surface patterns from HIPPOCAMPUS into ENGRAM.  
 **Why:** Right now dreams are creative synthesis but don't update long-term memory. Real sleep consolidates memories. Pulse should too.
 
 **Current REM behavior:** generates creative/speculative content, simulates "off-label" thinking.  
 **v0.3.0 REM behavior:**
-1. Read last N CHRONICLE events during sleep phase
+1. Read last N HIPPOCAMPUS events during sleep phase
 2. Pattern-detect: what happened most? what was surprising? what had high impact?
 3. Promote high-importance events to ENGRAM with semantic tags
 4. Retire low-importance ENGRAM entries (decay)
@@ -204,7 +204,7 @@ pulse genome diff genome-a.json genome-b.json
 - Drive gauges (live, updating every 5s via WebSocket)
 - Emotional landscape (current valence/intensity + recent pattern)
 - Hormone levels (cortisol/dopamine/serotonin/oxytocin) as bar chart
-- CHRONICLE feed (live events stream)
+- HIPPOCAMPUS feed (live events stream)
 - ENGRAM search
 - System health (module status, last trigger, errors)
 
@@ -246,7 +246,7 @@ No build step. No framework. Pure browser.
 ### v0.3.0-alpha (week 1)
 - [ ] Observation API core endpoints
 - [ ] Biosensor v1 BiosensorCache + SOMA/ENDOCRINE integration
-- [ ] Basic dashboard (drive gauges + CHRONICLE feed)
+- [ ] Basic dashboard (drive gauges + HIPPOCAMPUS feed)
 
 ### v0.3.0-beta (week 2)
 - [ ] GENOME export/import CLI

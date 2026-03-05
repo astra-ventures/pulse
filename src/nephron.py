@@ -3,7 +3,7 @@
 Kidneys for the mind. Filters out:
 - Stale THALAMUS entries (>1000)
 - Low-relevance ENGRAM memories (below threshold)
-- Old CHRONICLE entries (>30 days)
+- Old HIPPOCAMPUS entries (>30 days)
 - Bloated mood_history in ENDOCRINE (>48 entries)
 - Expired AMYGDALA threat cache
 - Old RETINA learning entries
@@ -25,7 +25,7 @@ _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "nephron-state.json"
 
 # Pruning thresholds
 THALAMUS_MAX_ENTRIES = 500       # Keep last 500 bus messages
-CHRONICLE_MAX_AGE_DAYS = 30      # Archive entries older than 30 days
+HIPPOCAMPUS_MAX_AGE_DAYS = 30      # Archive entries older than 30 days
 MOOD_HISTORY_MAX = 48            # Already enforced by endocrine, but double-check
 ENGRAM_MIN_IMPORTANCE = 2        # Prune memories with importance < 2
 ENGRAM_MAX_AGE_DAYS = 90         # Prune memories older than 90 days (unless high importance)
@@ -78,13 +78,13 @@ def filter_all() -> dict:
     except Exception as e:
         results["errors"].append(f"thalamus: {e}")
 
-    # 2. CHRONICLE — archive old timeline entries
+    # 2. HIPPOCAMPUS — archive old timeline entries
     try:
-        pruned = _prune_chronicle()
+        pruned = _prune_hippocampus()
         if pruned > 0:
-            results["pruned"]["chronicle"] = pruned
+            results["pruned"]["hippocampus"] = pruned
     except Exception as e:
-        results["errors"].append(f"chronicle: {e}")
+        results["errors"].append(f"hippocampus: {e}")
 
     # 3. ENDOCRINE — trim mood history
     try:
@@ -156,14 +156,14 @@ def _prune_thalamus() -> int:
     return pruned
 
 
-def _prune_chronicle() -> int:
-    """Remove CHRONICLE entries older than threshold."""
-    chronicle_file = _DEFAULT_STATE_DIR / "chronicle.jsonl"
-    if not chronicle_file.exists():
+def _prune_hippocampus() -> int:
+    """Remove HIPPOCAMPUS entries older than threshold."""
+    hippocampus_file = _DEFAULT_STATE_DIR / "hippocampus.jsonl"
+    if not hippocampus_file.exists():
         return 0
 
-    cutoff = time.time() - (CHRONICLE_MAX_AGE_DAYS * 86400)
-    lines = chronicle_file.read_text().strip().split("\n")
+    cutoff = time.time() - (HIPPOCAMPUS_MAX_AGE_DAYS * 86400)
+    lines = hippocampus_file.read_text().strip().split("\n")
     kept = []
     pruned = 0
 
@@ -178,7 +178,7 @@ def _prune_chronicle() -> int:
             pruned += 1
 
     if pruned > 0:
-        chronicle_file.write_text("\n".join(kept) + "\n" if kept else "")
+        hippocampus_file.write_text("\n".join(kept) + "\n" if kept else "")
     return pruned
 
 

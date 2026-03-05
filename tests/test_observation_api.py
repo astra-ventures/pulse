@@ -43,12 +43,12 @@ def state_dir(tmp_path):
     (tmp_path / "soma-state.json").write_text(json.dumps({
         "energy": 0.65, "strain": 0.12, "readiness": 0.78
     }))
-    # chronicle.jsonl
+    # hippocampus.jsonl
     events = [
         {"timestamp": time.time() - i * 60, "level": "info", "message": f"Event {i}"}
         for i in range(25)
     ]
-    (tmp_path / "chronicle.jsonl").write_text("\n".join(json.dumps(e) for e in events))
+    (tmp_path / "hippocampus.jsonl").write_text("\n".join(json.dumps(e) for e in events))
     # engram-store.json
     (tmp_path / "engram-store.json").write_text(json.dumps({
         "engrams": [
@@ -268,39 +268,39 @@ class TestSoma:
         assert abs(data["strain"] - 0.12) < 0.001
 
 
-# ── /chronicle/recent ────────────────────────────────────────────────────────
+# ── /hippocampus/recent ────────────────────────────────────────────────────────
 
-class TestChronicle:
-    def test_chronicle_ok(self, client):
-        r = client.get("/chronicle/recent")
+class TestHippocampus:
+    def test_hippocampus_ok(self, client):
+        r = client.get("/hippocampus/recent")
         assert r.status_code == 200
 
-    def test_chronicle_default_limit(self, client):
-        data = client.get("/chronicle/recent").json()
+    def test_hippocampus_default_limit(self, client):
+        data = client.get("/hippocampus/recent").json()
         assert len(data["events"]) <= 20
 
-    def test_chronicle_custom_limit(self, client):
-        data = client.get("/chronicle/recent?n=5").json()
+    def test_hippocampus_custom_limit(self, client):
+        data = client.get("/hippocampus/recent?n=5").json()
         assert len(data["events"]) <= 5
 
-    def test_chronicle_has_count(self, client):
-        data = client.get("/chronicle/recent").json()
+    def test_hippocampus_has_count(self, client):
+        data = client.get("/hippocampus/recent").json()
         assert "count" in data
         assert data["count"] == len(data["events"])
 
-    def test_chronicle_events_are_dicts(self, client):
-        data = client.get("/chronicle/recent").json()
+    def test_hippocampus_events_are_dicts(self, client):
+        data = client.get("/hippocampus/recent").json()
         for e in data["events"]:
             assert isinstance(e, dict)
 
-    def test_chronicle_empty_file(self, tmp_path, monkeypatch):
+    def test_hippocampus_empty_file(self, tmp_path, monkeypatch):
         import importlib
         monkeypatch.setenv("PULSE_STATE_DIR", str(tmp_path))
         monkeypatch.setenv("PULSE_OBS_TOKEN", "")
         import pulse.src.observation_api as obs_mod
         importlib.reload(obs_mod)
         c = TestClient(obs_mod.app)
-        r = c.get("/chronicle/recent")
+        r = c.get("/hippocampus/recent")
         assert r.status_code == 200
         assert r.json()["events"] == []
 

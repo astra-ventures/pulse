@@ -92,7 +92,7 @@ Pulse ships a complete bio-mimetic nervous system:
 | Metabolic | ADIPOSE, SPINE, IMMUNE, TELOMERE |
 | Social | DENDRITE, MIRROR, CALLOSUM, OXIMETER |
 | Growth | PLASTICITY, PHENOTYPE, GENOME, THYMUS |
-| Integration | ECHO, AURUM, VESPER, ANAMNESIS, TELOS |
+| Integration | ECHO, ADRENAL, PINEAL, ANAMNESIS, BASAL_GANGLIA |
 | + 16 more | See NERVOUS-SYSTEM.md |
 
 Each module is named after its biological counterpart because the inspiration is genuine neuroscience.

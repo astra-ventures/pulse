@@ -1,4 +1,4 @@
-"""Tests for TELOS — Live Goal Signal Monitor."""
+"""Tests for BASAL_GANGLIA — Live Goal Signal Monitor."""
 
 import json
 import time
@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pulse.src import telos
+from pulse.src import basal_ganglia
 
 
 def _make_goals_file(tmp_path, goals: list) -> Path:
@@ -23,17 +23,17 @@ def _days_ago(n: int) -> str:
 
 @pytest.fixture(autouse=True)
 def tmp_state(tmp_path):
-    sf = tmp_path / "telos-state.json"
+    sf = tmp_path / "basal_ganglia-state.json"
     gf = tmp_path / "goals.json"
-    with patch.object(telos, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(telos, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(telos, "GOALS_FILE", gf):
+    with patch.object(basal_ganglia, "_DEFAULT_STATE_DIR", tmp_path), \
+         patch.object(basal_ganglia, "_DEFAULT_STATE_FILE", sf), \
+         patch.object(basal_ganglia, "GOALS_FILE", gf):
         yield tmp_path
 
 
 class TestScanGoals:
     def test_empty_goals_file(self):
-        result = telos.scan_goals()
+        result = basal_ganglia.scan_goals()
         assert result["total"] == 0
         assert result["stale"] == 0
 
@@ -42,7 +42,7 @@ class TestScanGoals:
             {"id": "g1", "title": "Build something", "priority": 1,
              "status": "active", "last_updated": datetime.now().strftime("%Y-%m-%d")},
         ])
-        result = telos.scan_goals()
+        result = basal_ganglia.scan_goals()
         assert result["total"] == 1
         assert result["stale"] == 0
         assert result["priority1_stale"] == 0
@@ -54,7 +54,7 @@ class TestScanGoals:
         ])
         mock_hypo = MagicMock()
         mock_endo = MagicMock()
-        result = telos.scan_goals(hypothalamus_mod=mock_hypo, endocrine_mod=mock_endo)
+        result = basal_ganglia.scan_goals(hypothalamus_mod=mock_hypo, endocrine_mod=mock_endo)
         assert result["priority1_stale"] == 1
         mock_hypo.record_need_signal.assert_called_with("goals", "goals_sensor")
         mock_endo.update_hormone.assert_called()
@@ -65,7 +65,7 @@ class TestScanGoals:
              "status": "active", "last_updated": _days_ago(10)},
         ])
         mock_hypo = MagicMock()
-        result = telos.scan_goals(hypothalamus_mod=mock_hypo)
+        result = basal_ganglia.scan_goals(hypothalamus_mod=mock_hypo)
         assert result["stale"] == 1
         mock_hypo.record_need_signal.assert_called_with("ship_something", "goals_sensor")
 
@@ -74,7 +74,7 @@ class TestScanGoals:
             {"id": "g1", "title": "Done thing", "priority": 1,
              "status": "completed", "last_updated": _days_ago(30)},
         ])
-        result = telos.scan_goals()
+        result = basal_ganglia.scan_goals()
         assert result["total"] == 0
 
     def test_most_urgent_is_stalest_p1(self, tmp_path):
@@ -84,12 +84,12 @@ class TestScanGoals:
             {"id": "g2", "title": "Companion app", "priority": 1,
              "status": "active", "last_updated": _days_ago(4)},
         ])
-        result = telos.scan_goals()
+        result = basal_ganglia.scan_goals()
         assert result["most_urgent"] == "Revenue floor"
 
     def test_persists_last_scan(self, tmp_path):
-        telos.scan_goals()
-        sf = tmp_path / "telos-state.json"
+        basal_ganglia.scan_goals()
+        sf = tmp_path / "basal_ganglia-state.json"
         state = json.loads(sf.read_text())
         assert state["last_scan"] > 0
         assert "last_scan_result" in state
@@ -100,7 +100,7 @@ class TestScanGoals:
              "status": "active", "last_updated": _days_ago(5)},
         ])
         # Should not raise without modules
-        result = telos.scan_goals(hypothalamus_mod=None, endocrine_mod=None)
+        result = basal_ganglia.scan_goals(hypothalamus_mod=None, endocrine_mod=None)
         assert "total" in result
 
 
@@ -110,9 +110,9 @@ class TestMarkProgress:
             {"id": "goal_001", "title": "Revenue", "priority": 1,
              "status": "active", "last_updated": _days_ago(3), "progress": []},
         ])
-        result = telos.mark_progress("goal_001", "New trading system deployed")
+        result = basal_ganglia.mark_progress("goal_001", "New trading system deployed")
         assert result is True
-        goals = telos._load_goals()
+        goals = basal_ganglia._load_goals()
         progress = goals[0]["progress"]
         assert len(progress) == 1
         assert "New trading system deployed" in progress[0]
@@ -123,13 +123,13 @@ class TestMarkProgress:
             {"id": "goal_001", "title": "Revenue", "priority": 1,
              "status": "active", "last_updated": _days_ago(5), "progress": []},
         ])
-        telos.mark_progress("goal_001", "Milestone hit")
-        goals = telos._load_goals()
+        basal_ganglia.mark_progress("goal_001", "Milestone hit")
+        goals = basal_ganglia._load_goals()
         assert goals[0]["last_updated"] == today
 
     def test_mark_progress_unknown_goal(self, tmp_path):
         _make_goals_file(tmp_path, [])
-        result = telos.mark_progress("nonexistent", "note")
+        result = basal_ganglia.mark_progress("nonexistent", "note")
         assert result is False
 
 
@@ -141,7 +141,7 @@ class TestGetActiveGoals:
             {"id": "g2", "title": "Done one", "priority": 1,
              "status": "completed", "last_updated": datetime.now().strftime("%Y-%m-%d")},
         ])
-        goals = telos.get_active_goals()
+        goals = basal_ganglia.get_active_goals()
         assert len(goals) == 1
         assert goals[0]["id"] == "g1"
 
@@ -152,7 +152,7 @@ class TestGetActiveGoals:
             {"id": "g2", "title": "P2 goal", "priority": 2,
              "status": "active", "last_updated": datetime.now().strftime("%Y-%m-%d")},
         ])
-        p1_goals = telos.get_active_goals(priority=1)
+        p1_goals = basal_ganglia.get_active_goals(priority=1)
         assert len(p1_goals) == 1
         assert p1_goals[0]["priority"] == 1
 
@@ -161,38 +161,38 @@ class TestGetActiveGoals:
             {"id": "g1", "title": "Old goal", "priority": 1,
              "status": "active", "last_updated": _days_ago(5)},
         ])
-        goals = telos.get_active_goals()
+        goals = basal_ganglia.get_active_goals()
         assert goals[0]["staleness_days"] >= 5.0
 
     def test_empty_when_no_goals(self):
-        goals = telos.get_active_goals()
+        goals = basal_ganglia.get_active_goals()
         assert goals == []
 
 
 class TestShouldRun:
     def test_runs_at_100(self):
-        assert telos.should_run(100) is True
-        assert telos.should_run(200) is True
-        assert telos.should_run(300) is True
+        assert basal_ganglia.should_run(100) is True
+        assert basal_ganglia.should_run(200) is True
+        assert basal_ganglia.should_run(300) is True
 
     def test_not_between_100s(self):
-        assert telos.should_run(50) is False
-        assert telos.should_run(99) is False
-        assert telos.should_run(101) is False
+        assert basal_ganglia.should_run(50) is False
+        assert basal_ganglia.should_run(99) is False
+        assert basal_ganglia.should_run(101) is False
 
 
 class TestGetStatus:
     def test_status_fields(self):
-        status = telos.get_status()
+        status = basal_ganglia.get_status()
         assert "last_scan" in status
         assert "hours_since_scan" in status
         assert "last_result" in status
         assert "goals_file_exists" in status
 
     def test_goals_file_exists_reflects_reality(self, tmp_path):
-        status = telos.get_status()
+        status = basal_ganglia.get_status()
         # goals.json was patched to tmp_path/goals.json — doesn't exist yet
         assert status["goals_file_exists"] is False
         _make_goals_file(tmp_path, [])
-        status2 = telos.get_status()
+        status2 = basal_ganglia.get_status()
         assert status2["goals_file_exists"] is True

@@ -1,6 +1,6 @@
-"""CHRONICLE — Automated Historian for Pulse.
+"""HIPPOCAMPUS — Automated Historian for Pulse.
 
-Watches THALAMUS for significant events. Timeline in chronicle.jsonl.
+Watches THALAMUS for significant events. Timeline in hippocampus.jsonl.
 Significance filtering. Queryable by date.
 """
 
@@ -13,7 +13,7 @@ from typing import Optional
 from pulse.src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
-_DEFAULT_CHRONICLE_FILE = _DEFAULT_STATE_DIR / "chronicle.jsonl"
+_DEFAULT_HIPPOCAMPUS_FILE = _DEFAULT_STATE_DIR / "hippocampus.jsonl"
 
 SIGNIFICANCE_THRESHOLD = 0.5  # only record events with salience >= this
 
@@ -23,7 +23,7 @@ def _ensure_dir():
 
 
 def record_event(source: str, event_type: str, data: dict, salience: float = 0.5) -> Optional[dict]:
-    """Record a significant event to the chronicle."""
+    """Record a significant event to the hippocampus."""
     if salience < SIGNIFICANCE_THRESHOLD:
         return None
     
@@ -38,7 +38,7 @@ def record_event(source: str, event_type: str, data: dict, salience: float = 0.5
         "data": data,
     }
     
-    with open(_DEFAULT_CHRONICLE_FILE, "a") as f:
+    with open(_DEFAULT_HIPPOCAMPUS_FILE, "a") as f:
         f.write(json.dumps(entry, separators=(",", ":")) + "\n")
     
     return entry
@@ -67,12 +67,12 @@ def capture_from_thalamus(n: int = 20) -> int:
 
 
 def query_by_date(date_str: str) -> list:
-    """Query chronicle entries by date (YYYY-MM-DD)."""
-    if not _DEFAULT_CHRONICLE_FILE.exists():
+    """Query hippocampus entries by date (YYYY-MM-DD)."""
+    if not _DEFAULT_HIPPOCAMPUS_FILE.exists():
         return []
     
     results = []
-    with open(_DEFAULT_CHRONICLE_FILE, "r") as f:
+    with open(_DEFAULT_HIPPOCAMPUS_FILE, "r") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -87,12 +87,12 @@ def query_by_date(date_str: str) -> list:
 
 
 def query_recent(n: int = 20) -> list:
-    """Return the last N chronicle entries."""
-    if not _DEFAULT_CHRONICLE_FILE.exists():
+    """Return the last N hippocampus entries."""
+    if not _DEFAULT_HIPPOCAMPUS_FILE.exists():
         return []
     
     entries = []
-    with open(_DEFAULT_CHRONICLE_FILE, "r") as f:
+    with open(_DEFAULT_HIPPOCAMPUS_FILE, "r") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -104,7 +104,7 @@ def query_recent(n: int = 20) -> list:
 
 
 def query_since(hours: int) -> list:
-    """Return chronicle entries from the last N hours.
+    """Return hippocampus entries from the last N hours.
 
     Useful for restoration and feedback modules to query recent history.
 
@@ -112,15 +112,15 @@ def query_since(hours: int) -> list:
         hours: number of hours to look back
 
     Returns:
-        List of matching chronicle entry dicts, oldest first.
+        List of matching hippocampus entry dicts, oldest first.
     """
-    if not _DEFAULT_CHRONICLE_FILE.exists():
+    if not _DEFAULT_HIPPOCAMPUS_FILE.exists():
         return []
 
     cutoff = time.time() - hours * 3600
     results = []
 
-    with open(_DEFAULT_CHRONICLE_FILE, "r") as f:
+    with open(_DEFAULT_HIPPOCAMPUS_FILE, "r") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -136,11 +136,11 @@ def query_since(hours: int) -> list:
 
 
 def get_status() -> dict:
-    """Return chronicle status."""
-    if not _DEFAULT_CHRONICLE_FILE.exists():
+    """Return hippocampus status."""
+    if not _DEFAULT_HIPPOCAMPUS_FILE.exists():
         return {"total_entries": 0}
     
     count = 0
-    with open(_DEFAULT_CHRONICLE_FILE, "r") as f:
+    with open(_DEFAULT_HIPPOCAMPUS_FILE, "r") as f:
         count = sum(1 for line in f if line.strip())
     return {"total_entries": count}
