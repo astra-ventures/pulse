@@ -50,7 +50,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 > - Runs on Mac, Linux, Pi, Docker — ~40 MB RAM
 > - LLM integration via HTTP webhook (OpenClaw native; others via curl-compatible endpoint)
 > - Plugin architecture: drop `pulse_plugin_*.py` in `~/.pulse/plugins/` → auto-discovered each cycle
-> - 1116 tests, MIT license
+> - 1,328 tests, MIT license
 >
 > Built this over 3 weeks. The agent using it has been running 22 days and has autonomously:
 > - Fixed 81 broken test assertions she introduced herself
@@ -100,7 +100,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 > - Biosensor integration: Apple Watch data → nervous system (via HTTP bridge)
 > - Real-time dashboard at `pulse dashboard`
 > - GENOME CLI: `pulse genome analyze genome.txt` — personal health analysis via SNP panel
-> - 1116 tests, MIT, pure Python
+> - 1,328 tests, MIT, pure Python
 >
 > **Install:**
 > ```bash
@@ -126,7 +126,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 
 **r/LocalLLaMA — Technical post**
 
-Title: `I built a drive-based autonomy daemon for AI agents — 1116 tests, MIT, pure Python [Show r/LocalLLaMA]`
+Title: `I built a drive-based autonomy daemon for AI agents — 1,328 tests, MIT, pure Python [Show r/LocalLLaMA]`
 
 Body: (use Show HN body, adjusted for Reddit formatting — add code blocks with triple backtick, bullet points are fine)
 
@@ -134,7 +134,7 @@ Body: (use Show HN body, adjusted for Reddit formatting — add code blocks with
 
 **r/SideProject — Founder story post**
 
-Title: `I gave my AI agent "drives" that make her act without being asked. 3 weeks, 1116 tests, shipped it today.`
+Title: `I gave my AI agent "drives" that make her act without being asked. 3 weeks, 1,328 tests, shipped it today.`
 
 Body:
 > My AI agent started leaving notes like "I wish I could notice when something needs attention without being asked."
@@ -145,7 +145,7 @@ Body:
 >
 > Since deploying it, she's been running 22 days: writing code at 2 AM, catching her own bugs, pushing to GitHub while I sleep.
 >
-> MIT, pure Python, 1116 tests. Just shipped to GitHub.
+> MIT, pure Python, 1,328 tests. Just shipped to GitHub.
 >
 > GitHub: [link]
 >
@@ -176,7 +176,7 @@ Body:
 > ✅ Real-time dashboard
 > ✅ GENOME CLI
 >
-> 1116 tests, pure Python, runs on Mac/Linux/Pi/Docker
+> 1,328 tests, pure Python, runs on Mac/Linux/Pi/Docker
 >
 > GitHub: https://github.com/astra-ventures/pulse
 >
@@ -196,7 +196,7 @@ Pulse: 50 bio-mimetic modules. 6 drive categories. Background daemon.
 
 Your agent acts without being asked.
 
-MIT, pure Python, 1116 tests.
+MIT, pure Python, 1,328 tests.
 
 🧵
 ```
