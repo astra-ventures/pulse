@@ -8,10 +8,19 @@ Supports two session modes:
 
 The isolated approach lets Pulse-triggered work happen in the background
 while the main session stays clean for human conversation.
+
+Security: outgoing webhook payloads are HMAC-SHA256 signed using the
+webhook_token as the key. Signature is sent in X-Pulse-Signature header.
+Format: sha256=<hex-digest>
+This allows the receiving agent / OpenClaw to verify the payload
+genuinely came from this Pulse instance.
 """
 
+import hashlib
+import hmac
 import json
 import logging
+import time
 from typing import Optional
 
 import aiohttp
@@ -37,6 +46,21 @@ class OpenClawWebhook:
             self._session = aiohttp.ClientSession()
         return self._session
 
+    def _sign_payload(self, body: bytes) -> str:
+        """
+        Compute HMAC-SHA256 signature of the raw JSON body bytes.
+        Returns a 'sha256=<hex>' string suitable for X-Pulse-Signature header.
+        Returns empty string if no token is configured.
+        """
+        if not self.token:
+            return ""
+        sig = hmac.new(
+            self.token.encode("utf-8"),
+            body,
+            hashlib.sha256,
+        ).hexdigest()
+        return f"sha256={sig}"
+
     async def trigger(self, message: str, name: str = "Pulse", model_override: str = None) -> bool:
         """
         Trigger an agent turn via OpenClaw webhook.
@@ -54,17 +78,12 @@ class OpenClawWebhook:
         """
         session = await self._get_session()
 
-        headers = {
-            "Content-Type": "application/json",
-        }
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
-
         payload = {
             "message": message,
             "name": name,
             "wakeMode": "now",
             "deliver": self.deliver,
+            "_pulse_timestamp": int(time.time()),  # replay-attack mitigation
         }
 
         # In isolated mode, tell OpenClaw to spawn a separate session
@@ -75,10 +94,24 @@ class OpenClawWebhook:
             if effective_model:
                 payload["model"] = effective_model
 
+        # Serialize payload once so signature covers the exact bytes sent
+        body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+
+        headers = {
+            "Content-Type": "application/json",
+        }
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+
+        # Attach HMAC signature — allows receiver to verify origin
+        sig = self._sign_payload(body)
+        if sig:
+            headers["X-Pulse-Signature"] = sig
+
         try:
             async with session.post(
-                self.url, 
-                json=payload, 
+                self.url,
+                data=body,
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:

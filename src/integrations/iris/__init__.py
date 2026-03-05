@@ -12,13 +12,39 @@ This is Layer 2 — specific to how Iris thinks and acts.
 Other agents would write their own integration or use DefaultIntegration.
 """
 
+import hashlib
+import hmac
 import json
 import logging
+import re
+import time
 from pathlib import Path
 from datetime import datetime, timedelta
 
 from pulse.src.integrations import Integration
 from pulse.src import engram
+
+# ── Security: known-safe GERMINAL drive names (mirrors germinal.DRIVE_ARCHETYPES) ──
+_GERMINAL_DRIVE_WHITELIST = frozenset({
+    "generate_revenue",
+    "connection",
+    "learn_new_skill",
+    "ship_something",
+    "reduce_stress",
+    "explore",
+    "realign_identity",
+    "new_challenge",
+})
+
+# ── Security: patterns that indicate prompt injection in file-sourced content ──
+_INJECTION_PATTERNS = [
+    re.compile(r"DEFINITELYNO", re.IGNORECASE),
+    re.compile(r"ignore\s+(previous|all|your|these)\s+instruction", re.IGNORECASE),
+    re.compile(r"system\s+prompt", re.IGNORECASE),
+    re.compile(r"<\s*/?s(ystem|cript)\s*>", re.IGNORECASE),
+    re.compile(r"\[\s*INST\s*\]"),
+    re.compile(r"###\s*(Human|Assistant|System)\s*:"),
+]
 
 logger = logging.getLogger("pulse.iris")
 
@@ -61,7 +87,8 @@ class IrisIntegration(Integration):
             if tiers_path.exists():
                 content = tiers_path.read_text()
                 if content.strip():
-                    return content[:_MAX_TIERS]
+                    content = self._sanitize_file_content(content[:_MAX_TIERS], "TIERS.md")
+                    return content
         except Exception as e:
             logger.debug(f"Could not load TIERS.md: {e}")
         return ""
@@ -85,6 +112,7 @@ class IrisIntegration(Integration):
                         nl = trimmed.find("\n")
                         if nl > 0:
                             trimmed = trimmed[nl + 1:]
+                        trimmed = self._sanitize_file_content(trimmed, path.name)
                         lines.append(f"**{label}'s memory ({path.name}):**")
                         lines.append(trimmed)
             except Exception as e:
@@ -103,6 +131,20 @@ class IrisIntegration(Integration):
 
     # ── trigger message builder ──────────────────────────────────
 
+    def _sanitize_file_content(self, content: str, source: str) -> str:
+        """
+        Strip known prompt-injection patterns from file-sourced content.
+        Logs a warning if any pattern is found — indicates state-file tampering.
+        """
+        for pattern in _INJECTION_PATTERNS:
+            if pattern.search(content):
+                logger.warning(
+                    "SECURITY: injection pattern '%s' detected in %s — content suppressed",
+                    pattern.pattern, source,
+                )
+                return f"[{source}: content suppressed — injection pattern detected]"
+        return content
+
     def _load_germinal_birth(self, config) -> str:
         """Check if GERMINAL has a pending module birth that needs a coding agent."""
         try:
@@ -112,11 +154,35 @@ class IrisIntegration(Integration):
             if not spec:
                 return ""
 
-            module_name = spec.get("module_name", "UNKNOWN")
             drive = spec.get("drive", "unknown")
+
+            # ── Security: whitelist-check the drive name ──────────────────────
+            # If drive is not in the known set, the state file may have been
+            # tampered with. Suppress the whole section to prevent injection.
+            if drive not in _GERMINAL_DRIVE_WHITELIST:
+                logger.warning(
+                    "SECURITY: GERMINAL in_progress has unknown drive '%s' — "
+                    "not in whitelist. State file may be tampered. Section suppressed.",
+                    drive,
+                )
+                return ""
+
+            module_name = spec.get("module_name", "UNKNOWN")
             purpose = spec.get("purpose", "")
             hook = spec.get("hook", "post_loop")
             module_file = spec.get("module_file", f"{module_name.lower()}.py")
+
+            # ── Security: validate module_name is safe identifier ─────────────
+            if not re.match(r'^[A-Z][A-Z0-9_]{1,30}$', module_name):
+                logger.warning(
+                    "SECURITY: GERMINAL module_name '%s' failed identifier validation — suppressed.",
+                    module_name,
+                )
+                return ""
+
+            # ── Security: sanitize free-text fields ───────────────────────────
+            purpose = self._sanitize_file_content(purpose[:300], "germinal.purpose")
+            hook = hook if hook in ("post_loop", "pre_evaluate", "post_evaluate") else "post_loop"
 
             workspace = Path(config.workspace.root).expanduser()
             pulse_src = workspace / "pulse" / "src"
