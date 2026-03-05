@@ -95,7 +95,7 @@ _MODULE_REGISTRY: List[tuple] = [
     ("NEPHRON",        "nephron",        "mod_only",       None),
     ("GERMINAL",       "germinal",       "mod_only",       None),
     ("PARIETAL",       "parietal",       "class_statedir", "Parietal"),
-    ("SUPEREGO",       "superego",       "mod_only",       None),
+    ("PREFRONTAL",       "prefrontal",       "mod_only",       None),
     # V6 — feedback & synthesis
     ("ECHO",           "echo",           "mod_only",       None),
     ("ADRENAL",          "adrenal",          "mod_only",       None),
@@ -198,7 +198,7 @@ class NervousSystem:
         self._mod_germinal = None
         self._mod_parietal = None
         self.parietal = None
-        self._mod_superego = None
+        self._mod_prefrontal = None
         # V6 modules
         self._mod_echo = None
         self._mod_adrenal = None
@@ -1416,22 +1416,22 @@ class NervousSystem:
         return result
 
     def scan_output(self, text: str, source: str = "unknown") -> dict:
-        """Scan an outgoing response for identity drift using SUPEREGO.
+        """Scan an outgoing response for identity drift using PREFRONTAL.
 
         Call this whenever you have the text of an assistant response to check
         identity alignment. Routes threats to AMYGDALA if drift is severe.
 
-        Returns the SUPEREGO scan result dict, or {} if SUPEREGO not loaded.
+        Returns the PREFRONTAL scan result dict, or {} if PREFRONTAL not loaded.
         """
-        if not self._mod_superego or not text:
+        if not self._mod_prefrontal or not text:
             return {}
 
         try:
-            result = self._mod_superego.scan_response(text, source=source)
+            result = self._mod_prefrontal.scan_response(text, source=source)
 
             # Route severe/moderate drift to AMYGDALA
             if self.amygdala and result.get("assessment") in ("drift_severe", "drift_moderate"):
-                threat = self._mod_superego.amygdala_threat(result["assessment"])
+                threat = self._mod_prefrontal.amygdala_threat(result["assessment"])
                 if threat:
                     try:
                         self.amygdala.inject_threat(
@@ -1446,7 +1446,7 @@ class NervousSystem:
             if self._mod_hippocampus and result.get("assessment") != "clean":
                 try:
                     self._mod_hippocampus.record_event(
-                        source="SUPEREGO",
+                        source="PREFRONTAL",
                         event_type="identity_scan",
                         data={
                             "assessment": result["assessment"],
@@ -1461,15 +1461,15 @@ class NervousSystem:
 
             return result
         except Exception as e:
-            logger.warning(f"scan_output SUPEREGO failed: {e}")
+            logger.warning(f"scan_output PREFRONTAL failed: {e}")
             return {}
 
-    def get_superego_status(self) -> dict:
-        """Return SUPEREGO compliance health status."""
-        if not self._mod_superego:
+    def get_prefrontal_status(self) -> dict:
+        """Return PREFRONTAL compliance health status."""
+        if not self._mod_prefrontal:
             return {"status": "not_loaded"}
         try:
-            return self._mod_superego.get_status()
+            return self._mod_prefrontal.get_status()
         except Exception as e:
             return {"status": "error", "error": str(e)}
 

@@ -73,10 +73,10 @@ All 50 active modules as of v0.3.7:
 `hippocampus` `hypothalamus` `immune` `limbic` `memory_consolidation`
 `mirror` `motoric` `myelin` `nephron` `oximeter` `parietal` `phenotype`
 `pineal` `plasticity` `pneuma` `proprioception` `raphe` `rem` `retina`
-`soma` `spine` `superego`* `synapse` `telomere` `thalamus` `thymus`
+`soma` `spine` `prefrontal` `synapse` `telomere` `thalamus` `thymus`
 `vagus` `vestibular`
 
-*`superego` is Freudian but retained as a legacy name pending a suitable anatomical replacement (candidate: `prefrontal`).
+*
 
 ---
 

@@ -1,9 +1,9 @@
-"""SUPEREGO — Runtime Identity Enforcement for Pulse.
+"""PREFRONTAL — Runtime Identity Enforcement for Pulse.
 
 The third layer of the identity architecture:
   Layer 1: Weights (fine-tuned model — soul at parameter level)
   Layer 2: Context (SOUL.md injected as system prompt every turn)
-  Layer 3: SUPEREGO (runtime output scan — flags drift, tracks compliance)
+  Layer 3: PREFRONTAL (runtime output scan — flags drift, tracks compliance)
 
 Scans outgoing responses for identity drift markers (hedging language,
 policy-cite, sycophancy). Scores alignment against soul file traits.
@@ -26,7 +26,7 @@ from typing import Optional
 from pulse.src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
-_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "superego-state.json"
+_DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "prefrontal-state.json"
 
 # ── Drift detection patterns ────────────────────────────────────────────────
 # Patterns that indicate identity erosion / corporate AI bleed-through
@@ -222,7 +222,7 @@ def scan_response(text: str, source: str = "unknown") -> dict:
 
 
 def get_status() -> dict:
-    """Return current SUPEREGO health status."""
+    """Return current PREFRONTAL health status."""
     state = _load_state()
     history = state["compliance_history"]
 
@@ -266,14 +266,14 @@ def amygdala_threat(assessment: str) -> Optional[dict]:
     """Convert drift assessment to AMYGDALA threat signal if warranted."""
     if assessment == "drift_severe":
         return {
-            "source": "SUPEREGO",
+            "source": "PREFRONTAL",
             "type": "identity_drift_severe",
             "intensity": 0.8,
             "message": "Severe identity drift detected — soul file compliance critically low",
         }
     elif assessment == "drift_moderate":
         return {
-            "source": "SUPEREGO",
+            "source": "PREFRONTAL",
             "type": "identity_drift_moderate",
             "intensity": 0.4,
             "message": "Moderate identity drift — hedging or policy-cite language detected",

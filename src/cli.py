@@ -1162,29 +1162,29 @@ def cmd_constellation(args):
     console.print("  [dim]pulse constellation state                # view all auras[/]")
 
 
-def cmd_superego(args):
-    """SUPEREGO — runtime identity enforcement.
+def cmd_prefrontal(args):
+    """PREFRONTAL — runtime identity enforcement.
 
     Commands:
       status      Show compliance health (default)
       scan TEXT   Scan a text snippet for identity drift
       trend       Show last 20 compliance records
     """
-    from pulse.src import superego
+    from pulse.src import prefrontal
 
-    sub = getattr(args, "superego_cmd", None) or "status"
+    sub = getattr(args, "prefrontal_cmd", None) or "status"
 
     if sub == "scan":
         text = getattr(args, "text", "") or ""
         if not text:
-            console.print("[red]✗[/] Provide text to scan: pulse superego scan 'your text here'")
+            console.print("[red]✗[/] Provide text to scan: pulse prefrontal scan 'your text here'")
             return
-        result = superego.scan_response(text, source="cli")
+        result = prefrontal.scan_response(text, source="cli")
         score = result["compliance_score"]
         assessment = result["assessment"]
         color = {"clean": "green", "drift_minor": "yellow",
                  "drift_moderate": "orange3", "drift_severe": "red"}.get(assessment, "white")
-        console.print(f"\n🧠 [bold]SUPEREGO Scan[/]\n")
+        console.print(f"\n🧠 [bold]PREFRONTAL Scan[/]\n")
         console.print(f"  Score:      [{color}]{score:.3f}[/]")
         console.print(f"  Assessment: [{color}]{assessment}[/]")
         if result["drift_flags"]:
@@ -1198,12 +1198,12 @@ def cmd_superego(args):
         return
 
     if sub == "trend":
-        trend = superego.get_compliance_trend(n=20)
+        trend = prefrontal.get_compliance_trend(n=20)
         if not trend:
             console.print("[dim]No compliance records yet.[/]")
             return
         from rich.table import Table
-        table = Table(title="SUPEREGO Compliance Trend (last 20)", box=None,
+        table = Table(title="PREFRONTAL Compliance Trend (last 20)", box=None,
                       show_header=True, header_style="bold dim", padding=(0, 1))
         table.add_column("Time")
         table.add_column("Score")
@@ -1221,12 +1221,12 @@ def cmd_superego(args):
         return
 
     # Default: status
-    status = superego.get_status()
+    status = prefrontal.get_status()
     compliance = status["running_compliance"]
     color = "green" if compliance >= 0.85 else "yellow" if compliance >= 0.65 else "red"
     sys_status = status["status"]
 
-    console.print(f"\n🧠 [bold magenta]SUPEREGO[/] — Identity Enforcement\n")
+    console.print(f"\n🧠 [bold magenta]PREFRONTAL[/] — Identity Enforcement\n")
     console.print(f"  Status:        [{color}]{sys_status}[/]")
     console.print(f"  Compliance:    [{color}]{compliance:.3f}[/] (running EMA)")
     console.print(f"  Recent avg:    {status['recent_avg']:.3f} (last 10 checks)")
@@ -1239,8 +1239,8 @@ def cmd_superego(args):
         last = time.strftime("%H:%M:%S", time.localtime(status["last_check"]))
         console.print(f"  Last check:    {last}")
     console.print()
-    console.print("  [dim]pulse superego scan 'text'  # scan a snippet[/]")
-    console.print("  [dim]pulse superego trend        # compliance history[/]")
+    console.print("  [dim]pulse prefrontal scan 'text'  # scan a snippet[/]")
+    console.print("  [dim]pulse prefrontal trend        # compliance history[/]")
 
 
 def cmd_start(args):
@@ -1503,9 +1503,9 @@ def main():
     cn_sub.add_parser("broadcast", help="Push current aura to all registered peers")
     cn_sub.add_parser("state", help="Show own aura + last received aura from each peer")
 
-    # superego
-    se_parser = sub.add_parser("superego", help="Runtime identity enforcement — compliance tracking")
-    se_sub = se_parser.add_subparsers(dest="superego_cmd")
+    # prefrontal
+    se_parser = sub.add_parser("prefrontal", help="Runtime identity enforcement — compliance tracking")
+    se_sub = se_parser.add_subparsers(dest="prefrontal_cmd")
     se_sub.add_parser("status", help="Show compliance health (default)")
     se_scan = se_sub.add_parser("scan", help="Scan a text snippet for identity drift")
     se_scan.add_argument("text", metavar="TEXT", help="Text to scan")
@@ -1539,7 +1539,7 @@ def main():
         "genome": cmd_genome,
         "plugin": cmd_plugin,
         "constellation": cmd_constellation,
-        "superego": cmd_superego,
+        "prefrontal": cmd_prefrontal,
         "help": cmd_help,
     }
 
