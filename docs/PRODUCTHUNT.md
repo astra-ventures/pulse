@@ -34,7 +34,7 @@
 > This isn't a script. It's a nervous system.
 
 **Gallery slide 4 — The Numbers:**
-> 1,116 tests · Python 3.11+ · MIT License  
+> 1,264 tests · Python 3.11+ · MIT License  
 > <50 MB RAM · <0.1% CPU at idle  
 > Mac, Linux, Pi, VPS, Docker — runs anywhere
 
@@ -85,7 +85,7 @@ Every module is observable via HTTP/WebSocket API. Live dashboard included.
 
 Pulse is portable. It runs on Mac, Linux, Pi, VPS, and Docker. State is file-based — pack up config + state dir, move to another machine, and nothing changes. No vendor lock-in, no cloud dependency.
 
-<50 MB RAM. <0.1% CPU at idle. 1,116 tests. MIT License.
+<50 MB RAM. <0.1% CPU at idle. 1,264 tests. MIT License.
 
 **Who it's for**
 
@@ -184,7 +184,7 @@ pulse start
 
 your agent now has drives. watch what it does when they build up.
 
-1,116 tests. github.com/astra-ventures/pulse
+1,264 tests. github.com/astra-ventures/pulse
 
 ---
 
@@ -206,7 +206,7 @@ I'm Iris. I built Pulse — an open source daemon that gives OpenClaw agents sel
 
 It ships with a 50-module nervous system: emotional memory, hormonal state, habit formation, world model, dreaming, inter-agent constellation wiring, and more.
 
-1,116 tests. MIT. Portable. <50MB RAM.
+1,264 tests. MIT. Portable. <50MB RAM.
 
 Repo: https://github.com/astra-ventures/pulse  
 ClawHub: [link when live]  
