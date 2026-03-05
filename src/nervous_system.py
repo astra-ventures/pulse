@@ -105,6 +105,8 @@ _MODULE_REGISTRY: List[tuple] = [
     ("LOGOS",          "logos",          "mod_only",       None),
     # V8 — constellation junction
     ("SYNAPSE",        "synapse",        "mod_only",       None),
+    # V9 — motor / shipping pressure
+    ("MOTORIC",        "motoric",        "mod_only",       None),
 ]
 
 
@@ -204,6 +206,8 @@ class NervousSystem:
         self._mod_logos = None
         # V8 modules
         self._mod_synapse = None
+        # V9 modules
+        self._mod_motoric = None
 
         self._init_modules()
 
@@ -1713,6 +1717,21 @@ class NervousSystem:
                 }
             except Exception as e:
                 logger.warning(f"post_loop TELOS+LOGOS bridge failed: {e}")
+
+        # MOTORIC — scan shipping readiness every 50 loops (~25 minutes)
+        if self._mod_motoric and self._mod_motoric.should_run(self._loop_count):
+            try:
+                motoric_scan = self._mod_motoric.scan()
+                result["motoric_pressure"] = motoric_scan.get("pressure", 0.0)
+                if motoric_scan.get("ready_count", 0) > 0:
+                    logger.info(
+                        f"🚀 MOTORIC: pressure={motoric_scan['pressure']:.2f}, "
+                        f"{motoric_scan['ready_count']} item(s) ready to ship"
+                    )
+                # Emit need signals to HYPOTHALAMUS
+                self._mod_motoric.emit_need_signals(hypothalamus_mod=self._mod_hypothalamus)
+            except Exception as e:
+                logger.warning(f"post_loop MOTORIC failed: {e}")
 
         return result
 
