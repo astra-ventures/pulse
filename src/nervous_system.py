@@ -107,6 +107,8 @@ _MODULE_REGISTRY: List[tuple] = [
     ("SYNAPSE",        "synapse",        "mod_only",       None),
     # V9 — motor / shipping pressure
     ("MOTORIC",        "motoric",        "mod_only",       None),
+    # V10 — goal expansion / stagnation detection
+    ("CHALLENGER",     "challenger",     "mod_only",       None),
 ]
 
 
@@ -208,6 +210,8 @@ class NervousSystem:
         self._mod_synapse = None
         # V9 modules
         self._mod_motoric = None
+        # V10 modules
+        self._mod_challenger = None
 
         self._init_modules()
 
@@ -1732,6 +1736,25 @@ class NervousSystem:
                 self._mod_motoric.emit_need_signals(hypothalamus_mod=self._mod_hypothalamus)
             except Exception as e:
                 logger.warning(f"post_loop MOTORIC failed: {e}")
+
+        # CHALLENGER — stagnation scan every 75 loops (~37 minutes)
+        if self._mod_challenger and self._mod_challenger.should_run(self._loop_count):
+            try:
+                challenger_scan = self._mod_challenger.scan()
+                result["challenger_stagnant"] = challenger_scan.get("stagnant", False)
+                result["challenger_novelty"] = challenger_scan.get("novelty_score", 1.0)
+                if challenger_scan.get("stagnant"):
+                    challenge = challenger_scan.get("challenge") or {}
+                    logger.info(
+                        f"🎯 CHALLENGER: stagnation detected "
+                        f"(novelty={challenger_scan['novelty_score']:.2f}, "
+                        f"streak={challenger_scan['stagnation_streak']}) → "
+                        f"{challenge.get('prompt', 'seek new challenge')}"
+                    )
+                # Emit need signals to HYPOTHALAMUS
+                self._mod_challenger.emit_need_signals(hypothalamus_mod=self._mod_hypothalamus)
+            except Exception as e:
+                logger.warning(f"post_loop CHALLENGER failed: {e}")
 
         return result
 
