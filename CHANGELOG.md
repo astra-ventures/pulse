@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-03-05
+
+### Added
+- **MOTORIC module** (`src/motoric.py`) — motor cortex / shipping pressure monitor. Watches for
+  projects ready to ship but not yet shipped: PyPI dist/ artifacts, LAUNCH_CHECKLIST.md
+  completion ratio, blocked-on-external-dep items, stale iamiris.ai /now page, and recent ship
+  history. Emits `ship_something`, `deploy_now`, and `update_presence` drive signals that
+  propagate through HYPOTHALAMUS → ENDOCRINE → trigger decisions. Wired into NervousSystem
+  registry and `post_loop`. Birth recorded via GERMINAL. (commit `e4231da`)
+- **39 new tests** (`tests/test_motoric.py`) — full coverage of drive signal logic, checklist
+  parsing, dist detection, and ship decay. Suite total: 1328/1328 passing.
+
 ## [0.3.5] - 2026-03-04
 
 ### Security
