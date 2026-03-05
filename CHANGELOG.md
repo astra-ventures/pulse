@@ -7,30 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-03-04
+
+### Security
+- **Prompt injection hardening** — `_sanitize_file_content()` strips injection patterns from ALL
+  file-sourced content before it reaches the webhook payload (TIERS.md, daily memory, GERMINAL
+  state). Patterns caught: DEFINITELYNO, "ignore instructions", `[INST]` tags, system prompt
+  overrides, `### Human/Assistant` headers. Logs WARNING on detection. (commit `ab8b4ba`)
+- **GERMINAL drive whitelist at output layer** — `_load_germinal_birth()` now validates drive
+  name against `_GERMINAL_DRIVE_WHITELIST` before building any webhook content. Unknown drive →
+  section suppressed entirely. Module name validated via `^[A-Z][A-Z0-9_]{1,30}$` regex. The
+  whitelist already existed in `germinal.py`; this fix applies it at the *integration layer*
+  where external content surfaces. Defense-in-depth. (commit `ab8b4ba`)
+- **HMAC signing on outgoing webhooks** — `OpenClawWebhook._sign_payload()` signs payload bytes
+  with HMAC-SHA256(gateway token). Signature delivered in `X-Pulse-Signature: sha256=<hex>`.
+  `_pulse_timestamp` field included for replay-attack mitigation. (commit `ab8b4ba`)
+- **DEFINITELYNO injection root cause fixed** — `test_metacognitive_review.py` called
+  `germinal.attempt_birth("definitely_not_a_real_drive_xyz_test")` against the real production
+  state file (no mocking). PARIETAL health checks ran tests in a loop, re-poisoning state every
+  ~200 daemon cycles. Fix: `attempt_birth()` validates drive name against DRIVE_ARCHETYPES
+  whitelist before touching state; test uses tempfile + real whitelisted drive. Eliminated the
+  entire class of self-inflicted injection alerts. (commit `a1b53f1`)
+
+### Added
+- **PNEUMA module** (`src/pneuma.py`, formerly FEDERATION) — cross-machine peer discovery and
+  beacon registration for Pulse-to-Pulse coordination. Renamed for clarity: Pneuma is the
+  breath that connects agents across machines. (commit `c79b38d`)
+- **AXON module** (`src/axon.py`) — cross-peer task delegation engine. Injects drive spikes into
+  remote Pulse instances via authenticated POST. Week 1 of Pneuma architecture. (commit `801f695`)
+- **PHASE2-DECISION.md** — Decision brief for Josh: Pneuma-first vs Cloud-first for v0.4.0.
+  Includes revenue projections, technical risk comparison, and recommendation. (commit `a655df6`)
+
 ### Fixed
 - **daemon.py — feedback file unlink ordering** — `feedback_path.unlink()` was called immediately
   after `json.loads()`, BEFORE drive pressure decay was processed. If `drive.decay()` raised an
   unexpected exception, feedback was silently lost (drive stayed at high pressure, triggering again).
-  Moved unlink into a `finally` block so it always runs after processing regardless of outcome.
+  Moved `unlink()` into a `finally` block so it always executes after processing.
 - **germinal_tasks.py — DEFAULT_REFLECTION_TASK cascade cooldown** — `generate_tasks()` returned
-  the fallback reflection task on both the empty-filter path and the LLM-exception path without
-  calling `_record_category_used()`. Consecutive LLM failures (or overcooled categories) would
-  cycle "Reflect on current state" indefinitely — the exact cascade pattern observed today.
-  Fix: `_record_category_used()` now called before returning the fallback on both paths.
-  8 tests in `tests/test_bug_fixes_036.py`. Total: 1174.
+  the fallback "Reflect on current state" task on both the empty-filter path and the LLM-exception
+  path without calling `_record_category_used()`. Consecutive failures would cycle the same task
+  indefinitely — the cascade pattern now documented in CORTEX.md. Fix: `_record_category_used()`
+  called before returning the fallback on both paths. 8 tests in `tests/test_bug_fixes_036.py`.
 
-### Added
-- **SYNAPSE** module (`src/synapse.py`) — weighted inter-agent signal junction for the constellation architecture. Handles directional signal transmission (excitatory/inhibitory/modulatory) between agents with synaptic weight adjustment, short-term potentiation, depression decay, and pruning. 22 tests. Fills the gap between AURA (ambient broadcast) and DENDRITE (social graph): SYNAPSE is the actual weighted junction mechanics.
-
-### Added
-- **PHASE2-ARCHITECTURE.md** — Complete design document for Phase 2 (Pneuma, Cloud, Monetization, Intelligence Loop). Four-pillar architecture: SYNAPSE/CORPUS/AXON pneuma modules, Fly.io + Supabase cloud layer, Free/Pro/Team/Enterprise tier model, and network intelligence loop. Revenue projections: $10.5k conservative → $37.8k moderate (12 months post-launch). Decision points for Josh: Pneuma-first vs Cloud-first, pricing, OSS strategy.
+### Added (pre-security-hardening)
+- **SYNAPSE module** (`src/synapse.py`) — weighted inter-agent signal junction. Handles
+  directional signal transmission (excitatory/inhibitory/modulatory) between agents with synaptic
+  weight adjustment, short-term potentiation, depression decay, and pruning. 22 tests. Fills the
+  gap between AURA (ambient broadcast) and DENDRITE (social graph): SYNAPSE is the actual weighted
+  junction mechanics.
+- **PHASE2-ARCHITECTURE.md** — Complete Phase 2 design: SYNAPSE/CORPUS/AXON Pneuma modules,
+  Fly.io + Supabase cloud layer, Free/Pro/Team/Enterprise tier model, intelligence loop.
+  Revenue projections: $10.5k conservative → $37.8k moderate (12 months post-launch).
 
 ### Changed
 - **`nervous_system.py` — data-driven module registry** — `_init_modules` refactored from 387
-  lines of near-identical try/except blocks (one per module) down to a 42-line data-driven
-  loop over `_MODULE_REGISTRY`. Each of the 50 modules is now a single list entry: `(name,
-  kind, class_name)`. Zero behavior change; all 1116 tests pass. Adding a new module now
-  requires one registry entry instead of 6 lines of copy-paste. (commit `8afb0ad`)
+  lines of near-identical try/except blocks down to a 42-line loop over `_MODULE_REGISTRY`.
+  Each module is one list entry: `(name, kind, class_name)`. Zero behavior change. Adding a
+  new module now requires one line instead of six copy-pasted. (commit `8afb0ad`)
+
+**Tests:** 1289 passing (25 new for security hardening).
 
 ## [0.3.4] - 2026-03-03
 
