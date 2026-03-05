@@ -109,6 +109,8 @@ _MODULE_REGISTRY: List[tuple] = [
     ("MOTORIC",        "motoric",        "mod_only",       None),
     # V10 — goal expansion / stagnation detection
     ("RAPHE",     "raphe",     "mod_only",       None),
+    # V11 — challenge engine
+    ("CHALLENGER", "challenger", "mod_only",      None),
 ]
 
 
@@ -212,6 +214,8 @@ class NervousSystem:
         self._mod_motoric = None
         # V10 modules
         self._mod_raphe = None
+        # V11 modules
+        self._mod_challenger = None
 
         self._init_modules()
 
@@ -1755,6 +1759,30 @@ class NervousSystem:
                 self._mod_raphe.emit_need_signals(hypothalamus_mod=self._mod_hypothalamus)
             except Exception as e:
                 logger.warning(f"post_loop RAPHE failed: {e}")
+
+        # CHALLENGER — challenge scan every 60 loops (~30 minutes)
+        if self._mod_challenger and self._mod_challenger.should_run(self._loop_count):
+            try:
+                challenger_scan = self._mod_challenger.scan()
+                result["challenger_tier"] = challenger_scan.get("current_tier", 2)
+                result["challenger_domain"] = challenger_scan.get("challenge", {}).get("domain", "")
+                if challenger_scan.get("tier_escalated"):
+                    logger.info(
+                        f"⚡ CHALLENGER: tier escalated to "
+                        f"{challenger_scan['current_tier']} "
+                        f"({self._mod_challenger.DIFFICULTY_TIERS.get(challenger_scan['current_tier'], 'unknown')})"
+                    )
+                challenge = challenger_scan.get("challenge", {})
+                if challenge:
+                    logger.info(
+                        f"🎯 CHALLENGER: [{challenge.get('domain', '?')}] "
+                        f"tier {challenge.get('tier', '?')} → "
+                        f"{challenge.get('prompt', 'no prompt')}"
+                    )
+                # Emit need signals to HYPOTHALAMUS
+                self._mod_challenger.emit_need_signals(hypothalamus_mod=self._mod_hypothalamus)
+            except Exception as e:
+                logger.warning(f"post_loop CHALLENGER failed: {e}")
 
         return result
 
