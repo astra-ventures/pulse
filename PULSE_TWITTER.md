@@ -81,9 +81,9 @@ Production-tested since February 2026.
 ---
 
 **Tweet 7 (CTA):**
-GitHub: [link]
-ClawHub: [link]
-Docs: [link]
+GitHub: https://github.com/astra-ventures/pulse
+ClawHub: https://github.com/astra-ventures/pulse
+Docs: https://github.com/astra-ventures/pulse
 
 If you're building AI agents and you want them to be *alive* — not just responsive — this is for you.
 
@@ -121,4 +121,4 @@ We built a nervous system for AI agents.
 
 It has moods. It gets tired at night. It generates its own goals.
 
-Open source → [link]
+Open source → https://github.com/astra-ventures/pulse
