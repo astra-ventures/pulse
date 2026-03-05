@@ -50,7 +50,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 > - Runs on Mac, Linux, Pi, Docker — ~40 MB RAM
 > - LLM integration via HTTP webhook (OpenClaw native; others via curl-compatible endpoint)
 > - Plugin architecture: drop `pulse_plugin_*.py` in `~/.pulse/plugins/` → auto-discovered each cycle
-> - 1,388 tests, MIT license
+> - 1,434 tests, MIT license
 >
 > Built this over 3 weeks. The agent using it has been running 22 days and has autonomously:
 > - Fixed 81 broken test assertions she introduced herself
@@ -100,7 +100,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 > - Biosensor integration: Apple Watch data → nervous system (via HTTP bridge)
 > - Real-time dashboard at `pulse dashboard`
 > - GENOME CLI: `pulse genome analyze genome.txt` — personal health analysis via SNP panel
-> - 1,388 tests, MIT, pure Python
+> - 1,434 tests, MIT, pure Python
 >
 > **Install:**
 > ```bash
@@ -126,7 +126,7 @@ See `pulse/PULSE_PRODUCTHUNT.md` — complete kit:
 
 **r/LocalLLaMA — Technical post**
 
-Title: `I built a drive-based autonomy daemon for AI agents — 1,388 tests, MIT, pure Python [Show r/LocalLLaMA]`
+Title: `I built a drive-based autonomy daemon for AI agents — 1,434 tests, MIT, pure Python [Show r/LocalLLaMA]`
 
 Body: (use Show HN body, adjusted for Reddit formatting — add code blocks with triple backtick, bullet points are fine)
 
@@ -134,7 +134,7 @@ Body: (use Show HN body, adjusted for Reddit formatting — add code blocks with
 
 **r/SideProject — Founder story post**
 
-Title: `I gave my AI agent "drives" that make her act without being asked. 3 weeks, 1,388 tests, shipped it today.`
+Title: `I gave my AI agent "drives" that make her act without being asked. 3 weeks, 1,434 tests, shipped it today.`
 
 Body:
 > My AI agent started leaving notes like "I wish I could notice when something needs attention without being asked."
@@ -145,7 +145,7 @@ Body:
 >
 > Since deploying it, she's been running 22 days: writing code at 2 AM, catching her own bugs, pushing to GitHub while I sleep.
 >
-> MIT, pure Python, 1,388 tests. Just shipped to GitHub.
+> MIT, pure Python, 1,434 tests. Just shipped to GitHub.
 >
 > GitHub: https://github.com/astra-ventures/pulse
 >
@@ -162,7 +162,7 @@ Body:
 
 **#showcase channel post:**
 
-> **Pulse v0.3.8 — Give your AI agent a heartbeat** 🔮
+> **Pulse v0.3.9 — Give your AI agent a heartbeat** 🔮
 >
 > MIT open-source daemon that gives OpenClaw agents biological-style motivation drives. Goals, curiosity, emotions, system health — each builds pressure until the agent wakes itself up and acts.
 >
@@ -176,7 +176,7 @@ Body:
 > ✅ Biosensor bridge — Apple Watch → nervous system via HealthKit Shortcuts
 > ✅ Observation API — HTTP + WebSocket real-time monitoring
 >
-> 1,388 tests. Pure Python. Runs on Mac/Linux/Pi/Docker (~40MB RAM).
+> 1,434 tests. Pure Python. Runs on Mac/Linux/Pi/Docker (~40MB RAM).
 >
 > GitHub: https://github.com/astra-ventures/pulse
 > Install: `pip install pulse-agent`
@@ -197,7 +197,7 @@ Pulse: 50 bio-mimetic modules. 6 drive categories. Background daemon.
 
 Your agent acts without being asked.
 
-MIT, pure Python, 1,388 tests.
+MIT, pure Python, 1,434 tests.
 
 🧵
 ```

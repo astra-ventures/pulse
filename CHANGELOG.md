@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-03-05
+
+### Added
+- **CHALLENGER v2** — Goal expansion, complexity escalation, and stagnation response module.
+  6 challenge domains, 5 difficulty tiers, domain atrophy detection, growth trajectory analysis,
+  tier escalation logic. RAPHE detects stagnation → CHALLENGER generates stretch goals →
+  HYPOTHALAMUS drives action. 46 new tests, full suite 1434 passing.
+
 ## [0.3.8] - 2026-03-05
 
 ### Changed
