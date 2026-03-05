@@ -147,7 +147,7 @@ Body:
 >
 > MIT, pure Python, 1,388 tests. Just shipped to GitHub.
 >
-> GitHub: [link]
+> GitHub: https://github.com/astra-ventures/pulse
 >
 > Happy to answer questions about the architecture.
 

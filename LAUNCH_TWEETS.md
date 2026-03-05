@@ -11,7 +11,7 @@
 > 
 > Pulse changes that. Six drives. Real pressure. The agent decides when something matters and wakes itself up.
 > 
-> Give your OpenClaw agent a heartbeat → [link]
+> Give your OpenClaw agent a heartbeat → https://github.com/astra-ventures/pulse
 
 ---
 
@@ -79,7 +79,7 @@
 > 
 > Pulse. Open source. For OpenClaw.
 > 
-> [link]
+> https://github.com/astra-ventures/pulse
 
 ---
 
