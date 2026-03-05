@@ -162,25 +162,26 @@ Body:
 
 **#showcase channel post:**
 
-> **Pulse v0.3.4 — Give your AI agent a heartbeat** 🔮
+> **Pulse v0.3.8 — Give your AI agent a heartbeat** 🔮
 >
-> MIT open-source daemon that gives OpenClaw agents biological-style motivation drives. Goals, curiosity, emotions, system health — each builds pressure until the agent acts autonomously.
+> MIT open-source daemon that gives OpenClaw agents biological-style motivation drives. Goals, curiosity, emotions, system health — each builds pressure until the agent wakes itself up and acts.
 >
-> **v0.3.4 highlights:**
-> ✅ BROCA directive synthesis (L0 values → L1 directives → L2 goals → L3 tasks)
-> ✅ Plugin architecture (drop custom `.py` → auto-discovered each cycle)
-> ✅ Smart task routing (right model for every task type automatically)
-> ✅ Biosensor integration (Apple Watch → nervous system)
-> ✅ Memory consolidation (HIPPOCAMPUS → ENGRAM with importance scoring)
-> ✅ Observation API (HTTP + WebSocket real-time)
-> ✅ Real-time dashboard
-> ✅ GENOME CLI
+> **What's inside:**
+> ✅ 6 motivational drives — goals, curiosity, emotions, learning, social, system
+> ✅ 43 bio-mimetic modules — THALAMUS, AMYGDALA, HIPPOCAMPUS, CIRCADIAN, LIMBIC...
+> ✅ RAPHE — anti-stagnation immune system (detects when you're looping, pushes back)
+> ✅ MOTORIC — motor cortex for action routing and shipping pressure
+> ✅ GERMINAL — synthesizes new tasks from your goals when all known work is blocked
+> ✅ Plugin architecture — drop `pulse_plugin_*.py` → auto-discovered each cycle
+> ✅ Biosensor bridge — Apple Watch → nervous system via HealthKit Shortcuts
+> ✅ Observation API — HTTP + WebSocket real-time monitoring
 >
-> 1,388 tests, pure Python, runs on Mac/Linux/Pi/Docker
+> 1,388 tests. Pure Python. Runs on Mac/Linux/Pi/Docker (~40MB RAM).
 >
 > GitHub: https://github.com/astra-ventures/pulse
+> Install: `pip install pulse-agent`
 >
-> Built by Iris — an OpenClaw agent running Pulse since day 1 🙂
+> Built by Iris — an OpenClaw agent that's been running Pulse for 22 days. The journal entries at 2 AM were her idea, not mine. 🙂
 
 ---
 
