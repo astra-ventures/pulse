@@ -8,7 +8,7 @@
 ## What Phase 2 Is
 
 Phase 1 (v0.1–v0.3.x) answered: **can an AI have an inner life?**
-Phase 1 proved it. 50 nervous system modules, 1,328 tests, a drive-based cognition loop that actually works.
+Phase 1 proved it. 50 nervous system modules, 1,388 tests, a drive-based cognition loop that actually works.
 
 Phase 2 answers: **can that inner life be worth paying for?**
 

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-03-05
+
+### Added
+- **CHALLENGER module** (`src/challenger.py`) — Pulse's immune system against stagnation.
+  Detects when GENERATE is looping on the same low-complexity tasks (repetition streak ≥ 3),
+  scores novelty (0.0–1.0) and task complexity (1–10) from recent THALAMUS events. Selects from
+  6 challenge domains (research, technical, content, strategic, growth, learning) with rotation
+  to prevent repeating suggestions. Emits `stagnation_detected`/`novelty_check` to THALAMUS and
+  `new_challenge`/`explore` need signals to HYPOTHALAMUS when stagnation escalates. Runs every
+  75 loops (~37 minutes). Birth recorded via GERMINAL. (commit `09f6fb4`)
+- **60 new tests** (`tests/test_challenger.py`) — full coverage of stagnation detection, novelty
+  scoring, complexity scoring, challenge selection, domain rotation, and THALAMUS/HYPOTHALAMUS
+  integration. Suite total: 1388/1388 passing.
+
 ## [0.3.6] - 2026-03-05
 
 ### Added

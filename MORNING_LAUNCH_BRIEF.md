@@ -9,9 +9,9 @@
 
 Tonight's audit session closed all 11 P0+P1 issues. PyPI pre-flight passed. The package is built, verified, and ready. The only things between "ready" and "live" are 3 actions that require your credentials.
 
-**1328 tests passing. twine check passed. pulse-agent name is available on PyPI right now.**
+**1388 tests passing. twine check passed. pulse-agent name is available on PyPI right now.**
 
-*(Updated 12:33 AM Mar 5 — v0.3.6 built with MOTORIC module. 1138 → 1166 → 1328 tests over three overnight sessions.)*
+*(Updated 6:47 AM Mar 5 — v0.3.7 built with MOTORIC + CHALLENGER modules. 1138 → 1166 → 1328 → 1388 tests across overnight sessions.)*
 
 ---
 
@@ -28,7 +28,7 @@ Tonight's audit session closed all 11 P0+P1 issues. PyPI pre-flight passed. The 
 
 ```bash
 cd /Users/iris/.openclaw/workspace/pulse
-TWINE_USERNAME=__token__ TWINE_PASSWORD=pypi-<paste-token-here> /Users/iris/Library/Python/3.14/bin/twine upload dist/pulse_agent-0.3.6*
+TWINE_USERNAME=__token__ TWINE_PASSWORD=pypi-<paste-token-here> /Users/iris/Library/Python/3.14/bin/twine upload dist/pulse_agent-0.3.7*
 ```
 
 ✅ Result: `pip install pulse-agent` works globally from anywhere.
