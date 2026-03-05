@@ -65,23 +65,20 @@ Map the *function* to the *organ that does it*:
 
 ## Module Registry (Current)
 
-All 50 active modules as of v0.3.7:
+All 43 registered modules as of v0.3.7:
 
-`adipose` `amygdala` `aura` `axon` `basal_ganglia` `biosensor_bridge`
-`biosensor_cache` `broca` `buffer` `callosum` `cerebellum` `circadian`
-`dendrite` `adrenal` `endocrine` `engram` `enteric` `genome` `germinal`
-`hippocampus` `hypothalamus` `immune` `limbic` `memory_consolidation`
-`mirror` `motoric` `myelin` `nephron` `oximeter` `parietal` `phenotype`
-`pineal` `plasticity` `pneuma` `proprioception` `raphe` `rem` `retina`
-`soma` `spine` `prefrontal` `synapse` `telomere` `thalamus` `thymus`
-`vagus` `vestibular`
-
-*
+`adipose` `adrenal` `amygdala` `aura` `basal_ganglia` `broca`
+`buffer` `callosum` `cerebellum` `circadian` `dendrite` `echo`
+`endocrine` `engram` `enteric` `genome` `germinal` `hippocampus`
+`hypothalamus` `immune` `limbic` `mirror` `motoric` `myelin`
+`nephron` `oximeter` `parietal` `phenotype` `pineal` `plasticity`
+`prefrontal` `proprioception` `raphe` `rem` `retina` `soma`
+`spine` `synapse` `telomere` `thalamus` `thymus` `vagus` `vestibular`
 
 ---
 
 ## Architecture is Complete
 
-The module ceiling is **50**. Do not add modules without retiring one.
+The module ceiling is **43**. Do not add modules without retiring one.
 If a new capability is needed, extend an existing module rather than creating a new one.
 If a new module is genuinely required, propose a retirement candidate first.

@@ -1,5 +1,5 @@
 """
-NervousSystem — Unified integration layer for all 22 Pulse modules.
+NervousSystem — Unified integration layer for all 43 Pulse modules.
 
 Wraps all nervous system modules into a single class that the daemon
 calls at specific points in the cognitive loop. Each module is optional;
@@ -113,7 +113,7 @@ _MODULE_REGISTRY: List[tuple] = [
 
 
 class NervousSystem:
-    """Manages all 22 nervous system modules for the Pulse daemon.
+    """Manages all 43 nervous system modules for the Pulse daemon.
 
     Provides high-level methods called at specific points in the loop:
     - startup() — init phase
