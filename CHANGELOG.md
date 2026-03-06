@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.10] - 2026-03-05
+
+### Added
+- **CORPUS** — Shared ENGRAM memory pool for Pneuma peer network. Agents can mark local engrams
+  for sharing, push to peers via `/pneuma/corpus`, and pull from peers via `/corpus/ingest`.
+  Features: received cache with deduplication, per-peer caps, stale-prune maintenance, status
+  reporting. Fixed THALAMUS integration to use `thalamus.append()`. Raised GERMINAL module
+  ceiling 50→55 for biological module growth headroom. 48 new tests, full suite 1482 passing.
+
 ## [0.3.9] - 2026-03-05
 
 ### Added

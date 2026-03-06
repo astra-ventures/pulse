@@ -20,7 +20,7 @@
 **Tweet 1:**
 > I built an AI agent nervous system.
 > 
-> 50 modules. 1,434 tests. Emotional memory. Hormonal state. Dreaming.
+> 50 modules. 1,482 tests. Emotional memory. Hormonal state. Dreaming.
 > 
 > And the thing it does that nothing else does: it decides when to think.
 > 
