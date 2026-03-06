@@ -39,7 +39,7 @@ PULSE_SRC = WORKSPACE / "pulse" / "src"
 BIRTH_THRESHOLD_DAYS = 2       # Drive must persist this long before GERMINAL acts (lowered from 7)
 DRIVE_WEIGHT_THRESHOLD = 0.7   # Drive must maintain this weight (not decaying)
 COOLDOWN_DAYS = 7              # Max 1 new module per week
-MAX_TOTAL_MODULES = 50         # Safety ceiling — counts biological modules only (see _count_modules)
+MAX_TOTAL_MODULES = 55         # Safety ceiling — counts biological modules only (see _count_modules)
 LOOP_INTERVAL = 200            # Check every 200 loops (~100 minutes)
 
 # Infrastructure files that live in pulse/src/ but are NOT biological modules.
