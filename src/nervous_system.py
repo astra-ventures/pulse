@@ -693,11 +693,18 @@ class NervousSystem:
         if self._mod_proprioception:
             try:
                 self._mod_proprioception.update_capabilities(
-                    model="anthropic/claude-sonnet-4-5",
-                    tools=["read", "write", "edit", "exec", "process", "web_search", "web_fetch",
-                           "browser", "canvas", "nodes", "cron", "message", "gateway", "tts",
-                           "memory_search", "memory_get", "sessions_spawn", "sessions_list",
-                           "sessions_history", "sessions_send", "subagents", "session_status", "image"],
+                    model=getattr(getattr(self.config, "openclaw", None), "isolated_model", None) or "unknown",
+                    tools=[
+                        "read", "write", "edit", "exec", "process",
+                        "web_search", "web_fetch",
+                        "browser", "canvas", "nodes",
+                        "message", "tts",
+                        "memory_search", "memory_get",
+                        "sessions_spawn", "sessions_list", "sessions_history", "sessions_send",
+                        "subagents", "session_status",
+                        "image", "pdf",
+                        "agents_list",
+                    ],
                     context_max=200000,
                     skills=["coding-agent", "discord", "gh-issues", "github", "weather",
                             "elevenlabs-voices", "elevenlabs-stt", "firecrawl", "apple-calendar",
@@ -705,7 +712,7 @@ class NervousSystem:
                             "topic-monitor", "reddit-insights"],
                     channels=["signal", "telegram"],
                     limitations=["cannot_send_email_directly", "no_physical_presence_yet"],
-                    session_type="main",
+                    session_type=getattr(getattr(self.config, "openclaw", None), "session_mode", "unknown"),
                 )
                 status["proprioception_wired"] = True
             except Exception as e:
@@ -1347,14 +1354,20 @@ class NervousSystem:
         # PROPRIOCEPTION — update context_used estimate after trigger
         if self._mod_proprioception:
             try:
+                # Preserve current self-model (tools/skills/channels/etc) and only update context_used.
+                _self_model = self._mod_proprioception.get_self_model()
                 self._mod_proprioception.update_capabilities(
-                    model="anthropic/claude-sonnet-4-5",
-                    tools=["read", "write", "edit", "exec", "process", "web_search", "web_fetch",
-                           "browser", "canvas", "nodes", "cron", "message", "gateway", "tts",
-                           "memory_search", "memory_get", "sessions_spawn", "sessions_list",
-                           "sessions_history", "sessions_send", "subagents", "session_status", "image"],
-                    context_max=200000,
+                    model=_self_model.get("model", "unknown"),
+                    tools=_self_model.get("tools_available", []),
+                    context_max=_self_model.get("context_window", 200000),
                     context_used=self._loop_count * 500,
+                    skills=_self_model.get("skills_available", []),
+                    channels=_self_model.get("channels_active", []),
+                    limitations=_self_model.get("limitations", []),
+                    session_type=_self_model.get(
+                        "session_type",
+                        getattr(getattr(self.config, "openclaw", None), "session_mode", "unknown"),
+                    ),
                 )
             except Exception as e:
                 logger.warning(f"post_trigger PROPRIOCEPTION context update failed: {e}")
