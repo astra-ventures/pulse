@@ -25,8 +25,8 @@ python3 --version  # Should show 3.11.x or higher
 git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
-# 2. Install dependencies
-pip3 install -r requirements.txt
+# 2. Install
+python3 -m pip install -e ".[dev]"  # or: python3 -m pip install .
 
 # 3. Copy example config
 cp config/pulse.example.yaml config/pulse.yaml
@@ -257,7 +257,7 @@ python3.11 -m venv venv
 source venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+python3 -m pip install -e ".[dev]"  # or: python3 -m pip install .
 
 # Configure
 cp config/pulse.example.yaml config/pulse.yaml
@@ -307,7 +307,8 @@ python -m pulse --validate-config
 
 **Solution:** Install dependencies:
 ```bash
-pip3 install -r requirements.txt
+python3 -m pip install --user .
+# If needed for dev/tests: python3 -m pip install -e ".[dev]"
 ```
 
 ### "Connection refused" when curling /health

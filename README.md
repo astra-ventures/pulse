@@ -6,7 +6,7 @@ Pulse is a persistent daemon that gives AI agents self-directed initiative. Inst
 
 Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 
-**1174 tests** · Python 3.11+ · MIT License · Docker-ready · v0.3.4
+**1482 tests** · Python 3.11+ · MIT License · Docker-ready · v0.3.10
 
 ---
 
@@ -53,7 +53,11 @@ Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 
 ⚡ **Smart Task Routing**
 - TaskRouter classifies work and picks the right model automatically
-- Heavy build → Opus; conversational → Sonnet; fast synthesis → local LLM (iris-70b/llama3)
+- Defaults are **OpenAI Codex-first** (with a local LLM for fast/cheap work)
+- Three tiers (historical names kept for backwards compatibility):
+  - **local** — heartbeats, memory, emotion, coordination (default)
+  - **sonnet** — implementation/coding (default: `openai-codex/gpt-5.3-codex-spark`)
+  - **opus** — architecture/deep reasoning (default: `openai-codex/gpt-5.3-codex`)
 - Zero config — sensible defaults, fully overridable
 
 📡 **Observation API**
@@ -77,7 +81,7 @@ git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
 # 2. Install
-pip install -r requirements.txt
+python -m pip install -e ".[dev]"  # or: python -m pip install .
 
 # 3. Configure
 cp config/pulse.example.yaml config/pulse.yaml

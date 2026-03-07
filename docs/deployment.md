@@ -32,8 +32,9 @@ Get Pulse running in production — from localhost testing to 24/7 cloud deploym
 git clone https://github.com/yourusername/pulse.git
 cd pulse
 
-# Install dependencies
-pip install -r requirements.txt
+# Install
+python -m pip install -e ".[dev]"  # local dev (includes tests)
+# or: python -m pip install .
 
 # Or via pip (when published)
 pip install pulse-agent
@@ -104,7 +105,7 @@ sudo su - pulse
 cd ~
 git clone https://github.com/yourusername/pulse.git
 cd pulse
-pip install --user -r requirements.txt
+python -m pip install --user .
 ```
 
 ### 3. Configure for Production
@@ -371,7 +372,7 @@ su - pulse
 # Install Pulse
 git clone https://github.com/yourusername/pulse.git
 cd pulse
-pip3 install --user -r requirements.txt
+python3 -m pip install --user .
 
 # Configure
 cp config/pulse.example.yaml ~/.pulse/config.yaml
