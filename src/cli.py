@@ -16,6 +16,7 @@ Usage:
     pulse stop                Stop the daemon  
     pulse restart             Restart the daemon
     pulse logs [n]            Show recent log lines
+    pulse feedback <drives...>  Send turn feedback to Pulse (decays drive pressure)
     pulse health              Raw health check
 """
 
@@ -61,6 +62,19 @@ def _get(endpoint: str) -> dict:
     url = f"{HEALTH_URL.format(port=_port())}{endpoint}"
     try:
         with urllib.request.urlopen(url, timeout=3) as resp:
+            return json.loads(resp.read())
+    except Exception:
+        return None
+
+
+def _post(endpoint: str, payload: dict) -> dict:
+    """POST JSON to the health API."""
+    import urllib.request
+    url = f"{HEALTH_URL.format(port=_port())}{endpoint}"
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=3) as resp:
             return json.loads(resp.read())
     except Exception:
         return None
@@ -1352,6 +1366,7 @@ def cmd_help(args):
         ("pulse mutations [-n 20]", "Mutation audit log — every self-modification recorded"),
         ("pulse health", "Raw JSON from /health, /status, and /evolution endpoints"),
         ("pulse logs [-n 30]", "Colored log viewer (errors red, triggers magenta, mutations cyan)"),
+        ("pulse feedback <drives...>", "Send turn feedback (decays drive pressure)"),
         ("pulse config", "Show current configuration from pulse.yaml"),
         ("", ""),
         ("", "[bold]Drive Control[/]"),
@@ -1390,6 +1405,7 @@ def cmd_help(args):
     console.print("  pulse decay system 1.0             [dim]# Reduce system pressure[/]")
     console.print('  pulse mutate \'{"type": "add_drive", "name": "art", "weight": 0.6, "reason": "creative exploration"}\'')
     console.print("  pulse triggers -n 5                [dim]# Last 5 triggers[/]")
+    console.print("  pulse feedback goals --summary 'shipped X'   [dim]# Decay drive pressure[/]")
     console.print("  pulse logs -n 50                   [dim]# Last 50 log lines[/]")
     console.print()
 
@@ -1412,6 +1428,59 @@ def cmd_health(args):
             console.print(json.dumps(data, indent=2, default=str))
         else:
             console.print(f"\n[red]{endpoint}: unreachable[/]")
+
+
+def cmd_feedback(args):
+    """Send turn feedback to Pulse to decay drive pressure."""
+    running, _ = _is_running()
+    if not running:
+        console.print("[red]Pulse is not running[/] — start it first: pulse start")
+        return
+
+    drives = args.drives or []
+    if not drives and args.outcome != "cascade_stop":
+        console.print("[red]Provide at least one drive name[/] (or use --outcome cascade_stop)")
+        return
+
+    payload = {
+        "drives_addressed": drives,
+        "outcome": args.outcome,
+        "summary": args.summary or "",
+    }
+
+    if args.decay_overrides:
+        try:
+            payload["decay_overrides"] = json.loads(args.decay_overrides)
+        except json.JSONDecodeError as e:
+            console.print(f"[red]Invalid JSON for --decay-overrides:[/] {e}")
+            return
+
+    data = _post("/feedback", payload)
+    if not data or data.get("status") != "ok":
+        console.print("[red]Failed to send feedback[/]")
+        return
+
+    updated = data.get("drives_updated", {}) or {}
+    console.print("\n📨 [bold magenta]Feedback accepted[/]\n")
+    if not updated:
+        console.print("  [dim]No drives updated (already at 0?)[/]")
+        return
+
+    table = Table(box=box.SIMPLE_HEAVY, padding=(0, 1))
+    table.add_column("Drive", style="bold")
+    table.add_column("Before", justify="right")
+    table.add_column("After", justify="right")
+    table.add_column("Decayed", justify="right")
+
+    for name, r in sorted(updated.items()):
+        table.add_row(
+            name,
+            f"{r.get('before', 0):.2f}",
+            f"{r.get('after', 0):.2f}",
+            f"{r.get('decayed', 0):.2f}",
+        )
+
+    console.print(table)
 
 
 # ─── Main ────────────────────────────────────────────────────────
@@ -1466,6 +1535,13 @@ def main():
     # logs
     p = sub.add_parser("logs", help="Show recent log lines")
     p.add_argument("-n", "--count", type=int, default=30, help="Number of lines")
+
+    # feedback
+    p = sub.add_parser("feedback", help="Send turn feedback (decays drive pressure)")
+    p.add_argument("drives", nargs="*", help="Drive names addressed (e.g. goals curiosity)")
+    p.add_argument("--outcome", default="success", choices=["success", "partial", "blocked", "cascade_stop"], help="Outcome")
+    p.add_argument("--summary", default="", help="One-line summary of what you did")
+    p.add_argument("--decay-overrides", default="", help="JSON dict of per-drive decay amounts")
 
     # health
     sub.add_parser("health", help="Raw health/status/evolution endpoints")
@@ -1535,6 +1611,7 @@ def main():
         "stop": cmd_stop,
         "restart": cmd_restart,
         "logs": cmd_logs,
+        "feedback": cmd_feedback,
         "health": cmd_health,
         "genome": cmd_genome,
         "plugin": cmd_plugin,
