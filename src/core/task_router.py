@@ -3,13 +3,14 @@ TaskRouter — routes Pulse trigger messages to the appropriate model.
 
 Pulse handles many kinds of tasks. Local 70B models (iris-70b-v3) are
 great for identity, memory, emotional processing, and coordination.
-Cloud models (Sonnet, Opus) are better for complex coding, architecture,
+Cloud models (OpenAI Codex variants) are better for complex coding, architecture,
 and multi-step implementations.
 
 This router inspects the trigger message and picks the right model
-before the webhook fires — so Anthropic only gets called when needed.
+before the webhook fires — so only the necessary (and often more expensive)
+cloud model gets called when needed.
 
-Routing tiers:
+Routing tiers (historical names kept for backwards-compatibility):
   opus   — architecture decisions, novel problems, >10-step chains
   sonnet — coding tasks, complex implementations, research synthesis
   local  — everything else (heartbeats, memory, emotional, coordination)
@@ -23,7 +24,7 @@ from typing import Optional
 logger = logging.getLogger("pulse.task_router")
 
 
-# Keywords that signal a coding/implementation task → Sonnet
+# Keywords that signal a coding/implementation task → "sonnet" tier (typically Codex Spark)
 SONNET_KEYWORDS = [
     # Code generation
     "write code", "write a script", "write a function", "write a class",
@@ -41,7 +42,7 @@ SONNET_KEYWORDS = [
     "parse", "scrape", "extract data", "transform data",
 ]
 
-# Keywords that signal architectural / deep reasoning → Opus
+# Keywords that signal architectural / deep reasoning → "opus" tier (typically Codex)
 OPUS_KEYWORDS = [
     "architecture", "system design", "redesign", "from scratch",
     "comprehensive plan", "long-term roadmap", "fundamental",
@@ -74,8 +75,8 @@ class TaskRouter:
       openclaw:
         isolated_model: "ollama/iris-70b-v3-tools:latest"   # default (local)
         routing:
-          sonnet_model: "anthropic/claude-sonnet-4-6"
-          opus_model: "anthropic/claude-opus-4-6"
+          sonnet_model: "openai-codex/gpt-5.3-codex-spark"
+          opus_model: "openai-codex/gpt-5.3-codex"
           enabled: true
     """
 
@@ -88,11 +89,11 @@ class TaskRouter:
         routing_cfg = getattr(config.openclaw, "routing", None)
         self.sonnet_model = (
             getattr(routing_cfg, "sonnet_model", None) 
-            or "anthropic/claude-sonnet-4-6"
+            or "openai-codex/gpt-5.3-codex-spark"
         )
         self.opus_model = (
             getattr(routing_cfg, "opus_model", None) 
-            or "anthropic/claude-opus-4-6"
+            or "openai-codex/gpt-5.3-codex"
         )
 
     def route(self, message: str) -> RoutingDecision:
