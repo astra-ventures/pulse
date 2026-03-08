@@ -6,7 +6,7 @@ Pulse is a persistent daemon that gives AI agents self-directed initiative. Inst
 
 Built for [OpenClaw](https://openclaw.ai), portable across any deployment.
 
-**351 tests** · Python 3.11+ · MIT License · Docker-ready
+**867 tests** · Python 3.11+ · MIT License · Docker-ready
 
 ---
 
@@ -57,7 +57,7 @@ cp config/pulse.example.yaml config/pulse.yaml
 nano config/pulse.yaml  # set webhook_url + webhook_token
 
 # 4. Run
-python -m pulse
+python3 -m src
 
 # 5. Test
 curl http://localhost:9720/health
