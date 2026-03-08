@@ -64,7 +64,7 @@ workspace:
 
 ```bash
 # Foreground (for testing)
-python3 -m pulse.src
+python3 -m pulse
 
 # Or use the helper script
 ./bin/run.sh
@@ -145,7 +145,7 @@ export PULSE_STATE_DIR=~/.pulse
 ### 5. Test Before Daemonizing
 
 ```bash
-python3 -m pulse.src
+python3 -m pulse
 # Let it run for 5 minutes, watch for errors
 # Ctrl+C to stop
 ```
@@ -235,7 +235,7 @@ Group=pulse
 WorkingDirectory=/home/pulse/pulse
 Environment="PULSE_HOOK_TOKEN=your-token"
 Environment="PULSE_CONFIG=/home/pulse/.pulse/config.yaml"
-ExecStart=/usr/bin/python3 -m pulse.src
+ExecStart=/usr/bin/python3 -m pulse
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
@@ -383,7 +383,7 @@ nano ~/.pulse/config/pulse.yaml
 # If remote: https://your-openclaw.example.com/hooks/agent
 
 # Test
-python3 -m pulse.src
+python3 -m pulse
 ```
 
 **Daemonize with systemd** (see above).
@@ -591,7 +591,7 @@ nano ~/.pulse/config/pulse.yaml
 # Change openclaw.webhook_url if needed
 
 # Start
-python3 -m pulse.src
+python3 -m pulse
 ```
 
 Your agent picks up exactly where it left off.

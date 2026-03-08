@@ -11,3 +11,6 @@ import sys
 _src_module = importlib.import_module("src")
 sys.modules[__name__ + ".src"] = _src_module
 setattr(sys.modules[__name__], "src", _src_module)
+
+# Convenience: expose version on the `pulse` shim as well.
+__version__ = getattr(_src_module, "__version__", "0.0.0")

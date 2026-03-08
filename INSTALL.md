@@ -36,7 +36,7 @@ cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
 nano ~/.pulse/config/pulse.yaml  # or use your preferred editor
 
 # 5. Run Pulse
-python3 -m pulse.src
+python3 -m pulse
 
 # 6. Verify (in another terminal)
 curl http://localhost:9720/health
@@ -56,7 +56,7 @@ curl http://localhost:9720/health
 **Option 1: Run manually**
 ```bash
 cd /path/to/pulse
-python3 -m pulse.src
+python3 -m pulse
 ```
 
 **Option 2: Run as LaunchAgent (starts on login)**
@@ -74,7 +74,7 @@ cat > ~/Library/LaunchAgents/ai.iris.pulse.plist <<EOF
     <array>
         <string>/usr/local/bin/python3</string>
         <string>-m</string>
-        <string>pulse.src</string>
+        <string>pulse</string>
     </array>
     <key>WorkingDirectory</key>
     <string>/Users/YOUR_USERNAME/pulse</string>
@@ -122,7 +122,7 @@ launchctl unload ~/Library/LaunchAgents/ai.iris.pulse.plist
 **Option 1: Run manually**
 ```bash
 cd /path/to/pulse
-python3 -m pulse.src
+python3 -m pulse
 ```
 
 **Option 2: Run as systemd service (starts on boot)**
@@ -142,7 +142,7 @@ After=network.target
 Type=simple
 User=YOUR_USERNAME
 WorkingDirectory=/home/YOUR_USERNAME/pulse
-ExecStart=/usr/bin/python3 -m pulse.src
+ExecStart=/usr/bin/python3 -m pulse
 Restart=always
 RestartSec=10
 StandardOutput=append:/home/YOUR_USERNAME/pulse/pulse.log
@@ -265,13 +265,13 @@ cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
 nano ~/.pulse/config/pulse.yaml
 
 # Run
-python -m pulse.src
+python -m pulse
 ```
 
 **Run as systemd service:**
 Follow Linux systemd instructions above, but use:
 ```ini
-ExecStart=/home/YOUR_USERNAME/pulse/venv/bin/python -m pulse.src
+ExecStart=/home/YOUR_USERNAME/pulse/venv/bin/python -m pulse
 ```
 
 **Performance tips:**

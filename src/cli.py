@@ -348,7 +348,7 @@ def cmd_init(args):
         run_sh_content = f"""#!/bin/bash
 set -a; source ~/.pulse/.env; set +a
 cd {workspace}
-exec {pulse_bin or 'python3 -m pulse.src'}
+exec {pulse_bin or 'python3 -m pulse'}
 """
         run_sh.write_text(run_sh_content)
         run_sh.chmod(0o755)
@@ -1143,7 +1143,7 @@ def cmd_start(args):
         console.print("[dim]No LaunchAgent installed. Starting in foreground...[/]")
         os.execvp(
             sys.executable,
-            [sys.executable, "-m", "pulse.src"],
+            [sys.executable, "-m", "pulse"],
         )
 
 

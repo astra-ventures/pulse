@@ -61,7 +61,7 @@ cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
 nano ~/.pulse/config/pulse.yaml  # set webhook_url + webhook_token
 
 # 4. Run (foreground)
-python3 -m pulse.src
+python3 -m pulse
 
 # (Optional) once installed, you can also use the CLI:
 # pulse doctor
