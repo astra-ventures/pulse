@@ -130,6 +130,7 @@ class NervousSystem:
         self._mod_aura = None
         self._mod_chronicle = None
         self._mod_nephron = None
+        self._mod_cortex_ext = None
         self._mod_germinal = None
         self._mod_parietal = None
         self.parietal = None
@@ -473,6 +474,15 @@ class NervousSystem:
             logger.info("✓ NEPHRON loaded")
         except Exception as e:
             logger.warning(f"✗ NEPHRON failed: {e}")
+
+        # CORTEX_EXT — active learning / gap detection
+        try:
+            from pulse.src import cortexext
+            self._mod_cortex_ext = cortexext
+            self._patch_module_state_dir(cortexext)
+            logger.info("✓ CORTEX_EXT loaded")
+        except Exception as e:
+            logger.warning(f"✗ CORTEX_EXT failed: {e}")
 
         # GERMINAL — reproductive system / self-spawning module generator
         try:
@@ -1441,6 +1451,14 @@ class NervousSystem:
                     logger.info(f"NEPHRON pruned {total} items: {filter_results['pruned']}")
             except Exception as e:
                 logger.warning(f"post_loop NEPHRON failed: {e}")
+
+        # CORTEX_EXT — active learning scan (periodic)
+        if self._mod_cortex_ext and self._mod_cortex_ext.should_run(self._loop_count):
+            try:
+                scan = self._mod_cortex_ext.run_scan(loop_count=self._loop_count)
+                result["cortex_ext_scan"] = scan
+            except Exception as e:
+                logger.warning(f"post_loop CORTEX_EXT failed: {e}")
 
         # GERMINAL — scan for birth candidates every 200th loop
         if self._mod_germinal and self._mod_germinal.should_run(self._loop_count):
