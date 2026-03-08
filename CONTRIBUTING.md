@@ -86,14 +86,17 @@ python3.11 -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 
 # 3. Install dev dependencies
-pip install -r requirements.txt
-pip install pytest black
+# (Installs core deps + test/lint/release tooling)
+pip install -e ".[dev]"
 
 # 4. Run tests
 pytest tests/
 
 # 5. Run Pulse locally
-PULSE_CONFIG=config/pulse.example.yaml python3 -m pulse.src
+PULSE_CONFIG=config/pulse.example.yaml python3 -m pulse
+
+# 6. Run health diagnostics
+python3 -m pulse doctor
 ```
 
 ---
