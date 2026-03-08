@@ -12,7 +12,8 @@ from pulse.src import basal_ganglia
 
 
 def _make_goals_file(tmp_path, goals: list) -> Path:
-    gf = tmp_path / "goals.json"
+    gf = tmp_path if str(tmp_path).endswith("goals.json") else tmp_path / "goals.json"
+    gf.parent.mkdir(parents=True, exist_ok=True)
     gf.write_text(json.dumps({"goals": goals}))
     return gf
 
@@ -58,6 +59,22 @@ class TestScanGoals:
         assert result["priority1_stale"] == 1
         mock_hypo.record_need_signal.assert_called_with("goals", "goals_sensor")
         mock_endo.update_hormone.assert_called()
+
+
+    def test_scan_goals_uses_workspace_root(self, tmp_path):
+        workspace = tmp_path / "workspace"
+        goals_path = workspace / "memory" / "self" / "goals.json"
+        _make_goals_file(goals_path, [
+            {"id": "g1", "title": "Workspace goal", "priority": 1,
+             "status": "active", "last_updated": _days_ago(5)},
+        ])
+        result = basal_ganglia.scan_goals(
+            hypothalamus_mod=None,
+            endocrine_mod=None,
+            workspace_root=str(workspace),
+        )
+        assert result["total"] == 1
+        assert result["priority1_stale"] == 1
 
     def test_general_stale_emits_ship_something(self, tmp_path):
         _make_goals_file(tmp_path, [
@@ -195,4 +212,14 @@ class TestGetStatus:
         assert status["goals_file_exists"] is False
         _make_goals_file(tmp_path, [])
         status2 = basal_ganglia.get_status()
+        assert status2["goals_file_exists"] is True
+
+
+    def test_status_uses_workspace_root(self, tmp_path):
+        workspace = tmp_path / "workspace"
+        status = basal_ganglia.get_status(workspace_root=str(workspace))
+        assert status["goals_file_exists"] is False
+        goals_path = workspace / "memory" / "self" / "goals.json"
+        _make_goals_file(goals_path, [])
+        status2 = basal_ganglia.get_status(workspace_root=str(workspace))
         assert status2["goals_file_exists"] is True

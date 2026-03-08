@@ -29,6 +29,28 @@ _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "basal_ganglia-state.json"
 
 GOALS_FILE = Path.home() / ".openclaw" / "workspace" / "memory" / "self" / "goals.json"
 
+
+def _resolve_goals_file(goals_file: Optional[Path] = None, workspace_root: Optional[str] = None) -> Path:
+    """Resolve the goals.json file path.
+
+    Pulse is designed to be portable across machines and workspace locations.
+    Many deployments keep goals at <workspace_root>/memory/self/goals.json, but
+    older installs (and tests) may patch GOALS_FILE directly.
+
+    Args:
+        goals_file: explicit path override (highest priority)
+        workspace_root: workspace root dir; if provided, goals live at
+            <workspace_root>/memory/self/goals.json
+
+    Returns:
+        Absolute Path to goals.json.
+    """
+    if goals_file is not None:
+        return Path(goals_file)
+    if workspace_root:
+        return Path(workspace_root).expanduser() / "memory" / "self" / "goals.json"
+    return GOALS_FILE
+
 # Staleness thresholds
 _P1_STALE_DAYS = 3
 _GENERAL_STALE_DAYS = 7
@@ -55,29 +77,31 @@ def _save_state(state: dict):
     _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
-def _load_goals() -> list:
+def _load_goals(goals_file: Optional[Path] = None, workspace_root: Optional[str] = None) -> list:
     """Load goals from goals.json. Returns list of goal dicts."""
-    if not GOALS_FILE.exists():
+    gf = _resolve_goals_file(goals_file=goals_file, workspace_root=workspace_root)
+    if not gf.exists():
         return []
     try:
-        data = json.loads(GOALS_FILE.read_text())
+        data = json.loads(gf.read_text())
         return data.get("goals", [])
     except (json.JSONDecodeError, OSError):
         return []
 
 
-def _save_goals(goals: list):
+def _save_goals(goals: list, goals_file: Optional[Path] = None, workspace_root: Optional[str] = None):
     """Save goals list back to goals.json."""
-    GOALS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    gf = _resolve_goals_file(goals_file=goals_file, workspace_root=workspace_root)
+    gf.parent.mkdir(parents=True, exist_ok=True)
     try:
-        if GOALS_FILE.exists():
-            data = json.loads(GOALS_FILE.read_text())
+        if gf.exists():
+            data = json.loads(gf.read_text())
         else:
             data = {}
     except (json.JSONDecodeError, OSError):
         data = {}
     data["goals"] = goals
-    GOALS_FILE.write_text(json.dumps(data, indent=2))
+    gf.write_text(json.dumps(data, indent=2))
 
 
 def _staleness_days(goal: dict) -> float:
@@ -94,7 +118,7 @@ def _staleness_days(goal: dict) -> float:
         return 999.0
 
 
-def scan_goals(hypothalamus_mod=None, endocrine_mod=None) -> dict:
+def scan_goals(hypothalamus_mod=None, endocrine_mod=None, workspace_root: Optional[str] = None) -> dict:
     """Scan goals.json and emit need signals for stale or urgent goals.
 
     Args:
@@ -109,7 +133,7 @@ def scan_goals(hypothalamus_mod=None, endocrine_mod=None) -> dict:
             "most_urgent": str,
         }
     """
-    goals = _load_goals()
+    goals = _load_goals(workspace_root=workspace_root)
     state = _load_state()
 
     all_active = [g for g in goals if g.get("status") == "active"]
@@ -181,7 +205,7 @@ def scan_goals(hypothalamus_mod=None, endocrine_mod=None) -> dict:
     return result
 
 
-def mark_progress(goal_id: str, note: str) -> bool:
+def mark_progress(goal_id: str, note: str, workspace_root: Optional[str] = None) -> bool:
     """Append a progress note to a goal and update last_updated.
 
     Args:
@@ -191,7 +215,7 @@ def mark_progress(goal_id: str, note: str) -> bool:
     Returns:
         True if goal was found and updated, False otherwise.
     """
-    goals = _load_goals()
+    goals = _load_goals(workspace_root=workspace_root)
     today = datetime.now().strftime("%Y-%m-%d")
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
 
@@ -201,13 +225,13 @@ def mark_progress(goal_id: str, note: str) -> bool:
             progress.append(f"[{timestamp}] {note}")
             goal["progress"] = progress
             goal["last_updated"] = today
-            _save_goals(goals)
+            _save_goals(goals, workspace_root=workspace_root)
             return True
 
     return False
 
 
-def get_active_goals(priority: Optional[int] = None, include_blocked: bool = False) -> list:
+def get_active_goals(priority: Optional[int] = None, include_blocked: bool = False, workspace_root: Optional[str] = None) -> list:
     """Return active goals, optionally filtered by priority.
 
     Args:
@@ -217,7 +241,7 @@ def get_active_goals(priority: Optional[int] = None, include_blocked: bool = Fal
     Returns:
         List of goal dicts (title, id, priority, last_updated, staleness_days, blocked_on).
     """
-    goals = _load_goals()
+    goals = _load_goals(workspace_root=workspace_root)
     active = [g for g in goals if g.get("status") == "active"]
 
     if not include_blocked:
@@ -242,13 +266,13 @@ def get_active_goals(priority: Optional[int] = None, include_blocked: bool = Fal
     return result
 
 
-def get_blocked_goals() -> list:
+def get_blocked_goals(workspace_root: Optional[str] = None) -> list:
     """Return all active goals currently tagged as blocked.
 
     Returns:
         List of goal dicts with blocked_on field set.
     """
-    goals = _load_goals()
+    goals = _load_goals(workspace_root=workspace_root)
     blocked = [g for g in goals if g.get("status") == "active" and g.get("blocked_on")]
     return [
         {
@@ -262,7 +286,7 @@ def get_blocked_goals() -> list:
     ]
 
 
-def set_blocked(goal_id: str, blocker: Optional[str]) -> bool:
+def set_blocked(goal_id: str, blocker: Optional[str], workspace_root: Optional[str] = None) -> bool:
     """Tag or untag a goal as blocked on an external dependency.
 
     Args:
@@ -273,14 +297,14 @@ def set_blocked(goal_id: str, blocker: Optional[str]) -> bool:
     Returns:
         True if goal was found and updated, False otherwise.
     """
-    goals = _load_goals()
+    goals = _load_goals(workspace_root=workspace_root)
     for goal in goals:
         if goal.get("id") == goal_id:
             if blocker:
                 goal["blocked_on"] = blocker
             else:
                 goal.pop("blocked_on", None)
-            _save_goals(goals)
+            _save_goals(goals, workspace_root=workspace_root)
             return True
     return False
 
@@ -310,6 +334,7 @@ def scan_goals_with_directives(
     hypothalamus_mod=None,
     endocrine_mod=None,
     broca_mod=None,
+    workspace_root: Optional[str] = None,
 ) -> dict:
     """Extended goal scan that also reads BROCA directives.
 
@@ -332,7 +357,11 @@ def scan_goals_with_directives(
         }
     """
     # Standard goal scan first
-    result = scan_goals(hypothalamus_mod=hypothalamus_mod, endocrine_mod=endocrine_mod)
+    result = scan_goals(
+        hypothalamus_mod=hypothalamus_mod,
+        endocrine_mod=endocrine_mod,
+        workspace_root=workspace_root,
+    )
 
     # BROCA directive bridge
     directives_active = 0
@@ -380,7 +409,7 @@ def scan_goals_with_directives(
     return result
 
 
-def get_status() -> dict:
+def get_status(workspace_root: Optional[str] = None) -> dict:
     """Return goals sensor status."""
     state = _load_state()
     now = time.time()
@@ -390,5 +419,5 @@ def get_status() -> dict:
         "last_scan": state.get("last_scan", 0),
         "hours_since_scan": round(hours_since, 1),
         "last_result": state.get("last_scan_result", {}),
-        "goals_file_exists": GOALS_FILE.exists(),
+        "goals_file_exists": _resolve_goals_file(workspace_root=workspace_root).exists(),
     }

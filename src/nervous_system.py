@@ -927,7 +927,10 @@ class NervousSystem:
         # BASAL_GANGLIA — active P1 goals
         if self._mod_basal_ganglia:
             try:
-                context["active_p1_goals"] = self._mod_basal_ganglia.get_active_goals(priority=1)
+                context["active_p1_goals"] = self._mod_basal_ganglia.get_active_goals(
+                    priority=1,
+                    workspace_root=self.workspace_root,
+                )
             except Exception as e:
                 logger.warning(f"pre_sense BASAL_GANGLIA failed: {e}")
 
@@ -1415,7 +1418,7 @@ class NervousSystem:
         if self._mod_basal_ganglia and success:
             try:
                 _reason = getattr(decision, 'reason', '')
-                _goals = self._mod_basal_ganglia.get_active_goals()
+                _goals = self._mod_basal_ganglia.get_active_goals(workspace_root=self.workspace_root)
                 for _goal in _goals:
                     _title_lower = _goal.get("title", "").lower()
                     _reason_lower = _reason.lower()
@@ -1425,6 +1428,7 @@ class NervousSystem:
                         self._mod_basal_ganglia.mark_progress(
                             _goal["id"],
                             f"Auto-detected progress from trigger: {_reason[:100]}",
+                            workspace_root=self.workspace_root,
                         )
                         break  # one progress note per trigger
             except Exception as e:
@@ -1684,6 +1688,7 @@ class NervousSystem:
                 goals_scan = self._mod_basal_ganglia.scan_goals(
                     hypothalamus_mod=self._mod_hypothalamus,
                     endocrine_mod=self._mod_endocrine,
+                    workspace_root=self.workspace_root,
                 )
                 result["basal_ganglia_scan"] = goals_scan
                 if goals_scan.get("priority1_stale", 0) > 0:
@@ -1731,6 +1736,7 @@ class NervousSystem:
                     hypothalamus_mod=self._mod_hypothalamus,
                     endocrine_mod=self._mod_endocrine,
                     broca_mod=self._mod_broca,
+                    workspace_root=self.workspace_root,
                 )
                 result["basal_ganglia_broca_bridge"] = {
                     "directives_active": bridge_result.get("directives_active", 0),
