@@ -984,6 +984,8 @@ def cmd_config(args):
     candidates = [
         Path("pulse.yaml"),
         Path("~/.pulse/pulse.yaml").expanduser(),
+        Path("~/.pulse/config/pulse.yaml").expanduser(),
+        Path("~/.pulse/config.yaml").expanduser(),
         Path(__file__).parent.parent / "config" / "pulse.yaml",
     ]
     
@@ -1337,6 +1339,8 @@ def cmd_doctor(args):
     cfg_candidates = [
         Path("pulse.yaml"),
         Path("~/.pulse/pulse.yaml").expanduser(),
+        Path("~/.pulse/config/pulse.yaml").expanduser(),
+        Path("~/.pulse/config.yaml").expanduser(),
         Path(__file__).parent.parent / "config" / "pulse.yaml",
     ]
     cfg_path = next((p for p in cfg_candidates if p.exists()), None)

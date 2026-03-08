@@ -1,6 +1,6 @@
 # Pulse Configuration
 
-All configuration lives in `config/pulse.yaml` (or `~/.pulse/config.yaml`).
+All configuration lives in `config/pulse.yaml` (or `~/.pulse/pulse.yaml` / `~/.pulse/config/pulse.yaml`).
 
 ---
 

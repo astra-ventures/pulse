@@ -179,16 +179,23 @@ class PulseConfig:
     def load(cls, config_path: Optional[str] = None) -> "PulseConfig":
         """Load config from YAML file, falling back to defaults."""
         if config_path is None:
-            # Search order: ./pulse.yaml, ~/.pulse/pulse.yaml, config/pulse.yaml
-            candidates = [
-                Path("pulse.yaml"),
-                Path("~/.pulse/pulse.yaml").expanduser(),
-                Path(__file__).parent.parent.parent / "config" / "pulse.yaml",
-            ]
-            for candidate in candidates:
-                if candidate.exists():
-                    config_path = str(candidate)
-                    break
+            # Env override
+            env_cfg = os.environ.get("PULSE_CONFIG")
+            if env_cfg:
+                config_path = env_cfg
+            else:
+                # Search order: ./pulse.yaml, ~/.pulse/pulse.yaml, ~/.pulse/config/pulse.yaml, ~/.pulse/config.yaml, config/pulse.yaml
+                candidates = [
+                    Path("pulse.yaml"),
+                    Path("~/.pulse/pulse.yaml").expanduser(),
+                    Path("~/.pulse/config/pulse.yaml").expanduser(),
+                    Path("~/.pulse/config.yaml").expanduser(),
+                    Path(__file__).parent.parent.parent / "config" / "pulse.yaml",
+                ]
+                for candidate in candidates:
+                    if candidate.exists():
+                        config_path = str(candidate)
+                        break
 
         if config_path and Path(config_path).exists():
             cls._check_config_permissions(config_path)

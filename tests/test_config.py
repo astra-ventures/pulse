@@ -114,6 +114,16 @@ class TestConfigFromYaml:
         config = PulseConfig.load("/nonexistent/path/pulse.yaml")
         assert config.openclaw.webhook_url == "http://127.0.0.1:18789/hooks/agent"
 
+    def test_env_var_pulse_config_is_honored(self):
+        path = self._write_yaml({"openclaw": {"webhook_token": "envtok"}})
+        os.environ["PULSE_CONFIG"] = path
+        try:
+            config = PulseConfig.load()
+            assert config.openclaw.webhook_token == "envtok"
+        finally:
+            os.unlink(path)
+            del os.environ["PULSE_CONFIG"]
+
 
 class TestWorkspacePathResolution:
     """Test workspace path resolution."""
