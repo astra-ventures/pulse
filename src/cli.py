@@ -1309,9 +1309,29 @@ def cmd_doctor(args):
     add("Python", py >= (3, 9), f"{py.major}.{py.minor}.{py.micro}")
     add("Platform", True, f"{platform.system()} {platform.release()}")
 
-    # ── pulse binary visibility ─────────────────────────────────────────────
+    # ── Binary visibility ───────────────────────────────────────────────────
     pulse_bin = shutil.which("pulse")
     add("pulse in PATH", bool(pulse_bin), pulse_bin or "not found")
+
+    openclaw_bin = shutil.which("openclaw")
+    add("openclaw in PATH", bool(openclaw_bin), openclaw_bin or "not found")
+
+    # If OpenClaw is installed, try a fast, read-only gateway status check.
+    if openclaw_bin:
+        import subprocess
+        try:
+            p = subprocess.run(
+                ["openclaw", "gateway", "status"],
+                capture_output=True,
+                text=True,
+                timeout=3,
+            )
+            out = (p.stdout or "").strip() or (p.stderr or "").strip()
+            # Don't over-parse; just show a short summary.
+            detail = out.splitlines()[0][:160] if out else f"exit={p.returncode}"
+            add("openclaw gateway", p.returncode == 0, detail)
+        except Exception as e:
+            add("openclaw gateway", False, str(e))
 
     # ── Config detection / parse ────────────────────────────────────────────
     cfg_candidates = [
