@@ -1,7 +1,7 @@
 # Pulse .gitignore
 
 # State files (local daemon state, not for repo)
-state/
+/state/
 *.state
 drives.json
 working_memory.json
