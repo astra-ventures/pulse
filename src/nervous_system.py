@@ -797,7 +797,7 @@ class NervousSystem:
             "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
             "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
             # V4 modules
-            "nephron",
+            "nephron", "cortex_ext",
             # V5 modules
             "parietal",
         ]
@@ -1701,7 +1701,8 @@ class NervousSystem:
             # V3 modules
             "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
             "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
-            "parietal",
+            # V4/V5 modules
+            "nephron", "cortex_ext", "parietal",
         ]
         status = {}
         for name in modules:
