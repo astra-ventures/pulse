@@ -182,15 +182,32 @@ class DriveEngine:
         not on every tick. This prevents runaway pressure accumulation."""
         workspace = self.config.workspace
 
-        # Hypotheses — spike unfinished only when hypotheses file changes
+        # Hypotheses — spike unfinished only when hypotheses file changes.
+        # IMPORTANT: do NOT treat "blocked" hypotheses as unfinished. If we spike
+        # unfinished whenever `outcome` is null, the drive will pin at max_pressure
+        # permanently (many entries are intentionally blocked on external deps).
         data, changed = self._read_cached_json(workspace.resolve_path("hypotheses"))
         if data and changed:
             items = data if isinstance(data, list) else data.get("hypotheses", [])
-            untested = [h for h in items if isinstance(h, dict) and not h.get("outcome")]
+
+            def _counts_as_unfinished(h: dict) -> bool:
+                status = str(h.get("status", "")).strip().lower()
+                # Only explicit "active test" statuses should create unfinished pressure.
+                return status in {
+                    "untested",
+                    "testing",
+                    "ready_for_testing",
+                    "partially_unblocked",
+                    "in_progress",
+                }
+
+            untested = [h for h in items if isinstance(h, dict) and _counts_as_unfinished(h)]
             if untested and "unfinished" in self.drives:
                 boost = min(0.1, len(untested) * 0.02)
                 self.drives["unfinished"].spike(boost, self.config.drives.max_pressure)
-                logger.debug(f"Hypotheses changed: {len(untested)} untested, spiked unfinished +{boost:.3f}")
+                logger.debug(
+                    f"Hypotheses changed: {len(untested)} active/untested, spiked unfinished +{boost:.3f}"
+                )
 
         # Emotions — spike only when emotional state file changes
         data, changed = self._read_cached_json(workspace.resolve_path("emotions"))

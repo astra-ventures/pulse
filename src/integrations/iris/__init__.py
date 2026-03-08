@@ -307,10 +307,10 @@ class IrisIntegration(Integration):
             "After completing work, send feedback to Pulse so drives decay properly:"
         )
         parts.append(
-            '  curl -s -X POST http://127.0.0.1:9720/feedback '
-            '-H "Content-Type: application/json" '
-            '-d \'{"drives_addressed": ["<drive>"], "outcome": "success", '
-            '"summary": "<what you did>"}\''
+            "  Option A (recommended): `pulse feedback <drive> --outcome success --summary \"<what you did>\"`"
+        )
+        parts.append(
+            "  Option B (direct API): POST http://127.0.0.1:9720/feedback with JSON {drives_addressed,outcome,summary}"
         )
 
         parts.append("")
