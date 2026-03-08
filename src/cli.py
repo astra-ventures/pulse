@@ -51,9 +51,87 @@ MUTATIONS_FILE = _DEFAULT_STATE_DIR / "mutations.json"
 PLIST = Path("~/Library/LaunchAgents/ai.openclaw.pulse.plist").expanduser()
 
 
+def _candidate_config_path() -> Path | None:
+    """Return the config path Pulse would use (including PULSE_CONFIG override)."""
+    env_cfg = os.environ.get("PULSE_CONFIG")
+    if env_cfg:
+        return Path(os.path.expandvars(env_cfg)).expanduser()
+
+    candidates = [
+        Path("pulse.yaml"),
+        Path("~/.pulse/pulse.yaml").expanduser(),
+        Path("~/.pulse/config/pulse.yaml").expanduser(),
+        Path("~/.pulse/config.yaml").expanduser(),
+        Path(__file__).parent.parent / "config" / "pulse.yaml",
+    ]
+    return next((candidate for candidate in candidates if candidate.exists()), None)
+
+
+def _read_config_snapshot() -> tuple[Path | None, dict, str | None]:
+    """Read raw config YAML without requiring env substitution to succeed."""
+    cfg_path = _candidate_config_path()
+    if not cfg_path:
+        return None, {}, None
+    if not cfg_path.exists():
+        return cfg_path, {}, f"not found: {cfg_path}"
+
+    try:
+        import yaml
+
+        return cfg_path, yaml.safe_load(cfg_path.read_text()) or {}, None
+    except Exception as e:
+        return cfg_path, {}, str(e)
+
+
+def _nested_get(data: dict, *keys, default=None):
+    """Safely read nested config values from a raw dict."""
+    current = data
+    for key in keys:
+        if not isinstance(current, dict) or key not in current:
+            return default
+        current = current[key]
+    return current
+
+
+def _expand_path(value, default: Path) -> Path:
+    """Expand user/env vars for config-driven filesystem paths."""
+    if not value:
+        return default
+    return Path(os.path.expandvars(str(value))).expanduser()
+
+
+def _runtime_paths() -> dict:
+    """Resolve runtime paths/port from config, falling back to defaults."""
+    cfg_path, raw_cfg, cfg_error = _read_config_snapshot()
+
+    state_dir = _expand_path(_nested_get(raw_cfg, "state", "dir"), _DEFAULT_STATE_DIR)
+    log_file = _expand_path(_nested_get(raw_cfg, "logging", "file"), LOG_FILE)
+    pid_file = _expand_path(_nested_get(raw_cfg, "daemon", "pid_file"), PID_FILE)
+    port_raw = _nested_get(raw_cfg, "daemon", "health_port", default=DEFAULT_PORT)
+
+    try:
+        health_port = int(port_raw)
+    except (TypeError, ValueError):
+        health_port = DEFAULT_PORT
+
+    stdout_log = log_file.parent / STDOUT_LOG.name
+
+    return {
+        "config_path": cfg_path,
+        "config_error": cfg_error,
+        "raw_config": raw_cfg,
+        "state_dir": state_dir,
+        "log_file": log_file,
+        "stdout_log": stdout_log,
+        "pid_file": pid_file,
+        "mutations_file": state_dir / "mutations.json",
+        "health_port": health_port,
+    }
+
+
 def _port():
     """Get health port from config or default."""
-    return DEFAULT_PORT
+    return _runtime_paths()["health_port"]
 
 
 def _get(endpoint: str) -> dict:
@@ -89,9 +167,10 @@ def _post(endpoint: str, payload: dict) -> dict:
 
 def _is_running() -> tuple:
     """Check if daemon is running. Returns (running, pid)."""
-    if PID_FILE.exists():
+    pid_file = _runtime_paths()["pid_file"]
+    if pid_file.exists():
         try:
-            pid = int(PID_FILE.read_text().strip())
+            pid = int(pid_file.read_text().strip())
             os.kill(pid, 0)
             return True, pid
         except (ValueError, ProcessLookupError, PermissionError):
@@ -146,13 +225,14 @@ def _pressure_bar(pressure: float, max_p: float = 5.0, width: int = 20) -> Text:
 
 def _write_mutation_queue(mutations: list):
     """Write mutations to queue with file locking (matches daemon's lock)."""
-    MUTATIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    mutations_file = _runtime_paths()["mutations_file"]
+    mutations_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Touch the file if it doesn't exist
-    if not MUTATIONS_FILE.exists():
-        MUTATIONS_FILE.write_text("[]")
+    if not mutations_file.exists():
+        mutations_file.write_text("[]")
 
-    with open(MUTATIONS_FILE, "r+") as f:
+    with open(mutations_file, "r+") as f:
         fcntl.flock(f, fcntl.LOCK_EX)
         try:
             raw = f.read().strip()
@@ -426,6 +506,7 @@ exec {pulse_bin or 'python3 -m pulse'}
 
 def cmd_status(args):
     """Show full status overview."""
+    runtime = _runtime_paths()
     running, pid = _is_running()
 
     # Header
@@ -496,16 +577,16 @@ def cmd_status(args):
 
         table.add_row("Health", f"http://127.0.0.1:{_port()}")
         table.add_row("Service", "LaunchAgent" if PLIST.exists() else "[dim]manual[/]")
-        table.add_row("State", str(_DEFAULT_STATE_DIR))
-        table.add_row("Logs", str(STDOUT_LOG))
+        table.add_row("State", str(runtime["state_dir"]))
+        table.add_row("Logs", str(runtime["stdout_log"]))
     else:
         table.add_row("Status", "[red bold]● stopped[/]")
         table.add_row(
             "Service", "LaunchAgent" if PLIST.exists() else "[dim]not installed[/]"
         )
-        table.add_row("State", str(_DEFAULT_STATE_DIR))
-        if _DEFAULT_STATE_DIR.exists():
-            state_file = _DEFAULT_STATE_DIR / "pulse-state.json"
+        table.add_row("State", str(runtime["state_dir"]))
+        if runtime["state_dir"].exists():
+            state_file = runtime["state_dir"] / "pulse-state.json"
             if state_file.exists():
                 try:
                     data = json.loads(state_file.read_text())
@@ -523,6 +604,7 @@ def cmd_status(args):
 
 def cmd_drives(args):
     """Show all drives with pressure visualization."""
+    runtime = _runtime_paths()
     running, _ = _is_running()
 
     max_p = 5.0  # default
@@ -536,7 +618,7 @@ def cmd_drives(args):
         max_p = data.get("max_pressure", 5.0)
     else:
         # Read from state file
-        state_file = _DEFAULT_STATE_DIR / "pulse-state.json"
+        state_file = runtime["state_dir"] / "pulse-state.json"
         if not state_file.exists():
             console.print("[dim]No drive state found[/]")
             return
@@ -603,7 +685,7 @@ def cmd_drives(args):
 
 def cmd_triggers(args):
     """Show recent trigger history."""
-    history_file = _DEFAULT_STATE_DIR / "trigger-history.jsonl"
+    history_file = _runtime_paths()["state_dir"] / "trigger-history.jsonl"
     if not history_file.exists():
         console.print("[dim]No trigger history yet[/]")
         return
@@ -650,7 +732,7 @@ def cmd_triggers(args):
 
 def cmd_mutations(args):
     """Show mutation audit log."""
-    log_file = _DEFAULT_STATE_DIR / "mutations.jsonl"
+    log_file = _runtime_paths()["state_dir"] / "mutations.jsonl"
     if not log_file.exists():
         console.print("[dim]No mutations recorded yet[/]")
         return
@@ -1079,31 +1161,17 @@ def cmd_plugin(args):
 
 def cmd_config(args):
     """Show current configuration."""
-    # Find config file
-    candidates = [
-        Path("pulse.yaml"),
-        Path("~/.pulse/pulse.yaml").expanduser(),
-        Path("~/.pulse/config/pulse.yaml").expanduser(),
-        Path("~/.pulse/config.yaml").expanduser(),
-        Path(__file__).parent.parent / "config" / "pulse.yaml",
-    ]
-
-    config_path = None
-    for c in candidates:
-        if c.exists():
-            config_path = c
-            break
+    config_path, config, config_error = _read_config_snapshot()
 
     if not config_path:
         console.print("[red]No pulse.yaml found[/]")
         return
 
+    if config_error:
+        console.print(f"[red]Could not read config[/] — {config_error}")
+        return
+
     console.print(f"🫀 [bold magenta]Pulse Config[/] — {config_path}\n")
-
-    import yaml
-
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
 
     # Pretty print key sections
     table = Table(box=box.ROUNDED, show_header=False, padding=(0, 2))
@@ -1311,7 +1379,10 @@ def cmd_restart(args):
 
 def cmd_logs(args):
     """Show recent log lines."""
-    log = STDOUT_LOG if STDOUT_LOG.exists() else LOG_FILE
+    runtime = _runtime_paths()
+    stdout_log = runtime["stdout_log"]
+    log_file = runtime["log_file"]
+    log = stdout_log if stdout_log.exists() else log_file
     if not log.exists():
         console.print("[dim]No log file found[/]")
         return
@@ -1501,25 +1572,16 @@ def cmd_doctor(args):
             add("openclaw gateway", False, str(e))
 
     # ── Config detection / parse ────────────────────────────────────────────
-    cfg_candidates = [
-        Path("pulse.yaml"),
-        Path("~/.pulse/pulse.yaml").expanduser(),
-        Path("~/.pulse/config/pulse.yaml").expanduser(),
-        Path("~/.pulse/config.yaml").expanduser(),
-        Path(__file__).parent.parent / "config" / "pulse.yaml",
-    ]
-    cfg_path = next((p for p in cfg_candidates if p.exists()), None)
+    runtime = _runtime_paths()
+    cfg_path = runtime["config_path"]
+    cfg_error = runtime["config_error"]
 
     if not cfg_path:
         add("Config", False, "pulse.yaml not found (run: pulse init)")
+    elif cfg_error:
+        add("Config", False, f"Failed to parse {cfg_path}: {cfg_error}")
     else:
-        try:
-            import yaml
-
-            yaml.safe_load(cfg_path.read_text()) or {}
-            add("Config", True, str(cfg_path))
-        except Exception as e:
-            add("Config", False, f"Failed to parse {cfg_path}: {e}")
+        add("Config", True, str(cfg_path))
 
     # ── Token presence ──────────────────────────────────────────────────────
     env_file = Path("~/.pulse/.env").expanduser()
@@ -1533,8 +1595,8 @@ def cmd_doctor(args):
     add("Webhook token", token_ok, token_detail)
 
     # ── State/log dirs ──────────────────────────────────────────────────────
-    state_dir = _DEFAULT_STATE_DIR
-    logs_dir = LOG_FILE.parent
+    state_dir = runtime["state_dir"]
+    logs_dir = runtime["log_file"].parent
     add("State dir", state_dir.exists(), str(state_dir))
     add("State dir writable", state_dir.exists() and os.access(state_dir, os.W_OK), "")
     add("Logs dir", logs_dir.exists(), str(logs_dir))
