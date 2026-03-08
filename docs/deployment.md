@@ -83,7 +83,7 @@ curl http://localhost:9720/health
 
 ```bash
 # Manually spike a drive
-python3 -m pulse.src.cli spike goals 5.0 "Testing manual trigger"
+python3 -m pulse spike goals 5.0 "Testing manual trigger"
 
 # Watch the logs — should trigger an agent turn within 30s
 ```
@@ -469,7 +469,7 @@ Pulse will expose `/metrics` endpoint with:
 
 ```bash
 # Check config validity
-python3 -m pulse.src.cli doctor
+python3 -m pulse doctor
 
 # Check PID lock
 rm ~/.pulse/pulse.pid

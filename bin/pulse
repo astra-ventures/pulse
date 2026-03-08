@@ -3,4 +3,8 @@
 # Portable: uses python3 from PATH by default.
 set -euo pipefail
 PYTHON_BIN="${PULSE_PYTHON:-python3}"
-exec "$PYTHON_BIN" -m pulse.src.cli "$@"
+
+# `python -m pulse` routes:
+#   - no args -> daemon
+#   - args    -> CLI
+exec "$PYTHON_BIN" -m pulse "$@"

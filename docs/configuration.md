@@ -325,7 +325,7 @@ export PULSE_STATE_DIR=~/.pulse-custom
 Pulse checks startup and runtime diagnostics with:
 
 ```bash
-python3 -m pulse.src.cli doctor
+python3 -m pulse doctor
 ```
 
 Checks:
