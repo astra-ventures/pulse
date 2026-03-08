@@ -25,7 +25,7 @@ from typing import Optional
 
 import aiohttp
 
-from pulse.src.core.config import PulseConfig
+from src.core.config import PulseConfig
 
 logger = logging.getLogger("pulse.webhook")
 

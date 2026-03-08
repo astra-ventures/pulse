@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pulse.src import spine, thalamus
+from src import spine, thalamus
 
 
 @pytest.fixture(autouse=True)

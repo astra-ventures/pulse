@@ -8,7 +8,7 @@ import json
 import time
 from pathlib import Path
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "soma-state.json"
@@ -109,7 +109,7 @@ def update_from_biosensors(cache=None) -> dict:
     """
     try:
         if cache is None:
-            from pulse.src.biosensor_cache import BiosensorCache
+            from src.biosensor_cache import BiosensorCache
             cache = BiosensorCache()
 
         data = cache.read()

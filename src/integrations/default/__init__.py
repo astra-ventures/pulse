@@ -5,7 +5,7 @@ Sends a simple trigger message with drive info. No assumptions about
 CORTEX.md, hippocampus, or any specific agent architecture.
 """
 
-from pulse.src.integrations import Integration
+from src.integrations import Integration
 
 
 class DefaultIntegration(Integration):

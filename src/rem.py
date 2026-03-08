@@ -454,7 +454,7 @@ def run_rem_session_internal(
 
         # Phase 6 — Memory Consolidation (HIPPOCAMPUS → ENGRAM)
         try:
-            from pulse.src.memory_consolidation import consolidate
+            from src.memory_consolidation import consolidate
             consolidation = consolidate()
             session.consolidation_report = consolidation.to_dict()
             if consolidation.promoted > 0:

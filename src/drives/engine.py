@@ -18,8 +18,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pulse.src.core.config import PulseConfig
-from pulse.src.state.persistence import StatePersistence
+from src.core.config import PulseConfig
+from src.state.persistence import StatePersistence
 
 logger = logging.getLogger("pulse.drives")
 

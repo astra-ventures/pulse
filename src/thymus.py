@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "thymus-state.json"
@@ -148,7 +148,7 @@ def emit_need_signals() -> dict:
     for name, skill in state.get("skills", {}).items():
         plateau_since = skill.get("plateau_since")
         if plateau_since and (now - plateau_since) / 86400 > 7:
-            from pulse.src import hypothalamus
+            from src import hypothalamus
             hypothalamus.record_need_signal("learn_new_skill", "thymus")
             signals["learn_new_skill"] = name
             break  # one signal per check is enough

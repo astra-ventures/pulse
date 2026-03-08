@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 
-from pulse.src import nephron
+from src import nephron
 
 
 class TestNephronBasics:

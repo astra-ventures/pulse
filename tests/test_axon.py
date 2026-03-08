@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from pulse.src import axon
+from src import axon
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ FAKE_PEER_ID = "vera-agent"
 
 def _patch_beacon():
     """Patch pneuma.build_self_beacon to return a stable beacon."""
-    return patch("pulse.src.axon._pneuma.build_self_beacon", return_value=FAKE_BEACON)
+    return patch("src.axon._pneuma.build_self_beacon", return_value=FAKE_BEACON)
 
 
 def _sample_delegation(

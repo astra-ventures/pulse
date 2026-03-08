@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from pulse.src.core.config import PulseConfig
+from src.core.config import PulseConfig
 
 logger = logging.getLogger("pulse.daily_sync")
 

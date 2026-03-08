@@ -22,7 +22,7 @@ class TestGerminalModuleCount:
 
     def test_count_modules_less_than_total_py_files(self):
         """Module count must be less than total .py files (infra excluded)."""
-        from pulse.src.germinal import _count_modules, PULSE_SRC
+        from src.germinal import _count_modules, PULSE_SRC
         total_py = len(list(PULSE_SRC.glob("*.py")))
         module_count = _count_modules()
         assert module_count < total_py, (
@@ -31,7 +31,7 @@ class TestGerminalModuleCount:
 
     def test_count_excludes_init_files(self):
         """__init__.py and __main__.py must not be counted."""
-        from pulse.src.germinal import _count_modules, PULSE_SRC
+        from src.germinal import _count_modules, PULSE_SRC
         # These definitely exist
         assert (PULSE_SRC / "__init__.py").exists()
         # Count shouldn't include them
@@ -41,7 +41,7 @@ class TestGerminalModuleCount:
 
     def test_count_excludes_infrastructure(self):
         """Known infrastructure files must be excluded from count."""
-        from pulse.src.germinal import _count_modules, _INFRA_FILES, PULSE_SRC
+        from src.germinal import _count_modules, _INFRA_FILES, PULSE_SRC
         all_files = {f.name for f in PULSE_SRC.glob("*.py")}
         # Verify our infra list is accurate (all listed files actually exist)
         for infra in _INFRA_FILES:
@@ -52,7 +52,7 @@ class TestGerminalModuleCount:
 
     def test_ceiling_not_permanently_tripped(self):
         """With correct counting, ceiling should NOT be tripped (room for growth)."""
-        from pulse.src.germinal import _count_modules, MAX_TOTAL_MODULES
+        from src.germinal import _count_modules, MAX_TOTAL_MODULES
         count = _count_modules()
         assert count < MAX_TOTAL_MODULES, (
             f"Module count ({count}) >= ceiling ({MAX_TOTAL_MODULES}). "
@@ -61,7 +61,7 @@ class TestGerminalModuleCount:
 
     def test_room_for_at_least_5_new_modules(self):
         """Should have meaningful room for new births."""
-        from pulse.src.germinal import _count_modules, MAX_TOTAL_MODULES
+        from src.germinal import _count_modules, MAX_TOTAL_MODULES
         room = MAX_TOTAL_MODULES - _count_modules()
         assert room >= 5, f"Only {room} slots left — GERMINAL has almost no room to grow"
 
@@ -73,7 +73,7 @@ class TestGerminalModuleCount:
         """
         import tempfile, os
         from unittest.mock import patch
-        from pulse.src import germinal
+        from src import germinal
 
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             tmp_path = f.name
@@ -101,30 +101,30 @@ class TestStripJsonFences:
     """Test the deduplicated _strip_json_fences helper."""
 
     def test_plain_json_unchanged(self):
-        from pulse.src.evaluator.model import ModelEvaluator
+        from src.evaluator.model import ModelEvaluator
         raw = '{"trigger": true, "reason": "test"}'
         assert ModelEvaluator._strip_json_fences(raw) == raw
 
     def test_strips_json_fences(self):
-        from pulse.src.evaluator.model import ModelEvaluator
+        from src.evaluator.model import ModelEvaluator
         raw = '```json\n{"trigger": true}\n```'
         result = ModelEvaluator._strip_json_fences(raw)
         assert result == '{"trigger": true}'
 
     def test_strips_plain_fences(self):
-        from pulse.src.evaluator.model import ModelEvaluator
+        from src.evaluator.model import ModelEvaluator
         raw = '```\n{"trigger": false}\n```'
         result = ModelEvaluator._strip_json_fences(raw)
         assert result == '{"trigger": false}'
 
     def test_handles_whitespace(self):
-        from pulse.src.evaluator.model import ModelEvaluator
+        from src.evaluator.model import ModelEvaluator
         raw = '  \n```json\n{"x": 1}\n```\n  '
         result = ModelEvaluator._strip_json_fences(raw)
         assert json.loads(result) == {"x": 1}
 
     def test_no_fences_no_change(self):
-        from pulse.src.evaluator.model import ModelEvaluator
+        from src.evaluator.model import ModelEvaluator
         raw = '{"suppress_minutes": 15}'
         assert ModelEvaluator._strip_json_fences(raw) == raw
 
@@ -136,8 +136,8 @@ class TestFallbackConversationSuppression:
 
     def _make_evaluator(self):
         """Create a ModelEvaluator with minimal config for testing."""
-        from pulse.src.evaluator.model import ModelEvaluator
-        from pulse.src.drives.engine import Drive, DriveState
+        from src.evaluator.model import ModelEvaluator
+        from src.drives.engine import Drive, DriveState
 
         config = MagicMock()
         config.evaluator.rules.suppress_during_conversation = True

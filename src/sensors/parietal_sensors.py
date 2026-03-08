@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict
 
-from pulse.src.sensors.manager import BaseSensor
+from src.sensors.manager import BaseSensor
 
 logger = logging.getLogger("pulse.parietal.sensors")
 

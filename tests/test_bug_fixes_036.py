@@ -30,7 +30,7 @@ class TestFeedbackFileUnlinkOrder:
 
     def _make_daemon(self, state_dir: str):
         """Minimal daemon-like object with just what _process_feedback_file needs."""
-        from pulse.src.core.daemon import PulseDaemon
+        from src.core.daemon import PulseDaemon
 
         cfg = MagicMock()
         cfg.state.dir = state_dir
@@ -127,8 +127,8 @@ class TestDefaultReflectionTaskCooldown:
 
     def test_fallback_on_empty_tasks_records_cooldown(self):
         """When LLM returns no usable tasks, _record_category_used must be called."""
-        from pulse.src import germinal_tasks
-        from pulse.src.germinal_tasks import DEFAULT_REFLECTION_TASK
+        from src import germinal_tasks
+        from src.germinal_tasks import DEFAULT_REFLECTION_TASK
 
         context = {"goals": [], "recent_generated_titles": []}
         config = {"model": "test-model", "max_tasks": 2}
@@ -161,8 +161,8 @@ class TestDefaultReflectionTaskCooldown:
 
     def test_fallback_on_llm_exception_records_cooldown(self):
         """When LLM raises, _record_category_used must still be called."""
-        from pulse.src import germinal_tasks
-        from pulse.src.germinal_tasks import DEFAULT_REFLECTION_TASK
+        from src import germinal_tasks
+        from src.germinal_tasks import DEFAULT_REFLECTION_TASK
 
         context = {"goals": [], "recent_generated_titles": []}
         config = {"model": "test-model", "max_tasks": 2}
@@ -187,7 +187,7 @@ class TestDefaultReflectionTaskCooldown:
 
     def test_normal_path_still_records_cooldown(self):
         """Happy path: _record_category_used still called for real tasks."""
-        from pulse.src import germinal_tasks
+        from src import germinal_tasks
 
         fake_task = {"title": "Build something cool", "priority": "high", "description": "...",
                      "category": "build", "estimated_minutes": 30}

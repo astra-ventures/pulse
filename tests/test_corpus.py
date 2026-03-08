@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import pulse.src.corpus as corpus
+import src.corpus as corpus
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -441,7 +441,7 @@ class TestPushToPeer:
         mock_resp.__enter__ = lambda s: s
         mock_resp.__exit__ = MagicMock(return_value=False)
 
-        with patch("pulse.src.corpus.urlopen", return_value=mock_resp):
+        with patch("src.corpus.urlopen", return_value=mock_resp):
             result = corpus.push_to_peer(
                 "http://peer:9720", "tok", state_dir=tmp_state
             )
@@ -467,7 +467,7 @@ class TestPushToPeer:
             captured_payload["body"] = json.loads(body.decode())
             return mock_resp
 
-        with patch("pulse.src.corpus.urlopen", side_effect=mock_urlopen):
+        with patch("src.corpus.urlopen", side_effect=mock_urlopen):
             corpus.push_to_peer(
                 "http://peer:9720", "tok",
                 engram_ids=[eid1],
@@ -483,7 +483,7 @@ class TestPushToPeer:
         monkeypatch.setattr(corpus.thalamus, "append", lambda *a, **k: None)
         corpus.mark_shareable(sample_engram_id, state_dir=tmp_state)
 
-        with patch("pulse.src.corpus.urlopen", side_effect=URLError("refused")):
+        with patch("src.corpus.urlopen", side_effect=URLError("refused")):
             result = corpus.push_to_peer(
                 "http://dead:9720", "tok", state_dir=tmp_state
             )
@@ -518,7 +518,7 @@ class TestPullFromPeer:
         mock_resp.__enter__ = lambda s: s
         mock_resp.__exit__ = MagicMock(return_value=False)
 
-        with patch("pulse.src.corpus.urlopen", return_value=mock_resp):
+        with patch("src.corpus.urlopen", return_value=mock_resp):
             result = corpus.pull_from_peer(
                 "http://peer:9720", "tok", "scout", state_dir=tmp_state
             )
@@ -536,7 +536,7 @@ class TestPullFromPeer:
         mock_resp.__enter__ = lambda s: s
         mock_resp.__exit__ = MagicMock(return_value=False)
 
-        with patch("pulse.src.corpus.urlopen", return_value=mock_resp):
+        with patch("src.corpus.urlopen", return_value=mock_resp):
             result = corpus.pull_from_peer(
                 "http://peer:9720", "tok", "scout", state_dir=tmp_state
             )
@@ -545,7 +545,7 @@ class TestPullFromPeer:
 
     def test_handles_network_error(self, tmp_state):
         from urllib.error import URLError
-        with patch("pulse.src.corpus.urlopen", side_effect=URLError("refused")):
+        with patch("src.corpus.urlopen", side_effect=URLError("refused")):
             result = corpus.pull_from_peer(
                 "http://dead:9720", "tok", "scout", state_dir=tmp_state
             )
@@ -560,7 +560,7 @@ class TestPullFromPeer:
         mock_resp.__enter__ = lambda s: s
         mock_resp.__exit__ = MagicMock(return_value=False)
 
-        with patch("pulse.src.corpus.urlopen", return_value=mock_resp):
+        with patch("src.corpus.urlopen", return_value=mock_resp):
             result = corpus.pull_from_peer(
                 "http://peer:9720", "tok", "scout", state_dir=tmp_state
             )

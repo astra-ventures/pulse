@@ -253,7 +253,7 @@ class NervousSystem:
 
         for display, mod_name, kind, cls_name in _MODULE_REGISTRY:
             try:
-                pkg = f"pulse.src.{mod_name}"
+                pkg = f"src.{mod_name}"
 
                 if kind == "class":
                     # Import class, instantiate with no args → self.{mod_name}
@@ -856,7 +856,7 @@ class NervousSystem:
 
         # BIOSENSOR — poll Apple Watch data into SOMA + ENDOCRINE
         try:
-            from pulse.src.biosensor_cache import BiosensorCache
+            from src.biosensor_cache import BiosensorCache
             _bio = BiosensorCache()
             if _bio.is_active():
                 soma_changes, endo_changes = {}, {}
@@ -876,7 +876,7 @@ class NervousSystem:
 
         # PLUGINS — sense() contributions from registered community plugins
         try:
-            from pulse.src.plugin_registry import PluginRegistry, discover_plugins
+            from src.plugin_registry import PluginRegistry, discover_plugins
             reg = PluginRegistry.get()
             # Lazy discovery: run once when registry is empty and plugin dir may exist
             if reg.count == 0:
@@ -1819,7 +1819,7 @@ class NervousSystem:
         # Check circadian mode
         if self._mod_circadian:
             try:
-                from pulse.src.circadian import CircadianMode
+                from src.circadian import CircadianMode
                 mode = self._mod_circadian.get_current_mode()
                 result["is_deep_night"] = (mode == CircadianMode.DEEP_NIGHT)
             except Exception as e:
@@ -1910,14 +1910,14 @@ class NervousSystem:
         # PONS — enter sleep guard (block external actions)
         pons = None
         try:
-            from pulse.src.rem import Pons
+            from src.rem import Pons
             pons = Pons
             pons.enter()
         except Exception as e:
             logger.warning(f"run_rem PONS enter failed: {e}")
 
         try:
-            from pulse.src.rem import PonsConfig
+            from src.rem import PonsConfig
             config = PonsConfig()
             session = self.rem.run_rem_session_internal(
                 config=config,
@@ -1932,7 +1932,7 @@ class NervousSystem:
                     store = self._mod_engram.load_store()
                     if store:
                         # Consolidate recent engrams into narrative
-                        from pulse.src.engram import Engram as EngramObj
+                        from src.engram import Engram as EngramObj
                         recent = [EngramObj.from_dict(e) for e in store[-10:]]
                         self._mod_engram.consolidate(recent)
                 except Exception as e:

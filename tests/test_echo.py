@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pulse.src import echo
+from src import echo
 
 
 @pytest.fixture(autouse=True)

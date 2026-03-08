@@ -11,7 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_HEALTH_FILE = _DEFAULT_STATE_DIR / "spine-health.json"

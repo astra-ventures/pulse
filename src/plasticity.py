@@ -20,7 +20,7 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pulse.src.evolution.audit import AuditLog, MutationRecord
+from src.evolution.audit import AuditLog, MutationRecord
 
 logger = logging.getLogger("pulse.drive_evolution")
 

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pulse.src import adrenal
+from src import adrenal
 
 
 @pytest.fixture(autouse=True)

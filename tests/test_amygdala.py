@@ -7,15 +7,15 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src.amygdala import Amygdala, AmygdalaResponse, FAST_PATH_THRESHOLD
+from src.amygdala import Amygdala, AmygdalaResponse, FAST_PATH_THRESHOLD
 
 
 @pytest.fixture
 def amygdala(tmp_path, monkeypatch):
-    monkeypatch.setattr("pulse.src.amygdala._DEFAULT_STATE_DIR", tmp_path)
-    monkeypatch.setattr("pulse.src.amygdala._DEFAULT_STATE_FILE", tmp_path / "amygdala-state.json")
-    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", tmp_path / "broadcast.jsonl")
-    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr("src.amygdala._DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr("src.amygdala._DEFAULT_STATE_FILE", tmp_path / "amygdala-state.json")
+    monkeypatch.setattr("src.thalamus._DEFAULT_BROADCAST_FILE", tmp_path / "broadcast.jsonl")
+    monkeypatch.setattr("src.thalamus._DEFAULT_STATE_DIR", tmp_path)
     return Amygdala()
 
 

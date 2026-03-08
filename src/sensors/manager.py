@@ -20,7 +20,7 @@ from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
 import aiohttp
 
-from pulse.src.core.config import PulseConfig
+from src.core.config import PulseConfig
 
 logger = logging.getLogger("pulse.sensors")
 

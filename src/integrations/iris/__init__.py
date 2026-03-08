@@ -21,8 +21,8 @@ import time
 from pathlib import Path
 from datetime import datetime, timedelta
 
-from pulse.src.integrations import Integration
-from pulse.src import engram
+from src.integrations import Integration
+from src import engram
 
 # ── Security: known-safe GERMINAL drive names (mirrors germinal.DRIVE_ARCHETYPES) ──
 _GERMINAL_DRIVE_WHITELIST = frozenset({
@@ -148,7 +148,7 @@ class IrisIntegration(Integration):
     def _load_germinal_birth(self, config) -> str:
         """Check if GERMINAL has a pending module birth that needs a coding agent."""
         try:
-            from pulse.src import germinal
+            from src import germinal
             state = germinal._load_state()
             spec = state.get("in_progress")
             if not spec:
@@ -213,7 +213,7 @@ class IrisIntegration(Integration):
                 f"   All tests must pass before proceeding.",
                 f"",
                 f"5. After successful tests, call:",
-                f"   `python3 -c \"from pulse.src import germinal; germinal.record_birth('{drive}', '{module_name}', '{module_file}')\"` ",
+                f"   `python3 -c \"from src import germinal; germinal.record_birth('{drive}', '{module_name}', '{module_file}')\"` ",
                 f"   Then restart daemon: `launchctl kickstart -k gui/$(id -u)/ai.openclaw.pulse`",
                 f"",
                 f"6. Report back: 'GERMINAL: {module_name} born successfully'",

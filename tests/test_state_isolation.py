@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src.nervous_system import NervousSystem, _DEFAULT_STATE_DIR
+from src.nervous_system import NervousSystem, _DEFAULT_STATE_DIR
 
 
 class TestStateIsolation:

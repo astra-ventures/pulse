@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from pulse.src.callosum import (
+from src.callosum import (
     BridgeInsight, bridge, get_recent_insights, get_integration_score,
     detect_split, should_run, _load_state, _save_state,
     _calculate_integration, _detect_tension,
@@ -16,17 +16,17 @@ from pulse.src.callosum import (
 @pytest.fixture(autouse=True)
 def clean_state(tmp_path, monkeypatch):
     state_file = tmp_path / "callosum-state.json"
-    monkeypatch.setattr("pulse.src.callosum._DEFAULT_STATE_FILE", state_file)
-    monkeypatch.setattr("pulse.src.callosum._DEFAULT_STATE_DIR", tmp_path)
-    monkeypatch.setattr("pulse.src.callosum.DREAM_DIR", tmp_path / "dreams")
-    monkeypatch.setattr("pulse.src.callosum.thalamus", MagicMock())
+    monkeypatch.setattr("src.callosum._DEFAULT_STATE_FILE", state_file)
+    monkeypatch.setattr("src.callosum._DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr("src.callosum.DREAM_DIR", tmp_path / "dreams")
+    monkeypatch.setattr("src.callosum.thalamus", MagicMock())
     yield tmp_path
 
 
 class TestBridge:
-    @patch("pulse.src.callosum._get_logical_state", return_value="processing tasks")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: content", {"label": "content"}))
-    @patch("pulse.src.callosum._get_gut_signal", return_value="toward")
+    @patch("src.callosum._get_logical_state", return_value="processing tasks")
+    @patch("src.callosum._get_emotional_state", return_value=("mood: content", {"label": "content"}))
+    @patch("src.callosum._get_gut_signal", return_value="toward")
     def test_produces_insight(self, mock_gut, mock_emo, mock_logic):
         insight = bridge()
         assert isinstance(insight, BridgeInsight)
@@ -34,35 +34,35 @@ class TestBridge:
         assert insight.gut_signal == "toward"
         assert 0 <= insight.integration_score <= 1.0
 
-    @patch("pulse.src.callosum._get_logical_state", return_value="shipping feature")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: stressed | cortisol high", {}))
-    @patch("pulse.src.callosum._get_gut_signal", return_value="away")
+    @patch("src.callosum._get_logical_state", return_value="shipping feature")
+    @patch("src.callosum._get_emotional_state", return_value=("mood: stressed | cortisol high", {}))
+    @patch("src.callosum._get_gut_signal", return_value="away")
     def test_detects_split(self, mock_gut, mock_emo, mock_logic):
         insight = bridge()
         assert insight.split_detected is True
         assert insight.tension
 
-    @patch("pulse.src.callosum._get_logical_state", return_value="quiet — no recent logical activity")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: content", {}))
-    @patch("pulse.src.callosum._get_gut_signal", return_value="neutral")
+    @patch("src.callosum._get_logical_state", return_value="quiet — no recent logical activity")
+    @patch("src.callosum._get_emotional_state", return_value=("mood: content", {}))
+    @patch("src.callosum._get_gut_signal", return_value="neutral")
     def test_no_split_when_aligned(self, mock_gut, mock_emo, mock_logic):
         insight = bridge()
         assert insight.split_detected is False
 
-    @patch("pulse.src.callosum._get_logical_state", return_value="planning")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: calm", {}))
-    @patch("pulse.src.callosum._get_gut_signal", return_value="toward")
+    @patch("src.callosum._get_logical_state", return_value="planning")
+    @patch("src.callosum._get_emotional_state", return_value=("mood: calm", {}))
+    @patch("src.callosum._get_gut_signal", return_value="toward")
     def test_saves_to_state(self, mock_gut, mock_emo, mock_logic):
         bridge()
         state = _load_state()
         assert len(state["insights"]) == 1
         assert state["bridge_count"] == 1
 
-    @patch("pulse.src.callosum._get_logical_state", return_value="working")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: ok", {}))
-    @patch("pulse.src.callosum._get_gut_signal", return_value="neutral")
+    @patch("src.callosum._get_logical_state", return_value="working")
+    @patch("src.callosum._get_emotional_state", return_value=("mood: ok", {}))
+    @patch("src.callosum._get_gut_signal", return_value="neutral")
     def test_broadcasts_to_thalamus(self, mock_gut, mock_emo, mock_logic):
-        import pulse.src.callosum as cal
+        import src.callosum as cal
         bridge()
         cal.thalamus.append.assert_called_once()
         call_data = cal.thalamus.append.call_args[0][0]
@@ -71,9 +71,9 @@ class TestBridge:
 
 
 class TestGetRecentInsights:
-    @patch("pulse.src.callosum._get_logical_state", return_value="x")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("y", {}))
-    @patch("pulse.src.callosum._get_gut_signal", return_value="neutral")
+    @patch("src.callosum._get_logical_state", return_value="x")
+    @patch("src.callosum._get_emotional_state", return_value=("y", {}))
+    @patch("src.callosum._get_gut_signal", return_value="neutral")
     def test_returns_insights(self, *mocks):
         bridge()
         bridge()
@@ -99,15 +99,15 @@ class TestIntegrationScore:
 
 
 class TestDetectSplit:
-    @patch("pulse.src.callosum._get_logical_state", return_value="quiet — no recent logical activity")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: calm", {}))
-    @patch("pulse.src.callosum._get_gut_signal", return_value="neutral")
+    @patch("src.callosum._get_logical_state", return_value="quiet — no recent logical activity")
+    @patch("src.callosum._get_emotional_state", return_value=("mood: calm", {}))
+    @patch("src.callosum._get_gut_signal", return_value="neutral")
     def test_no_split(self, *mocks):
         assert detect_split() is None
 
-    @patch("pulse.src.callosum._get_logical_state", return_value="active shipping")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: stressed | cortisol", {}))
-    @patch("pulse.src.callosum._get_gut_signal", return_value="away")
+    @patch("src.callosum._get_logical_state", return_value="active shipping")
+    @patch("src.callosum._get_emotional_state", return_value=("mood: stressed | cortisol", {}))
+    @patch("src.callosum._get_gut_signal", return_value="away")
     def test_split_detected(self, *mocks):
         result = detect_split()
         assert result is not None

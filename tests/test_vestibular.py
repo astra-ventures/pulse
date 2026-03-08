@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src import vestibular, thalamus
+from src import vestibular, thalamus
 
 
 @pytest.fixture(autouse=True)

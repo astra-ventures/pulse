@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from pathlib import Path
 
-from pulse.src.nervous_system import NervousSystem
+from src.nervous_system import NervousSystem
 
 
 @pytest.fixture
@@ -13,8 +13,8 @@ def ns(tmp_path, monkeypatch):
     """NervousSystem with isolated state dirs."""
     state_dir = tmp_path / ".pulse" / "state"
     state_dir.mkdir(parents=True)
-    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_STATE_DIR", state_dir)
-    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl")
+    monkeypatch.setattr("src.thalamus._DEFAULT_STATE_DIR", state_dir)
+    monkeypatch.setattr("src.thalamus._DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl")
     return NervousSystem(workspace_root=str(tmp_path))
 
 
@@ -151,7 +151,7 @@ class TestDendriteWiring:
     """DENDRITE wired into post_trigger."""
 
     def test_dendrite_fires_in_post_trigger(self, ns, tmp_path):
-        from pulse.src import dendrite
+        from src import dendrite
         state_dir = tmp_path / ".pulse" / "state"
         with patch.object(dendrite, "_DEFAULT_STATE_DIR", state_dir), \
              patch.object(dendrite, "_DEFAULT_STATE_FILE", state_dir / "dendrite-state.json"):
@@ -217,7 +217,7 @@ class TestVestibularWiring:
     """VESTIBULAR wired into post_loop (every 5th loop)."""
 
     def test_vestibular_fires_every_5th_loop(self, ns, tmp_path):
-        from pulse.src import vestibular
+        from src import vestibular
         state_dir = tmp_path / ".pulse" / "state"
         with patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir), \
              patch.object(vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"):
@@ -260,7 +260,7 @@ class TestOximeterWiring:
         assert isinstance(result, dict)
 
     def test_oximeter_gap_fires_every_20th_loop(self, ns, tmp_path):
-        from pulse.src import oximeter, vestibular
+        from src import oximeter, vestibular
         state_dir = tmp_path / ".pulse" / "state"
         with patch.object(oximeter, "_DEFAULT_STATE_DIR", state_dir), \
              patch.object(oximeter, "_DEFAULT_STATE_FILE", state_dir / "oximeter-state.json"), \
@@ -276,7 +276,7 @@ class TestGenomeWiring:
     """GENOME wired into post_loop (every 100th loop)."""
 
     def test_genome_fires_every_100th_loop(self, ns, tmp_path):
-        from pulse.src import genome, vestibular, oximeter, thymus
+        from src import genome, vestibular, oximeter, thymus
         state_dir = tmp_path / ".pulse" / "state"
         with patch.object(genome, "_DEFAULT_STATE_DIR", state_dir), \
              patch.object(genome, "_DEFAULT_STATE_FILE", state_dir / "genome.json"), \
@@ -329,7 +329,7 @@ class TestRemSessionWiring:
     """run_rem_session wired with PONS + ENGRAM."""
 
     def test_rem_session_with_pons_guard(self, ns):
-        from pulse.src.rem import Pons
+        from src.rem import Pons
         # Ensure guard is released even if session returns None
         result = ns.run_rem_session(drives=None, force=False)
         assert Pons.is_active() is False

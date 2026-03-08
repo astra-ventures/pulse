@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pulse.src.core.daily_sync import DailyNoteSync
+from src.core.daily_sync import DailyNoteSync
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ class TestFlockPresent:
                 locked.append("unlock")
             return original_flock(fd, op)
 
-        with patch("pulse.src.core.daily_sync.fcntl") as mock_fcntl:
+        with patch("src.core.daily_sync.fcntl") as mock_fcntl:
             mock_fcntl.LOCK_EX = fcntl.LOCK_EX
             mock_fcntl.LOCK_UN = fcntl.LOCK_UN
             mock_fcntl.flock = tracking_flock
@@ -59,7 +59,7 @@ class TestFlockPresent:
                 locked.append("unlock")
             return original_flock(fd, op)
 
-        with patch("pulse.src.core.daily_sync.fcntl") as mock_fcntl:
+        with patch("src.core.daily_sync.fcntl") as mock_fcntl:
             mock_fcntl.LOCK_EX = fcntl.LOCK_EX
             mock_fcntl.LOCK_UN = fcntl.LOCK_UN
             mock_fcntl.flock = tracking_flock

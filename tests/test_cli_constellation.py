@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from pulse.src import cli, aura
+from src import cli, aura
 
 
 # ===========================================================================
@@ -47,7 +47,7 @@ def tmp_state(tmp_path):
         patch.object(aura, "_DEFAULT_CONSTELLATION_FILE", constellation_file),
     ):
         # Also patch thalamus to avoid state leaks
-        from pulse.src import thalamus
+        from src import thalamus
         thalamus_file = tmp_path / "broadcast.jsonl"
         with (
             patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
@@ -239,7 +239,7 @@ class TestConstellationState:
 
     def test_state_shows_own_aura(self, capsys):
         # Seed an aura state
-        from pulse.src import aura as aura_module
+        from src import aura as aura_module
         aura_module._save_state({
             "mood": "energized",
             "focus": 0.8,

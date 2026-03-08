@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from pulse.src import limbic, thalamus
+from src import limbic, thalamus
 
 
 @pytest.fixture(autouse=True)

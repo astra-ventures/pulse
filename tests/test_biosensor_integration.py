@@ -34,13 +34,13 @@ class TestBiosensorCache:
         }
 
     def test_read_returns_none_when_file_missing(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         cache = BiosensorCache(state_file=tmp_path / "missing.json")
         cache.invalidate()
         assert cache.read() is None
 
     def test_read_returns_data_when_fresh(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         data = self._make_state()
         state_file.write_text(json.dumps(data))
@@ -51,7 +51,7 @@ class TestBiosensorCache:
         assert result["heart_rate"]["value"] == 72
 
     def test_read_returns_none_when_stale(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         data = self._make_state(age_seconds=400)  # > 300s max_age
         state_file.write_text(json.dumps(data))
@@ -60,7 +60,7 @@ class TestBiosensorCache:
         assert cache.read() is None
 
     def test_read_returns_none_on_invalid_json(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text("not valid json {{{")
         cache = BiosensorCache(state_file=state_file)
@@ -68,7 +68,7 @@ class TestBiosensorCache:
         assert cache.read() is None
 
     def test_is_active_true_when_fresh(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state()))
         cache = BiosensorCache(state_file=state_file)
@@ -76,7 +76,7 @@ class TestBiosensorCache:
         assert cache.is_active() is True
 
     def test_is_active_false_when_stale(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state(age_seconds=400)))
         cache = BiosensorCache(state_file=state_file, max_age_seconds=300)
@@ -84,7 +84,7 @@ class TestBiosensorCache:
         assert cache.is_active() is False
 
     def test_heart_rate_returns_value(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state(hr=85)))
         cache = BiosensorCache(state_file=state_file)
@@ -92,7 +92,7 @@ class TestBiosensorCache:
         assert cache.heart_rate() == 85
 
     def test_hr_zone_returns_zone(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state(hr_zone="elevated")))
         cache = BiosensorCache(state_file=state_file)
@@ -100,7 +100,7 @@ class TestBiosensorCache:
         assert cache.hr_zone() == "elevated"
 
     def test_hrv_stress_returns_level(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state(hrv_stress="high")))
         cache = BiosensorCache(state_file=state_file)
@@ -108,7 +108,7 @@ class TestBiosensorCache:
         assert cache.hrv_stress() == "high"
 
     def test_move_ring_pct_partial(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state(move=300, goal=600)))
         cache = BiosensorCache(state_file=state_file)
@@ -117,7 +117,7 @@ class TestBiosensorCache:
         assert pct == pytest.approx(0.5)
 
     def test_move_ring_pct_closed(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state(move=650, goal=600)))
         cache = BiosensorCache(state_file=state_file)
@@ -125,7 +125,7 @@ class TestBiosensorCache:
         assert cache.move_ring_pct() == 1.0
 
     def test_workout_returns_none_when_inactive(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state(workout_active=False)))
         cache = BiosensorCache(state_file=state_file)
@@ -133,7 +133,7 @@ class TestBiosensorCache:
         assert cache.workout() is None
 
     def test_workout_returns_dict_when_active(self, tmp_path):
-        from pulse.src.biosensor_cache import BiosensorCache
+        from src.biosensor_cache import BiosensorCache
         state_file = tmp_path / "biosensor-state.json"
         state_file.write_text(json.dumps(self._make_state(workout_active=True)))
         cache = BiosensorCache(state_file=state_file)
@@ -148,7 +148,7 @@ class TestBiosensorCache:
 class TestSomaBiosensorUpdate:
 
     def test_returns_empty_when_no_bridge(self, tmp_path):
-        from pulse.src import soma
+        from src import soma
         mock_cache = MagicMock()
         mock_cache.read.return_value = None
         with patch.object(soma, "_DEFAULT_STATE_FILE", tmp_path / "soma-state.json"):
@@ -156,7 +156,7 @@ class TestSomaBiosensorUpdate:
         assert result == {}
 
     def test_move_ring_closed_boosts_energy(self, tmp_path):
-        from pulse.src import soma
+        from src import soma
         soma_file = tmp_path / "soma-state.json"
         soma_file.write_text(json.dumps({
             "energy": 0.7, "posture": "neutral", "temperature": "warm",
@@ -175,7 +175,7 @@ class TestSomaBiosensorUpdate:
         assert updated["energy"] > 0.7
 
     def test_high_hr_zone_drains_energy(self, tmp_path):
-        from pulse.src import soma
+        from src import soma
         soma_file = tmp_path / "soma-state.json"
         soma_file.write_text(json.dumps({
             "energy": 0.8, "posture": "neutral", "temperature": "warm",
@@ -193,7 +193,7 @@ class TestSomaBiosensorUpdate:
         assert updated["energy"] < 0.8
 
     def test_no_changes_when_all_normal(self, tmp_path):
-        from pulse.src import soma
+        from src import soma
         soma_file = tmp_path / "soma-state.json"
         initial_energy = 0.7
         soma_file.write_text(json.dumps({
@@ -226,7 +226,7 @@ class TestEndocrineBiosensorUpdate:
         }
 
     def test_returns_empty_when_no_bridge(self, tmp_path):
-        from pulse.src import endocrine
+        from src import endocrine
         mock_cache = MagicMock()
         mock_cache.read.return_value = None
         with patch.object(endocrine, "_DEFAULT_STATE_FILE", tmp_path / "endo.json"):
@@ -234,7 +234,7 @@ class TestEndocrineBiosensorUpdate:
         assert result == {}
 
     def test_high_hr_zone_raises_adrenaline(self, tmp_path):
-        from pulse.src import endocrine
+        from src import endocrine
         endo_file = tmp_path / "endo.json"
         endo_file.write_text(json.dumps(self._make_endo_state()))
         mock_cache = MagicMock()
@@ -250,7 +250,7 @@ class TestEndocrineBiosensorUpdate:
         assert updated["hormones"]["adrenaline"] > 0.1
 
     def test_low_hrv_stress_lowers_cortisol_raises_serotonin(self, tmp_path):
-        from pulse.src import endocrine
+        from src import endocrine
         endo_file = tmp_path / "endo.json"
         state = self._make_endo_state()
         state["hormones"]["cortisol"] = 0.5
@@ -268,7 +268,7 @@ class TestEndocrineBiosensorUpdate:
         assert updated["hormones"]["serotonin"] > 0.5
 
     def test_move_ring_closed_boosts_dopamine(self, tmp_path):
-        from pulse.src import endocrine
+        from src import endocrine
         endo_file = tmp_path / "endo.json"
         endo_file.write_text(json.dumps(self._make_endo_state()))
         mock_cache = MagicMock()

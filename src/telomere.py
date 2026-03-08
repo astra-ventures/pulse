@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "telomere-state.json"
@@ -164,7 +164,7 @@ def emit_need_signals() -> dict:
     drift = state.get("drift_score", 0.0)
 
     if drift > 0.3:
-        from pulse.src import hypothalamus
+        from src import hypothalamus
         hypothalamus.record_need_signal("realign_identity", "telomere")
         signals["realign_identity"] = drift
 

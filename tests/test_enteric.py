@@ -3,7 +3,7 @@ import json
 import pytest
 from unittest.mock import MagicMock
 
-from pulse.src import enteric
+from src import enteric
 
 
 @pytest.fixture(autouse=True)

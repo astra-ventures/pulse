@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import MagicMock
-from pulse.src.core.task_router import TaskRouter
+from src.core.task_router import TaskRouter
 
 
 def make_config(local="ollama/iris-70b-v3", sonnet="anthropic/claude-sonnet-4-6", opus="anthropic/claude-opus-4-6", enabled=True):

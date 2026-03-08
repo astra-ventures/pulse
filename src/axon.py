@@ -37,7 +37,7 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import pneuma as _pneuma
+from src import pneuma as _pneuma
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state" / "axon"
 _DEFAULT_INBOX_FILE = _DEFAULT_STATE_DIR / "inbox.json"

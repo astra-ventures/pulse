@@ -8,7 +8,7 @@ Design: purely file-based, no coupling to bridge internals.
 Freshness: data older than MAX_AGE_SECONDS is treated as stale and ignored.
 
 Usage:
-    from pulse.src.biosensor_cache import BiosensorCache
+    from src.biosensor_cache import BiosensorCache
     bio = BiosensorCache()
     data = bio.read()          # returns dict or None if no bridge / stale
     hr = bio.heart_rate()      # returns bpm float or None

@@ -7,7 +7,7 @@ import json
 import time
 from pathlib import Path
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "adipose-state.json"
@@ -237,7 +237,7 @@ def emit_need_signals() -> dict:
     # Check days_at_zero if tracked
     days_at_zero = state.get("days_at_zero", 0)
     if days_at_zero > 7:
-        from pulse.src import hypothalamus
+        from src import hypothalamus
         hypothalamus.record_need_signal("generate_revenue", "adipose")
         signals["generate_revenue"] = days_at_zero
         return signals
@@ -249,7 +249,7 @@ def emit_need_signals() -> dict:
         total_budget = sum(budgets.values())
         total_used = sum(usage.get(cat, 0) for cat in budgets)
         if total_budget > 0 and total_used / total_budget > 0.95:
-            from pulse.src import hypothalamus
+            from src import hypothalamus
             hypothalamus.record_need_signal("generate_revenue", "adipose")
             signals["generate_revenue"] = total_used / total_budget
 

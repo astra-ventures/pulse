@@ -7,7 +7,7 @@ from urllib.error import URLError
 
 import pytest
 
-from pulse.src import aura, thalamus
+from src import aura, thalamus
 
 
 @pytest.fixture(autouse=True)
@@ -214,7 +214,7 @@ class TestReceiveFromPeer:
 
         mock_limbic = MagicMock()
         mock_limbic.record_emotion.return_value = {"id": "test_afterimage"}
-        with patch("pulse.src.limbic", mock_limbic, create=True):
+        with patch("src.limbic", mock_limbic, create=True):
             result = aura.receive_from_peer(payload)
 
         assert result["contagion_applied"] is True
@@ -231,7 +231,7 @@ class TestReceiveFromPeer:
 
         mock_limbic = MagicMock()
         mock_limbic.record_emotion.return_value = {"id": "test_afterimage"}
-        with patch("pulse.src.limbic", mock_limbic, create=True):
+        with patch("src.limbic", mock_limbic, create=True):
             result = aura.receive_from_peer(payload)
 
         assert result["scaled_valence"] < 0
@@ -274,7 +274,7 @@ class TestReceiveFromPeer:
             "timestamp": time.time(),
             "aura": {"mood": "bonded", "energy": 0.95},
         }
-        with patch("pulse.src.limbic", MagicMock(), create=True):
+        with patch("src.limbic", MagicMock(), create=True):
             aura.receive_from_peer(payload)
 
         entries = thalamus.read_by_source("aura")

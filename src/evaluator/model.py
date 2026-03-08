@@ -30,9 +30,9 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-from pulse.src.core.config import PulseConfig
-from pulse.src.drives.engine import Drive, DriveState
-from pulse.src.evaluator.priority import TriggerDecision
+from src.core.config import PulseConfig
+from src.drives.engine import Drive, DriveState
+from src.evaluator.priority import TriggerDecision
 
 logger = logging.getLogger("pulse.evaluator.model")
 

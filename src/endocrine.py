@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "endocrine-state.json"
@@ -285,7 +285,7 @@ def emit_need_signals() -> dict:
 
     # Low oxytocin → need connection (threshold raised to 0.3 for sustained low levels)
     if h.get("oxytocin", 0.2) < 0.3:
-        from pulse.src import hypothalamus
+        from src import hypothalamus
         hypothalamus.record_need_signal("connection", "endocrine")
         signals["connection"] = h["oxytocin"]
     else:
@@ -294,13 +294,13 @@ def emit_need_signals() -> dict:
         if len(history) >= 5:
             last_5 = history[-5:]
             if all(entry.get("hormones", {}).get("oxytocin", -1) == 0.0 for entry in last_5):
-                from pulse.src import hypothalamus
+                from src import hypothalamus
                 hypothalamus.record_need_signal("connection", "endocrine")
                 signals["connection"] = 0.0
 
     # High cortisol → need to reduce stress
     if h.get("cortisol", 0.2) > 0.7:
-        from pulse.src import hypothalamus
+        from src import hypothalamus
         hypothalamus.record_need_signal("reduce_stress", "endocrine")
         signals["reduce_stress"] = h["cortisol"]
 
@@ -309,7 +309,7 @@ def emit_need_signals() -> dict:
     if len(history) >= 20:
         last_20 = history[-20:]
         if all(entry.get("hormones", {}).get("dopamine", 0) >= 0.99 for entry in last_20):
-            from pulse.src import hypothalamus
+            from src import hypothalamus
             hypothalamus.record_need_signal("new_challenge", "endocrine")
             signals["new_challenge"] = True
 
@@ -341,7 +341,7 @@ def update_from_biosensors(cache=None) -> dict:
     """
     try:
         if cache is None:
-            from pulse.src.biosensor_cache import BiosensorCache
+            from src.biosensor_cache import BiosensorCache
             cache = BiosensorCache()
 
         data = cache.read()

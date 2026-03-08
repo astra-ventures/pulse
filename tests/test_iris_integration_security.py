@@ -33,7 +33,7 @@ def _make_config(token="test-secret", session_mode="isolated"):
 
 def _make_integration():
     """Import and instantiate IrisIntegration."""
-    from pulse.src.integrations.iris import IrisIntegration
+    from src.integrations.iris import IrisIntegration
     return IrisIntegration()
 
 
@@ -101,11 +101,11 @@ class TestLoadGerminalBirth(unittest.TestCase):
 
     def _mock_state(self, spec: dict):
         """Patch germinal._load_state to return a fake state."""
-        import pulse.src.germinal as germinal_mod
+        import src.germinal as germinal_mod
         return patch.object(germinal_mod, "_load_state", return_value={"in_progress": spec})
 
     def test_no_in_progress_returns_empty(self):
-        import pulse.src.germinal as germinal_mod
+        import src.germinal as germinal_mod
         with patch.object(germinal_mod, "_load_state", return_value={}):
             result = self.integ._load_germinal_birth(self.config)
         self.assertEqual(result, "")
@@ -139,7 +139,7 @@ class TestLoadGerminalBirth(unittest.TestCase):
         self.assertEqual(result, "")
 
     def test_all_whitelisted_drives_accepted(self):
-        from pulse.src.integrations.iris import _GERMINAL_DRIVE_WHITELIST
+        from src.integrations.iris import _GERMINAL_DRIVE_WHITELIST
         for drive in _GERMINAL_DRIVE_WHITELIST:
             # derive a plausible module name
             module_name = drive.upper().replace("_", "")[:10] + "MOD"
@@ -151,7 +151,7 @@ class TestLoadGerminalBirth(unittest.TestCase):
                 "module_file": f"{module_name.lower()}.py",
                 "state_file": f"{module_name.lower()}-state.json",
             }
-            import pulse.src.germinal as germinal_mod
+            import src.germinal as germinal_mod
             with patch.object(germinal_mod, "_load_state", return_value={"in_progress": spec}):
                 result = self.integ._load_germinal_birth(self.config)
             self.assertNotEqual(result, "", f"Drive '{drive}' should be accepted")
@@ -219,7 +219,7 @@ class TestLoadGerminalBirth(unittest.TestCase):
 class TestWebhookSigning(unittest.TestCase):
 
     def _make_webhook(self, token="supersecret"):
-        from pulse.src.core.webhook import OpenClawWebhook
+        from src.core.webhook import OpenClawWebhook
         cfg = _make_config(token=token)
         return OpenClawWebhook(cfg)
 
@@ -273,8 +273,8 @@ class TestWhitelistCompleteness(unittest.TestCase):
 
     def test_whitelist_matches_drive_archetypes(self):
         """IrisIntegration whitelist must cover all DRIVE_ARCHETYPES keys."""
-        from pulse.src.germinal import DRIVE_ARCHETYPES
-        from pulse.src.integrations.iris import _GERMINAL_DRIVE_WHITELIST
+        from src.germinal import DRIVE_ARCHETYPES
+        from src.integrations.iris import _GERMINAL_DRIVE_WHITELIST
         missing = set(DRIVE_ARCHETYPES.keys()) - _GERMINAL_DRIVE_WHITELIST
         self.assertEqual(
             missing, set(),
@@ -282,7 +282,7 @@ class TestWhitelistCompleteness(unittest.TestCase):
         )
 
     def test_whitelist_is_frozenset(self):
-        from pulse.src.integrations.iris import _GERMINAL_DRIVE_WHITELIST
+        from src.integrations.iris import _GERMINAL_DRIVE_WHITELIST
         self.assertIsInstance(_GERMINAL_DRIVE_WHITELIST, frozenset)
 
 

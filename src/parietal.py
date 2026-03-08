@@ -581,7 +581,7 @@ class Parietal:
 
     def register_sensors(self, sensor_manager) -> int:
         """Register dynamic sensors with SensorManager. Returns count."""
-        from pulse.src.sensors.parietal_sensors import (
+        from src.sensors.parietal_sensors import (
             ParietalFileSensor,
             ParietalFileContentSensor,
             ParietalHttpSensor,

@@ -16,13 +16,13 @@ def isolated_state(tmp_path, monkeypatch):
     fed_dir.mkdir()
     peers_file = fed_dir / "peers.json"
 
-    monkeypatch.setattr("pulse.src.pneuma._DEFAULT_STATE_DIR", fed_dir)
-    monkeypatch.setattr("pulse.src.pneuma._DEFAULT_PEERS_FILE", peers_file)
-    monkeypatch.setattr("pulse.src.thalamus.append", lambda *a, **kw: None)
+    monkeypatch.setattr("src.pneuma._DEFAULT_STATE_DIR", fed_dir)
+    monkeypatch.setattr("src.pneuma._DEFAULT_PEERS_FILE", peers_file)
+    monkeypatch.setattr("src.thalamus.append", lambda *a, **kw: None)
     return fed_dir
 
 
-from pulse.src import pneuma
+from src import pneuma
 
 
 # ── Constants ──────────────────────────────────────────────────────────────────
@@ -72,8 +72,8 @@ class TestStateHelpers:
     def test_save_creates_parent_dirs(self, tmp_path, monkeypatch):
         deep_dir = tmp_path / "a" / "b" / "pneuma"
         deep_file = deep_dir / "peers.json"
-        monkeypatch.setattr("pulse.src.pneuma._DEFAULT_STATE_DIR", deep_dir)
-        monkeypatch.setattr("pulse.src.pneuma._DEFAULT_PEERS_FILE", deep_file)
+        monkeypatch.setattr("src.pneuma._DEFAULT_STATE_DIR", deep_dir)
+        monkeypatch.setattr("src.pneuma._DEFAULT_PEERS_FILE", deep_file)
         pneuma._save_state(pneuma._default_state())
         assert deep_file.exists()
 
@@ -130,13 +130,13 @@ class TestRegisterPeer:
 
     def test_register_emits_thalamus_event(self, monkeypatch):
         events = []
-        monkeypatch.setattr("pulse.src.thalamus.append", lambda e: events.append(e))
+        monkeypatch.setattr("src.thalamus.append", lambda e: events.append(e))
         pneuma.register_peer("scout", "http://192.168.1.5:9720")
         assert any(e.get("event") == "peer_registered" for e in events)
 
     def test_reregister_does_not_emit_thalamus_again(self, monkeypatch):
         events = []
-        monkeypatch.setattr("pulse.src.thalamus.append", lambda e: events.append(e))
+        monkeypatch.setattr("src.thalamus.append", lambda e: events.append(e))
         pneuma.register_peer("scout", "http://192.168.1.5:9720")
         pneuma.register_peer("scout", "http://192.168.1.5:9720")
         registered_events = [e for e in events if e.get("event") == "peer_registered"]
@@ -166,7 +166,7 @@ class TestDeregisterPeer:
 
     def test_deregister_emits_thalamus_event(self, monkeypatch):
         events = []
-        monkeypatch.setattr("pulse.src.thalamus.append", lambda e: events.append(e))
+        monkeypatch.setattr("src.thalamus.append", lambda e: events.append(e))
         pneuma.register_peer("scout", "http://192.168.1.5:9720")
         pneuma.deregister_peer("scout")
         assert any(e.get("event") == "peer_deregistered" for e in events)
@@ -381,7 +381,7 @@ class TestStatusAndLoop:
 
     def test_reconnect_event_emitted(self, monkeypatch):
         events = []
-        monkeypatch.setattr("pulse.src.thalamus.append", lambda e: events.append(e))
+        monkeypatch.setattr("src.thalamus.append", lambda e: events.append(e))
         pneuma.register_peer("scout", "http://192.168.1.5:9720")
         # Mark offline
         state = pneuma._load_state()

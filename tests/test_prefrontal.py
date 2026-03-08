@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import pytest
 
-from pulse.src import prefrontal
+from src import prefrontal
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────

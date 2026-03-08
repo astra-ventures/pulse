@@ -10,7 +10,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "callosum-state.json"
@@ -84,14 +84,14 @@ def _get_emotional_state() -> tuple[str, dict]:
     mood = {}
     parts = []
     try:
-        from pulse.src import endocrine
+        from src import endocrine
         mood = endocrine.get_mood()
         parts.append(f"mood: {mood.get('label', 'unknown')}")
     except Exception:
         parts.append("mood: unknown")
 
     try:
-        from pulse.src import limbic
+        from src import limbic
         afterimages = limbic.get_current_afterimages()
         if afterimages:
             emotions = [a.get("emotion", "?") for a in afterimages[:3]]
@@ -105,7 +105,7 @@ def _get_emotional_state() -> tuple[str, dict]:
 def _get_gut_signal() -> str:
     """Read ENTERIC gut feeling."""
     try:
-        from pulse.src import enteric
+        from src import enteric
         intuition = enteric.gut_check({})
         return intuition.direction
     except Exception:

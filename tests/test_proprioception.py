@@ -3,7 +3,7 @@ import json
 import pytest
 from unittest.mock import MagicMock
 
-from pulse.src import proprioception
+from src import proprioception
 
 
 @pytest.fixture(autouse=True)

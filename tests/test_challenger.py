@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 @pytest.fixture
 def challenger_module(tmp_path):
     """Import challenger with isolated state directory."""
-    from pulse.src import challenger
+    from src import challenger
 
     state_dir = tmp_path / "state"
     state_dir.mkdir()
@@ -23,7 +23,7 @@ def challenger_module(tmp_path):
 @pytest.fixture
 def thalamus_mock():
     """Mock thalamus.append to capture broadcasts."""
-    with patch("pulse.src.challenger.thalamus") as mock:
+    with patch("src.challenger.thalamus") as mock:
         mock.append = MagicMock()
         yield mock
 
@@ -385,7 +385,7 @@ class TestDifficultyTiers:
 class TestNervousSystemIntegration:
     def test_module_loads_in_nervous_system(self, tmp_path):
         """Verify CHALLENGER loads in the NervousSystem registry."""
-        from pulse.src.nervous_system import NervousSystem
+        from src.nervous_system import NervousSystem
         ns = NervousSystem(state_dir=tmp_path / "state")
         assert ns._mod_challenger is not None
 

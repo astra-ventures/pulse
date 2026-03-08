@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src import telomere, thalamus
+from src import telomere, thalamus
 
 
 @pytest.fixture(autouse=True)

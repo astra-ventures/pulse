@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from pulse.src.mirror import (
+from src.mirror import (
     get_josh_model, get_iris_model, update_josh_model,
     check_iris_model_updates, integrate_feedback,
     get_alignment_report, get_relational_state, _load_state, _save_state,
@@ -15,14 +15,14 @@ from pulse.src.mirror import (
 @pytest.fixture(autouse=True)
 def clean_state(tmp_path, monkeypatch):
     state_file = tmp_path / "mirror-state.json"
-    monkeypatch.setattr("pulse.src.mirror._DEFAULT_STATE_FILE", state_file)
-    monkeypatch.setattr("pulse.src.mirror._DEFAULT_STATE_DIR", tmp_path)
-    monkeypatch.setattr("pulse.src.mirror.thalamus", MagicMock())
+    monkeypatch.setattr("src.mirror._DEFAULT_STATE_FILE", state_file)
+    monkeypatch.setattr("src.mirror._DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr("src.mirror.thalamus", MagicMock())
 
     josh_path = tmp_path / "josh_model.md"
     iris_path = tmp_path / "iris_model.md"
-    monkeypatch.setattr("pulse.src.mirror.JOSH_MODEL_PATH", josh_path)
-    monkeypatch.setattr("pulse.src.mirror.IRIS_MODEL_PATH", iris_path)
+    monkeypatch.setattr("src.mirror.JOSH_MODEL_PATH", josh_path)
+    monkeypatch.setattr("src.mirror.IRIS_MODEL_PATH", iris_path)
 
     josh_path.write_text("# Josh Model\n\n## Current state\nFeeling good\n\n## Patterns\nLikes building\n")
     iris_path.write_text("# Iris Model\n\n## What I see in you\nCurious and warm\n\n## Your strengths\nCreative problem solving\n\n## Your blind spots\nSometimes overthinks\n")
@@ -42,7 +42,7 @@ class TestGetModels:
         assert "Curious" in model["What I see in you"]
 
     def test_missing_file(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("pulse.src.mirror.JOSH_MODEL_PATH", tmp_path / "nonexistent.md")
+        monkeypatch.setattr("src.mirror.JOSH_MODEL_PATH", tmp_path / "nonexistent.md")
         assert get_josh_model() == {}
 
 
@@ -64,7 +64,7 @@ class TestCheckUpdates:
         assert changes == []
 
     def test_detects_edit(self, tmp_path, monkeypatch):
-        iris_path = monkeypatch.setattr("pulse.src.mirror.IRIS_MODEL_PATH",
+        iris_path = monkeypatch.setattr("src.mirror.IRIS_MODEL_PATH",
                                          tmp_path / "iris_model.md") or (tmp_path / "iris_model.md")
         check_iris_model_updates()
         # Simulate Josh editing
@@ -73,20 +73,20 @@ class TestCheckUpdates:
         assert len(changes) > 0
 
     def test_missing_iris_model(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("pulse.src.mirror.IRIS_MODEL_PATH", tmp_path / "gone.md")
+        monkeypatch.setattr("src.mirror.IRIS_MODEL_PATH", tmp_path / "gone.md")
         assert check_iris_model_updates() == []
 
 
 class TestIntegrateFeedback:
     def test_broadcasts_to_thalamus(self):
-        import pulse.src.mirror as mirror_mod
+        import src.mirror as mirror_mod
         integrate_feedback(["Section 'strengths' updated"])
         mirror_mod.thalamus.append.assert_called_once()
         call_data = mirror_mod.thalamus.append.call_args[0][0]
         assert call_data["source"] == "mirror"
 
     def test_empty_changes_noop(self):
-        import pulse.src.mirror as mirror_mod
+        import src.mirror as mirror_mod
         integrate_feedback([])
         mirror_mod.thalamus.append.assert_not_called()
 

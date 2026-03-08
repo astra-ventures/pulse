@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src import oximeter, thalamus
+from src import oximeter, thalamus
 
 
 @pytest.fixture(autouse=True)

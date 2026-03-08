@@ -12,11 +12,11 @@ import json
 import logging
 import time
 from aiohttp import web
-from pulse.src import __version__
+from src import __version__
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pulse.src.core.daemon import PulseDaemon
+    from src.core.daemon import PulseDaemon
 
 logger = logging.getLogger("pulse.health")
 

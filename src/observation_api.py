@@ -23,9 +23,9 @@ Constellation (inter-agent):
 Auth: Bearer token via PULSE_OBS_TOKEN env var (falls back to PULSE_HOOK_TOKEN).
 
 Usage:
-    python -m pulse.src.observation_api
+    python -m src.observation_api
     # or
-    uvicorn pulse.src.observation_api:app --port 9722
+    uvicorn src.observation_api:app --port 9722
 """
 
 import asyncio
@@ -315,7 +315,7 @@ def receive_constellation_aura(
         }
     """
     try:
-        from pulse.src import aura as aura_module
+        from src import aura as aura_module
         result = aura_module.receive_from_peer(payload)
         return {
             "ok": True,
@@ -336,7 +336,7 @@ def get_constellation_state(_: None = Depends(require_auth)):
     with elapsed time since last contact.
     """
     try:
-        from pulse.src import aura as aura_module
+        from src import aura as aura_module
         return aura_module.get_constellation_state()
     except Exception as exc:
         logger.warning(f"Constellation state error: {exc}")
@@ -566,4 +566,4 @@ def get_dashboard():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("pulse.src.observation_api:app", host="0.0.0.0", port=OBS_PORT, reload=False)
+    uvicorn.run("src.observation_api:app", host="0.0.0.0", port=OBS_PORT, reload=False)

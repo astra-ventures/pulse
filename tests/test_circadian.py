@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src import circadian, thalamus
-from pulse.src.circadian import CircadianMode
+from src import circadian, thalamus
+from src.circadian import CircadianMode
 
 
 @pytest.fixture(autouse=True)

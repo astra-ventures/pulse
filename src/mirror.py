@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "mirror-state.json"
@@ -163,7 +163,7 @@ def integrate_feedback(changes: list):
 
     # Update PROPRIOCEPTION with external view
     try:
-        from pulse.src import proprioception
+        from src import proprioception
         model = proprioception.get_self_model()
         model["external_feedback_ts"] = int(time.time() * 1000)
         model["external_feedback_count"] = model.get("external_feedback_count", 0) + 1
@@ -177,7 +177,7 @@ def get_alignment_report() -> dict:
 
     self_view = {}
     try:
-        from pulse.src import proprioception
+        from src import proprioception
         self_view = proprioception.get_self_model()
     except Exception:
         pass

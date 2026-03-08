@@ -1,4 +1,4 @@
-"""Tests for Pulse Observation API (pulse.src.observation_api)."""
+"""Tests for Pulse Observation API (src.observation_api)."""
 
 import json
 import os
@@ -68,7 +68,7 @@ def client(state_dir, monkeypatch):
 
     # Re-import app after env patch to pick up new STATE_DIR
     import importlib
-    import pulse.src.observation_api as obs_mod
+    import src.observation_api as obs_mod
     importlib.reload(obs_mod)
 
     return TestClient(obs_mod.app)
@@ -81,7 +81,7 @@ def auth_client(state_dir, monkeypatch):
     monkeypatch.setenv("PULSE_OBS_TOKEN", "test-token-123")
 
     import importlib
-    import pulse.src.observation_api as obs_mod
+    import src.observation_api as obs_mod
     importlib.reload(obs_mod)
 
     return TestClient(obs_mod.app)
@@ -115,7 +115,7 @@ class TestHealth:
         old_time = time.time() - 400
         os.utime(drive_file, (old_time, old_time))
 
-        import pulse.src.observation_api as obs_mod
+        import src.observation_api as obs_mod
         importlib.reload(obs_mod)
         c = TestClient(obs_mod.app)
         r = c.get("/health")
@@ -172,7 +172,7 @@ class TestDrives:
         import importlib
         monkeypatch.setenv("PULSE_STATE_DIR", str(tmp_path))
         monkeypatch.setenv("PULSE_OBS_TOKEN", "")
-        import pulse.src.observation_api as obs_mod
+        import src.observation_api as obs_mod
         importlib.reload(obs_mod)
         c = TestClient(obs_mod.app)
         r = c.get("/state/drives")
@@ -297,7 +297,7 @@ class TestHippocampus:
         import importlib
         monkeypatch.setenv("PULSE_STATE_DIR", str(tmp_path))
         monkeypatch.setenv("PULSE_OBS_TOKEN", "")
-        import pulse.src.observation_api as obs_mod
+        import src.observation_api as obs_mod
         importlib.reload(obs_mod)
         c = TestClient(obs_mod.app)
         r = c.get("/hippocampus/recent")
@@ -401,7 +401,7 @@ class TestConstellation:
     def test_receive_aura_returns_200(self, client, state_dir, monkeypatch):
         """POST /constellation/aura with valid payload returns 200."""
         # Patch receive_from_peer to avoid touching live LIMBIC/THALAMUS
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         received = {}
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: received.update(p) or {"applied": True})
         r = client.post("/constellation/aura", json=self.SAMPLE_AURA_PAYLOAD)
@@ -409,7 +409,7 @@ class TestConstellation:
 
     def test_receive_aura_returns_source_agent(self, client, state_dir, monkeypatch):
         """Response body includes source_agent from payload."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"applied": True})
         r = client.post("/constellation/aura", json=self.SAMPLE_AURA_PAYLOAD)
         data = r.json()
@@ -417,14 +417,14 @@ class TestConstellation:
 
     def test_receive_aura_ok_flag(self, client, state_dir, monkeypatch):
         """Response body has ok=True on success."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"contagion_applied": True})
         r = client.post("/constellation/aura", json=self.SAMPLE_AURA_PAYLOAD)
         assert r.json()["ok"] is True
 
     def test_receive_aura_unknown_source(self, client, state_dir, monkeypatch):
         """Unknown source_agent is accepted (weight defaults to 0.5)."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"applied": True})
         payload = {**self.SAMPLE_AURA_PAYLOAD, "source_agent": "unknown_agent"}
         r = client.post("/constellation/aura", json=payload)
@@ -432,7 +432,7 @@ class TestConstellation:
 
     def test_receive_aura_negative_mood(self, client, state_dir, monkeypatch):
         """Burned-out mood from peer is accepted."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"applied": True})
         payload = {
             "source_agent": "mira",
@@ -444,7 +444,7 @@ class TestConstellation:
 
     def test_receive_aura_iris_primary_broadcaster(self, client, state_dir, monkeypatch):
         """Iris payloads are accepted (she's weight=1.0 primary)."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"applied": True})
         payload = {**self.SAMPLE_AURA_PAYLOAD, "source_agent": "iris"}
         r = client.post("/constellation/aura", json=payload)
@@ -452,7 +452,7 @@ class TestConstellation:
 
     def test_receive_aura_all_constellation_agents(self, client, state_dir, monkeypatch):
         """All 5 constellation agents can push aura."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"applied": True})
         for agent in ["iris", "vera", "mira", "sage", "lyra"]:
             payload = {**self.SAMPLE_AURA_PAYLOAD, "source_agent": agent}
@@ -461,7 +461,7 @@ class TestConstellation:
 
     def test_receive_aura_has_timestamp(self, client, state_dir, monkeypatch):
         """Response includes a timestamp."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"applied": True})
         r = client.post("/constellation/aura", json=self.SAMPLE_AURA_PAYLOAD)
         assert "timestamp" in r.json()
@@ -478,7 +478,7 @@ class TestConstellation:
         """GET /constellation/state includes own aura."""
         (state_dir / "constellation.json").write_text('{"peers":{}, "own_name":"iris", "last_received":{}}')
         (state_dir / "aura.json").write_text('{"mood":"content","energy":0.75,"available":true}')
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "get_constellation_state", lambda: {
             "own_name": "iris",
             "own_aura": {"mood": "content", "energy": 0.75},
@@ -491,7 +491,7 @@ class TestConstellation:
 
     def test_constellation_state_has_peers(self, client, state_dir, monkeypatch):
         """GET /constellation/state includes peer list."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "get_constellation_state", lambda: {
             "own_name": "iris",
             "own_aura": {"mood": "energized"},
@@ -506,7 +506,7 @@ class TestConstellation:
 
     def test_constellation_state_own_name(self, client, state_dir, monkeypatch):
         """GET /constellation/state includes own_name field."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "get_constellation_state", lambda: {
             "own_name": "iris",
             "own_aura": {},
@@ -524,7 +524,7 @@ class TestConstellation:
 
     def test_receive_aura_accepts_auth_token(self, auth_client, monkeypatch):
         """POST /constellation/aura accepts valid auth token."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"applied": True})
         r = auth_client.post(
             "/constellation/aura",
@@ -540,7 +540,7 @@ class TestConstellation:
 
     def test_receive_aura_empty_aura_field(self, client, monkeypatch):
         """Empty aura dict is accepted gracefully."""
-        import pulse.src.aura as aura_mod
+        import src.aura as aura_mod
         monkeypatch.setattr(aura_mod, "receive_from_peer", lambda p: {"applied": True})
         payload = {"source_agent": "lyra", "timestamp": 1740412800.0, "aura": {}}
         r = client.post("/constellation/aura", json=payload)

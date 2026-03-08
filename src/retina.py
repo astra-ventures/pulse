@@ -12,7 +12,7 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "retina-state.json"

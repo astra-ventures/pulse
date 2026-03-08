@@ -8,7 +8,7 @@ each SENSE cycle.
 Usage (plugin author):
     # Save as ~/.pulse/plugins/pulse_plugin_trading.py
 
-    from pulse.src.plugin_registry import PulsePlugin
+    from src.plugin_registry import PulsePlugin
 
     class TradingModule(PulsePlugin):
         name = 'TRADING'

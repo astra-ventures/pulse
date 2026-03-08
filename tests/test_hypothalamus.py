@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src import hypothalamus, thalamus
+from src import hypothalamus, thalamus
 
 
 @pytest.fixture(autouse=True)
@@ -106,7 +106,7 @@ class TestDriveBirthThreshold:
 
 class TestVestibularEmitSignals:
     def test_high_build_ship_ratio_emits(self, tmp_path):
-        from pulse.src import vestibular
+        from src import vestibular
         sf = tmp_path / "vestibular-state.json"
         with patch.object(vestibular, "_DEFAULT_STATE_DIR", tmp_path), \
              patch.object(vestibular, "_DEFAULT_STATE_FILE", sf):
@@ -124,7 +124,7 @@ class TestVestibularEmitSignals:
             assert "ship_something" in result
 
     def test_balanced_emits_nothing(self, tmp_path):
-        from pulse.src import vestibular
+        from src import vestibular
         sf = tmp_path / "vestibular-state.json"
         with patch.object(vestibular, "_DEFAULT_STATE_DIR", tmp_path), \
              patch.object(vestibular, "_DEFAULT_STATE_FILE", sf):
@@ -144,7 +144,7 @@ class TestVestibularEmitSignals:
 
 class TestEndocrineEmitSignals:
     def test_low_oxytocin_emits_connection(self, tmp_path):
-        from pulse.src import endocrine
+        from src import endocrine
         sf = tmp_path / "endocrine-state.json"
         with patch.object(endocrine, "_DEFAULT_STATE_DIR", tmp_path), \
              patch.object(endocrine, "_DEFAULT_STATE_FILE", sf):
@@ -155,7 +155,7 @@ class TestEndocrineEmitSignals:
             assert "connection" in result
 
     def test_high_cortisol_emits_reduce_stress(self, tmp_path):
-        from pulse.src import endocrine
+        from src import endocrine
         sf = tmp_path / "endocrine-state.json"
         with patch.object(endocrine, "_DEFAULT_STATE_DIR", tmp_path), \
              patch.object(endocrine, "_DEFAULT_STATE_FILE", sf):
@@ -166,7 +166,7 @@ class TestEndocrineEmitSignals:
             assert "reduce_stress" in result
 
     def test_normal_hormones_emit_nothing(self, tmp_path):
-        from pulse.src import endocrine
+        from src import endocrine
         sf = tmp_path / "endocrine-state.json"
         with patch.object(endocrine, "_DEFAULT_STATE_DIR", tmp_path), \
              patch.object(endocrine, "_DEFAULT_STATE_FILE", sf):
@@ -182,42 +182,42 @@ class TestEmitGracefulOnMissingState:
     """Missing state file returns {} gracefully for each emitter."""
 
     def test_vestibular_missing_state(self, tmp_path):
-        from pulse.src import vestibular
+        from src import vestibular
         sf = tmp_path / "nonexistent" / "vestibular-state.json"
         with patch.object(vestibular, "_DEFAULT_STATE_FILE", sf):
             result = vestibular.emit_need_signals()
             assert result == {}
 
     def test_endocrine_missing_state(self, tmp_path):
-        from pulse.src import endocrine
+        from src import endocrine
         sf = tmp_path / "nonexistent" / "endocrine-state.json"
         with patch.object(endocrine, "_DEFAULT_STATE_FILE", sf):
             result = endocrine.emit_need_signals()
             assert result == {}
 
     def test_vagus_missing_state(self, tmp_path):
-        from pulse.src import vagus
+        from src import vagus
         sf = tmp_path / "nonexistent" / "silence-state.json"
         with patch.object(vagus, "_DEFAULT_STATE_FILE", sf):
             result = vagus.emit_need_signals()
             assert result == {}
 
     def test_thymus_missing_state(self, tmp_path):
-        from pulse.src import thymus
+        from src import thymus
         sf = tmp_path / "nonexistent" / "thymus-state.json"
         with patch.object(thymus, "_DEFAULT_STATE_FILE", sf):
             result = thymus.emit_need_signals()
             assert result == {}
 
     def test_telomere_missing_state(self, tmp_path):
-        from pulse.src import telomere
+        from src import telomere
         sf = tmp_path / "nonexistent" / "telomere-state.json"
         with patch.object(telomere, "_DEFAULT_STATE_FILE", sf):
             result = telomere.emit_need_signals()
             assert result == {}
 
     def test_adipose_missing_state(self, tmp_path):
-        from pulse.src import adipose
+        from src import adipose
         sf = tmp_path / "nonexistent" / "adipose-state.json"
         with patch.object(adipose, "_DEFAULT_STATE_FILE", sf):
             result = adipose.emit_need_signals()

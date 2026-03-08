@@ -27,7 +27,7 @@ import urllib.error
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "aura.json"
@@ -142,7 +142,7 @@ def emit() -> dict:
 
     # Read ENDOCRINE mood
     try:
-        from pulse.src import endocrine
+        from src import endocrine
         mood = endocrine.get_mood()
         aura["mood"] = mood.get("label", "neutral")
     except Exception:
@@ -150,7 +150,7 @@ def emit() -> dict:
 
     # Read CIRCADIAN mode for focus
     try:
-        from pulse.src import circadian
+        from src import circadian
         mode = circadian.get_current_mode()
         mode_val = mode.value if hasattr(mode, 'value') else str(mode)
         focus_map = {"dawn": 0.6, "daylight": 0.8, "golden": 0.7, "twilight": 0.4, "deep_night": 0.2}
@@ -161,7 +161,7 @@ def emit() -> dict:
 
     # Read SOMA energy
     try:
-        from pulse.src import soma
+        from src import soma
         status = soma.get_status()
         aura["energy"] = status.get("energy", 1.0)
     except Exception:
@@ -169,7 +169,7 @@ def emit() -> dict:
 
     # Read ADIPOSE for social battery proxy
     try:
-        from pulse.src import adipose
+        from src import adipose
         report = adipose.get_budget_report()
         conv = report.get("categories", {}).get("conversation", {})
         pct_used = conv.get("percent_used", 0)
@@ -348,7 +348,7 @@ def receive_from_peer(payload: dict) -> dict:
 
     if abs(scaled_valence) > 0.1 and scaled_intensity > 0.5:
         try:
-            from pulse.src import limbic
+            from src import limbic
             afterimage = limbic.record_emotion(
                 scaled_valence,
                 scaled_intensity,

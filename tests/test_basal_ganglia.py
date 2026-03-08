@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pulse.src import basal_ganglia
+from src import basal_ganglia
 
 
 def _make_goals_file(tmp_path, goals: list) -> Path:

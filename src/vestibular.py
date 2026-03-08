@@ -9,7 +9,7 @@ import json
 import time
 from pathlib import Path
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "vestibular-state.json"
@@ -121,7 +121,7 @@ def emit_need_signals() -> dict:
     shipping = c.get("shipping", 0)
     building = c.get("building", 0)
     if shipping > 0 and building / shipping > 3.0:
-        from pulse.src import hypothalamus
+        from src import hypothalamus
         hypothalamus.record_need_signal("ship_something", "vestibular")
         signals["ship_something"] = building / shipping
 
@@ -129,7 +129,7 @@ def emit_need_signals() -> dict:
     reflecting = c.get("reflecting", 0)
     working = c.get("working", 0)
     if reflecting > 0 and working / reflecting > 5.0:
-        from pulse.src import hypothalamus
+        from src import hypothalamus
         hypothalamus.record_need_signal("reflect", "vestibular")
         signals["reflect"] = working / reflecting
 

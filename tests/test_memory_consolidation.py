@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List
 import pytest
 
-from pulse.src.memory_consolidation import (
+from src.memory_consolidation import (
     read_hippocampus_recent,
     score_event,
     consolidate,

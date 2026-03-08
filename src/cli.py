@@ -342,7 +342,7 @@ def cmd_init(args):
         run_sh_content = f"""#!/bin/bash
 set -a; source ~/.pulse/.env; set +a
 cd {workspace}
-exec {pulse_bin or 'python3 -m pulse.src'}
+exec {pulse_bin or 'python3 -m src'}
 """
         run_sh.write_text(run_sh_content)
         run_sh.chmod(0o755)
@@ -905,7 +905,7 @@ def cmd_genome(args):
 
 def cmd_plugin(args):
     """Manage Pulse plugins — list, discover, and inspect loaded plugins."""
-    from pulse.src.plugin_registry import PluginRegistry, discover_plugins, _DEFAULT_PLUGIN_DIR
+    from src.plugin_registry import PluginRegistry, discover_plugins, _DEFAULT_PLUGIN_DIR
 
     sub = getattr(args, "plugin_cmd", None) or "list"
 
@@ -1042,7 +1042,7 @@ def cmd_constellation(args):
       broadcast              Push current aura to all peers
       state                  Show own aura + last received aura from each peer
     """
-    from pulse.src import aura as aura_module
+    from src import aura as aura_module
 
     sub = getattr(args, "constellation_cmd", None) or "list"
 
@@ -1184,7 +1184,7 @@ def cmd_prefrontal(args):
       scan TEXT   Scan a text snippet for identity drift
       trend       Show last 20 compliance records
     """
-    from pulse.src import prefrontal
+    from src import prefrontal
 
     sub = getattr(args, "prefrontal_cmd", None) or "status"
 
@@ -1279,7 +1279,7 @@ def cmd_start(args):
         console.print("[dim]No LaunchAgent installed. Starting in foreground...[/]")
         os.execvp(
             sys.executable,
-            [sys.executable, "-m", "pulse.src"],
+            [sys.executable, "-m", "src"],
         )
 
 

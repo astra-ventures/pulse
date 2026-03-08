@@ -670,7 +670,7 @@ def complete_directive(directive_id: str, reason: str = "") -> bool:
 # ─── Self-test ────────────────────────────────────────────────────────────────
 
 def _run_tests():
-    """Quick self-test. Run via: python -m pulse.src.broca"""
+    """Quick self-test. Run via: python -m src.broca"""
     import tempfile
 
     print("BROCA self-test...")
@@ -698,7 +698,7 @@ def _run_tests():
     with tempfile.TemporaryDirectory() as tmp:
         original = DIRECTIVES_FILE
         try:
-            import pulse.src.broca as _self
+            import src.broca as _self
             _self.DIRECTIVES_FILE = Path(tmp) / "directives.json"
             _self.DIRECTIVES_FILE.write_text(json.dumps({
                 "directives": [

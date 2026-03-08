@@ -168,7 +168,7 @@ def emit_need_signals() -> dict:
         now_ms = int(time.time() * 1000)
         elapsed_seconds = (now_ms - josh_ts) / 1000
         if elapsed_seconds > 172800:  # 48 hours
-            from pulse.src import hypothalamus
+            from src import hypothalamus
             hypothalamus.record_need_signal("connection", "vagus")
             signals["connection"] = elapsed_seconds
 

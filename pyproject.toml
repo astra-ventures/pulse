@@ -37,7 +37,7 @@ dev = [
 ]
 
 [project.scripts]
-pulse = "pulse.src.__main__:main"
+pulse = "src.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -48,7 +48,7 @@ where = ["."]
 include = ["src*"]
 
 [tool.setuptools.package-dir]
-"pulse.src" = "src"
+"src" = "src"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

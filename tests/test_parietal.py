@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pulse.src.parietal import (
+from src.parietal import (
     Parietal,
     HealthSignal,
     GoalCondition,
@@ -464,7 +464,7 @@ class TestSensorRegistration:
 
 class TestHttpSensor:
     def test_http_sensor_success(self):
-        from pulse.src.sensors.parietal_sensors import ParietalHttpSensor
+        from src.sensors.parietal_sensors import ParietalHttpSensor
         signal = HealthSignal(
             id="http_test", type="http_health",
             target="https://example.com/health",
@@ -474,7 +474,7 @@ class TestHttpSensor:
         assert sensor.name == "parietal.http.http_test"
 
     def test_http_sensor_read_error(self):
-        from pulse.src.sensors.parietal_sensors import ParietalHttpSensor
+        from src.sensors.parietal_sensors import ParietalHttpSensor
         signal = HealthSignal(
             id="http_fail", type="http_health",
             target="https://doesnotexist.invalid/health",

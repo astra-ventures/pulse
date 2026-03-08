@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 
-from pulse.src import germinal
+from src import germinal
 
 
 class TestGerminalBasics:
@@ -192,7 +192,7 @@ class TestAttemptBirth:
         germinal._save_state(state)
 
         # Patch the ceiling check so in_progress check is reached
-        with patch("pulse.src.germinal.PULSE_SRC") as mock_src:
+        with patch("src.germinal.PULSE_SRC") as mock_src:
             mock_src.glob.return_value = []  # zero existing modules, ceiling not hit
             result = germinal.attempt_birth("connection")
         assert result["ok"] is False

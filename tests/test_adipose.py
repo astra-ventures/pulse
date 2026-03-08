@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src import adipose, thalamus
+from src import adipose, thalamus
 
 
 @pytest.fixture(autouse=True)

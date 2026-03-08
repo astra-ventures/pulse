@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src import thalamus
+from src import thalamus
 
 
 @pytest.fixture(autouse=True)

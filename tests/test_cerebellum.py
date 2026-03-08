@@ -6,15 +6,15 @@ from pathlib import Path
 
 import pytest
 
-from pulse.src.cerebellum import Cerebellum
+from src.cerebellum import Cerebellum
 
 
 @pytest.fixture
 def cerebellum(tmp_path, monkeypatch):
-    monkeypatch.setattr("pulse.src.cerebellum._DEFAULT_STATE_DIR", tmp_path)
-    monkeypatch.setattr("pulse.src.cerebellum._DEFAULT_STATE_FILE", tmp_path / "cerebellum-state.json")
-    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", tmp_path / "broadcast.jsonl")
-    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr("src.cerebellum._DEFAULT_STATE_DIR", tmp_path)
+    monkeypatch.setattr("src.cerebellum._DEFAULT_STATE_FILE", tmp_path / "cerebellum-state.json")
+    monkeypatch.setattr("src.thalamus._DEFAULT_BROADCAST_FILE", tmp_path / "broadcast.jsonl")
+    monkeypatch.setattr("src.thalamus._DEFAULT_STATE_DIR", tmp_path)
     return Cerebellum()
 
 

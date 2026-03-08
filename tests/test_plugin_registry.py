@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 import pytest
 
-from pulse.src.plugin_registry import (
+from src.plugin_registry import (
     PulsePlugin,
     PluginRegistry,
     discover_plugins,
@@ -220,7 +220,7 @@ class TestDiscoverPlugins:
 
     def _write_plugin(self, plugin_dir: Path, name: str, class_name: str, sense_val: float = 0.1):
         code = textwrap.dedent(f"""
-            from pulse.src.plugin_registry import PulsePlugin
+            from src.plugin_registry import PulsePlugin
 
             class {class_name}(PulsePlugin):
                 name = '{name}'

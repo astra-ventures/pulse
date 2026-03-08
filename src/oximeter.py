@@ -9,7 +9,7 @@ import json
 import time
 from pathlib import Path
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "oximeter-state.json"

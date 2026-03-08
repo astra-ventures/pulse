@@ -13,13 +13,13 @@ _tmpdir = tempfile.mkdtemp()
 _state_dir = Path(_tmpdir) / "state"
 _state_dir.mkdir()
 
-with patch("pulse.src.thalamus._DEFAULT_STATE_DIR", _state_dir), \
-     patch("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
-    import pulse.src.thalamus as thalamus
+with patch("src.thalamus._DEFAULT_STATE_DIR", _state_dir), \
+     patch("src.thalamus._DEFAULT_BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
+    import src.thalamus as thalamus
     # Now patch retina's state
     with patch.dict(os.environ, {}):
-        import pulse.src.retina as retina_mod
-        from pulse.src.retina import Retina, ScoredSignal
+        import src.retina as retina_mod
+        from src.retina import Retina, ScoredSignal
 
 
 @pytest.fixture(autouse=True)

@@ -11,8 +11,8 @@ from typing import Optional
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
-from pulse.src import engram as _engram
-from pulse.src import thalamus
+from src import engram as _engram
+from src import thalamus
 
 logger = logging.getLogger("pulse.corpus")
 

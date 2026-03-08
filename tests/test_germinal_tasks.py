@@ -5,7 +5,7 @@ import json
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from pulse.src.germinal_tasks import (
+from src.germinal_tasks import (
     generate_tasks,
     _build_prompt,
     _parse_and_filter,
@@ -76,7 +76,7 @@ class TestGenerateTasks:
         tasks = [_make_task("Refactor config module"), _make_task("Write unit tests")]
 
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch("src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
                 mock_llm.return_value = tasks
                 return await generate_tasks(_base_context(), _base_config())
 
@@ -93,7 +93,7 @@ class TestGenerateTasks:
         ]
 
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch("src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
                 mock_llm.return_value = tasks
                 return await generate_tasks(_base_context(), _base_config())
 
@@ -109,7 +109,7 @@ class TestGenerateTasks:
         ]
 
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch("src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
                 mock_llm.return_value = tasks
                 return await generate_tasks(_base_context(), _base_config())
 
@@ -124,7 +124,7 @@ class TestGenerateTasks:
         config["max_tasks"] = 2
 
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch("src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
                 mock_llm.return_value = tasks
                 return await generate_tasks(_base_context(), config)
 
@@ -134,7 +134,7 @@ class TestGenerateTasks:
     def test_empty_llm_response_returns_fallback(self):
         """When LLM returns no usable tasks, should return fallback."""
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch("src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
                 mock_llm.return_value = []
                 return await generate_tasks(_base_context(), _base_config())
 

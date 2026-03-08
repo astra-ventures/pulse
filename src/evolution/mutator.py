@@ -43,12 +43,12 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING
 
-from pulse.src.evolution.guardrails import Guardrails, GuardrailViolation
-from pulse.src.evolution.audit import AuditLog, MutationRecord
+from src.evolution.guardrails import Guardrails, GuardrailViolation
+from src.evolution.audit import AuditLog, MutationRecord
 
 if TYPE_CHECKING:
-    from pulse.src.core.config import PulseConfig
-    from pulse.src.drives.engine import DriveEngine, Drive
+    from src.core.config import PulseConfig
+    from src.drives.engine import DriveEngine, Drive
 
 logger = logging.getLogger("pulse.evolution.mutator")
 
@@ -305,7 +305,7 @@ class Mutator:
         self.guardrails.validate_drive_count(len(self.drives.drives))
         weight = self.guardrails.validate_weight_change(name, 0.5, weight)
 
-        from pulse.src.drives.engine import Drive
+        from src.drives.engine import Drive
         self.drives.drives[name] = Drive(
             name=name,
             category=name,

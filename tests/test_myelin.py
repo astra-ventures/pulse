@@ -12,11 +12,11 @@ _tmpdir = tempfile.mkdtemp()
 _state_dir = Path(_tmpdir) / "state"
 _state_dir.mkdir()
 
-with patch("pulse.src.thalamus._DEFAULT_STATE_DIR", _state_dir), \
-     patch("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
-    import pulse.src.thalamus as thalamus
-    import pulse.src.myelin as myelin_mod
-    from pulse.src.myelin import Myelin, REFERENCE_THRESHOLD, _PRE_SEEDED
+with patch("src.thalamus._DEFAULT_STATE_DIR", _state_dir), \
+     patch("src.thalamus._DEFAULT_BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
+    import src.thalamus as thalamus
+    import src.myelin as myelin_mod
+    from src.myelin import Myelin, REFERENCE_THRESHOLD, _PRE_SEEDED
 
 
 @pytest.fixture(autouse=True)

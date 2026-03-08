@@ -42,7 +42,7 @@ import hashlib
 from pathlib import Path
 from typing import Optional
 
-from pulse.src import thalamus
+from src import thalamus
 
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state" / "pneuma"
 _DEFAULT_PEERS_FILE = _DEFAULT_STATE_DIR / "peers.json"

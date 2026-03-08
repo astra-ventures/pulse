@@ -5,8 +5,8 @@ import os
 import sys
 from pathlib import Path
 
-from pulse.src.core.config import PulseConfig
-from pulse.src.core.daemon import PulseDaemon
+from src.core.config import PulseConfig
+from src.core.daemon import PulseDaemon
 
 
 class StructuredFormatter(logging.Formatter):

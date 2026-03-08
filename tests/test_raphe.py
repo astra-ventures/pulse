@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pulse.src import raphe
+from src import raphe
 
 
 # ── Fixtures ────────────────────────────────────────────────────────────────────

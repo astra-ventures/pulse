@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pulse.src import thymus, thalamus
+from src import thymus, thalamus
 
 
 @pytest.fixture(autouse=True)

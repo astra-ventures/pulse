@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pulse.src import pineal
+from src import pineal
 
 
 @pytest.fixture(autouse=True)

@@ -2,7 +2,7 @@
 
 import pytest
 
-from pulse.src.evaluator.model import EVALUATOR_SYSTEM_PROMPT
+from src.evaluator.model import EVALUATOR_SYSTEM_PROMPT
 
 
 class TestExceptionRulePrompt:

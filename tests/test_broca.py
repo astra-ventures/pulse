@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from pulse.src import broca
+from src import broca
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -411,7 +411,7 @@ class TestPatternDetection:
         original_fn = broca._detect_stale_goals
 
         def patched():
-            import pulse.src.broca as _l
+            import src.broca as _l
             # Monkey-patch the file path inside the function
             original_path = Path.home() / ".openclaw" / "workspace" / "memory" / "self" / "goals.json"
             try:

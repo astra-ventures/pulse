@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from pulse.src import immune
+from src import immune
 
 
 @pytest.fixture(autouse=True)

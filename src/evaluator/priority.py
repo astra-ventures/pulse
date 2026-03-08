@@ -13,8 +13,8 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
-from pulse.src.core.config import PulseConfig
-from pulse.src.drives.engine import Drive, DriveState
+from src.core.config import PulseConfig
+from src.drives.engine import Drive, DriveState
 
 logger = logging.getLogger("pulse.evaluator")
 

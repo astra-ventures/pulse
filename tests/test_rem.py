@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from pulse.src.rem import (
+from src.rem import (
     PonsConfig,
     Pons,
     PonsSession,

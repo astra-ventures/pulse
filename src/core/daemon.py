@@ -18,21 +18,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from pulse.src.core.config import PulseConfig
-from pulse.src.drives.engine import DriveEngine
-from pulse.src.sensors.manager import SensorManager
-from pulse.src.evaluator.priority import PriorityEvaluator, TriggerDecision
-from pulse.src.evaluator.model import ModelEvaluator, ModelConfig
-from pulse.src.evolution.mutator import Mutator
-from pulse.src.state.persistence import StatePersistence
-from pulse.src.core.health import HealthServer
-from pulse.src.core.webhook import OpenClawWebhook
-from pulse.src.core.task_router import TaskRouter
-from pulse.src.core.daily_sync import DailyNoteSync
-from pulse.src.core.events import EventBus, TRIGGER_SUCCESS, TRIGGER_FAILURE, MUTATION_APPLIED
-from pulse.src.integrations import Integration
-from pulse.src.nervous_system import NervousSystem
-from pulse.src.germinal_tasks import generate_tasks as germinal_generate
+from src.core.config import PulseConfig
+from src.drives.engine import DriveEngine
+from src.sensors.manager import SensorManager
+from src.evaluator.priority import PriorityEvaluator, TriggerDecision
+from src.evaluator.model import ModelEvaluator, ModelConfig
+from src.evolution.mutator import Mutator
+from src.state.persistence import StatePersistence
+from src.core.health import HealthServer
+from src.core.webhook import OpenClawWebhook
+from src.core.task_router import TaskRouter
+from src.core.daily_sync import DailyNoteSync
+from src.core.events import EventBus, TRIGGER_SUCCESS, TRIGGER_FAILURE, MUTATION_APPLIED
+from src.integrations import Integration
+from src.nervous_system import NervousSystem
+from src.germinal_tasks import generate_tasks as germinal_generate
 
 logger = logging.getLogger("pulse")
 
@@ -40,10 +40,10 @@ logger = logging.getLogger("pulse")
 def _load_integration(name: str) -> Integration:
     """Load an integration by name or module path."""
     if name == "iris":
-        from pulse.src.integrations.iris import IrisIntegration
+        from src.integrations.iris import IrisIntegration
         return IrisIntegration()
     elif name == "default":
-        from pulse.src.integrations.default import DefaultIntegration
+        from src.integrations.default import DefaultIntegration
         return DefaultIntegration()
     else:
         # Try importing as a module path (e.g. "mypackage.integrations.custom")
@@ -59,7 +59,7 @@ def _load_integration(name: str) -> Integration:
             raise ImportError(f"No Integration subclass found in {name}")
         except ImportError as e:
             logger.warning(f"Could not load integration '{name}': {e}. Using default.")
-            from pulse.src.integrations.default import DefaultIntegration
+            from src.integrations.default import DefaultIntegration
             return DefaultIntegration()
 
 
@@ -570,7 +570,7 @@ class PulseDaemon:
 
             thalamus_recent = []
             try:
-                from pulse.src import thalamus
+                from src import thalamus
                 thalamus_recent = thalamus.read_recent(5)
             except Exception:
                 pass
@@ -679,7 +679,7 @@ class PulseDaemon:
 
                 # Broadcast to thalamus
                 try:
-                    from pulse.src import thalamus
+                    from src import thalamus
                     thalamus.append({
                         "source": "germinal_tasks",
                         "type": "tasks_generated",
