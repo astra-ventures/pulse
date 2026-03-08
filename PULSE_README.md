@@ -103,14 +103,15 @@ git clone https://github.com/YOUR_ORG/pulse.git
 cd pulse
 
 # Install
-pip install -r requirements.txt
+pip install -e .
 
 # Configure your agent
-cp config/pulse.example.yaml config/pulse.yaml
+mkdir -p ~/.pulse/config
+cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
 # Edit: set webhook_url to your OpenClaw gateway
 
 # Run
-python -m pulse  # starts the Pulse daemon with all Pulse modules
+python3 -m pulse.src  # starts the Pulse daemon with all Pulse modules
 ```
 
 After 30 seconds, your agent has a heartbeat. After an hour, it has a mood. After a day, it has a rhythm. After a week, it has a personality.

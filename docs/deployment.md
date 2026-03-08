@@ -29,11 +29,11 @@ Get Pulse running in production — from localhost testing to 24/7 cloud deploym
 
 ```bash
 # Clone or install
-git clone https://github.com/yourusername/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
-# Install dependencies
-pip install -r requirements.txt
+# Install
+pip install -e .
 
 # Or via pip (when published)
 pip install pulse-agent
@@ -43,10 +43,11 @@ pip install pulse-agent
 
 ```bash
 # Copy example config
-cp config/pulse.example.yaml config/pulse.yaml
+mkdir -p ~/.pulse/config
+cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
 
 # Edit required fields
-nano config/pulse.yaml
+nano ~/.pulse/config/pulse.yaml
 ```
 
 **Minimum required:**
@@ -63,7 +64,7 @@ workspace:
 
 ```bash
 # Foreground (for testing)
-python3 -m src
+python3 -m pulse.src
 
 # Or use the helper script
 ./bin/run.sh
@@ -82,7 +83,7 @@ curl http://localhost:9720/health
 
 ```bash
 # Manually spike a drive
-python3 -m src.cli spike goals 5.0 "Testing manual trigger"
+python3 -m pulse.src.cli spike goals 5.0 "Testing manual trigger"
 
 # Watch the logs — should trigger an agent turn within 30s
 ```
@@ -102,9 +103,9 @@ sudo su - pulse
 
 ```bash
 cd ~
-git clone https://github.com/yourusername/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
-pip install --user -r requirements.txt
+pip install --user -e .
 ```
 
 ### 3. Configure for Production
@@ -144,7 +145,7 @@ export PULSE_STATE_DIR=~/.pulse
 ### 5. Test Before Daemonizing
 
 ```bash
-python3 -m src
+python3 -m pulse.src
 # Let it run for 5 minutes, watch for errors
 # Ctrl+C to stop
 ```
@@ -234,7 +235,7 @@ Group=pulse
 WorkingDirectory=/home/pulse/pulse
 Environment="PULSE_HOOK_TOKEN=your-token"
 Environment="PULSE_CONFIG=/home/pulse/.pulse/config.yaml"
-ExecStart=/usr/bin/python3 -m src
+ExecStart=/usr/bin/python3 -m pulse.src
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
@@ -369,9 +370,9 @@ useradd -r -m -s /bin/bash pulse
 su - pulse
 
 # Install Pulse
-git clone https://github.com/yourusername/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
-pip3 install --user -r requirements.txt
+pip3 install --user -e .
 
 # Configure
 cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
@@ -382,7 +383,7 @@ nano ~/.pulse/config/pulse.yaml
 # If remote: https://your-openclaw.example.com/hooks/agent
 
 # Test
-python3 -m src
+python3 -m pulse.src
 ```
 
 **Daemonize with systemd** (see above).
@@ -468,7 +469,7 @@ Pulse will expose `/metrics` endpoint with:
 
 ```bash
 # Check config validity
-python3 -m src.cli doctor
+python3 -m pulse.src.cli doctor
 
 # Check PID lock
 rm ~/.pulse/pulse.pid
@@ -590,7 +591,7 @@ nano ~/.pulse/config/pulse.yaml
 # Change openclaw.webhook_url if needed
 
 # Start
-python3 -m src
+python3 -m pulse.src
 ```
 
 Your agent picks up exactly where it left off.

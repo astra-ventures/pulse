@@ -93,7 +93,7 @@ pip install pytest black
 pytest tests/
 
 # 5. Run Pulse locally
-python -m pulse --config config/pulse.example.yaml
+PULSE_CONFIG=config/pulse.example.yaml python3 -m pulse.src
 ```
 
 ---

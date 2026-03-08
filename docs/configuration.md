@@ -8,10 +8,11 @@ All configuration lives in `config/pulse.yaml` (or `~/.pulse/pulse.yaml` / `~/.p
 
 ```bash
 # Copy the example config
-cp config/pulse.example.yaml config/pulse.yaml
+mkdir -p ~/.pulse/config
+cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
 
 # Edit the required fields
-nano config/pulse.yaml
+nano ~/.pulse/config/pulse.yaml
 ```
 
 **Required:**
@@ -324,7 +325,7 @@ export PULSE_STATE_DIR=~/.pulse-custom
 Pulse checks startup and runtime diagnostics with:
 
 ```bash
-python3 -m src.cli doctor
+python3 -m pulse.src.cli doctor
 ```
 
 Checks:

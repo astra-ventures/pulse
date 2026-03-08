@@ -60,18 +60,19 @@ pip install pulse-agent
 # Or clone
 git clone https://github.com/astra-ventures/pulse.git
 cd pulse
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ## Quick Start
 
 ```bash
 # 1. Configure
-cp config/pulse.example.yaml config/pulse.yaml
-nano config/pulse.yaml  # set webhook_url + webhook_token
+mkdir -p ~/.pulse/config
+cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
+nano ~/.pulse/config/pulse.yaml  # set webhook_url + webhook_token
 
 # 2. Run
-python -m pulse
+python3 -m pulse.src
 
 # 3. Test
 curl http://localhost:9719/health

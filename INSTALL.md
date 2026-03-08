@@ -25,17 +25,18 @@ python3 --version  # Should show 3.11.x or higher
 git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
-# 2. Install dependencies
-pip3 install -r requirements.txt
+# 2. Install
+pip3 install -e .
 
-# 3. Copy example config
-cp config/pulse.example.yaml config/pulse.yaml
+# 3. Copy example config (recommended location)
+mkdir -p ~/.pulse/config
+cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
 
 # 4. Edit config (set your webhook URL + token)
-nano config/pulse.yaml  # or use your preferred editor
+nano ~/.pulse/config/pulse.yaml  # or use your preferred editor
 
 # 5. Run Pulse
-python3 -m src
+python3 -m pulse.src
 
 # 6. Verify (in another terminal)
 curl http://localhost:9720/health
@@ -55,7 +56,7 @@ curl http://localhost:9720/health
 **Option 1: Run manually**
 ```bash
 cd /path/to/pulse
-python3 -m src
+python3 -m pulse.src
 ```
 
 **Option 2: Run as LaunchAgent (starts on login)**
@@ -73,7 +74,7 @@ cat > ~/Library/LaunchAgents/ai.iris.pulse.plist <<EOF
     <array>
         <string>/usr/local/bin/python3</string>
         <string>-m</string>
-        <string>src</string>
+        <string>pulse.src</string>
     </array>
     <key>WorkingDirectory</key>
     <string>/Users/YOUR_USERNAME/pulse</string>
@@ -121,7 +122,7 @@ launchctl unload ~/Library/LaunchAgents/ai.iris.pulse.plist
 **Option 1: Run manually**
 ```bash
 cd /path/to/pulse
-python3 -m src
+python3 -m pulse.src
 ```
 
 **Option 2: Run as systemd service (starts on boot)**
@@ -141,7 +142,7 @@ After=network.target
 Type=simple
 User=YOUR_USERNAME
 WorkingDirectory=/home/YOUR_USERNAME/pulse
-ExecStart=/usr/bin/python3 -m src
+ExecStart=/usr/bin/python3 -m pulse.src
 Restart=always
 RestartSec=10
 StandardOutput=append:/home/YOUR_USERNAME/pulse/pulse.log
@@ -256,21 +257,21 @@ cd pulse
 python3.11 -m venv venv
 source venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install
+pip install -e .
 
 # Configure
-cp config/pulse.example.yaml config/pulse.yaml
-nano config/pulse.yaml
+cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
+nano ~/.pulse/config/pulse.yaml
 
 # Run
-python -m src
+python -m pulse.src
 ```
 
 **Run as systemd service:**
 Follow Linux systemd instructions above, but use:
 ```ini
-ExecStart=/home/YOUR_USERNAME/pulse/venv/bin/python -m src
+ExecStart=/home/YOUR_USERNAME/pulse/venv/bin/python -m pulse.src
 ```
 
 **Performance tips:**
@@ -296,7 +297,7 @@ cat ~/.openclaw/config.yaml | grep webhookToken
 
 **Test configuration:**
 ```bash
-python3 -m src.cli doctor
+python3 -m pulse.src.cli doctor
 ```
 
 ---
@@ -307,7 +308,7 @@ python3 -m src.cli doctor
 
 **Solution:** Install dependencies:
 ```bash
-pip3 install -r requirements.txt
+pip3 install -e .
 ```
 
 ### "Connection refused" when curling /health
