@@ -182,7 +182,7 @@ class PulseConfig:
             # Env override
             env_cfg = os.environ.get("PULSE_CONFIG")
             if env_cfg:
-                config_path = env_cfg
+                config_path = str(Path(env_cfg).expanduser())
             else:
                 # Search order: ./pulse.yaml, ~/.pulse/pulse.yaml, ~/.pulse/config/pulse.yaml, ~/.pulse/config.yaml, config/pulse.yaml
                 candidates = [

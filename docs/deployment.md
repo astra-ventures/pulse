@@ -110,8 +110,8 @@ pip install --user -r requirements.txt
 ### 3. Configure for Production
 
 ```bash
-cp config/pulse.example.yaml ~/.pulse/config.yaml
-nano ~/.pulse/config.yaml
+cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
+nano ~/.pulse/config/pulse.yaml
 ```
 
 **Production config recommendations:**
@@ -137,7 +137,7 @@ drives:
 ```bash
 # Add to ~/.bashrc or ~/.profile
 export PULSE_HOOK_TOKEN="your-secret-token"
-export PULSE_CONFIG=~/.pulse/config.yaml
+export PULSE_CONFIG=~/.pulse/config/pulse.yaml
 export PULSE_STATE_DIR=~/.pulse
 ```
 
@@ -374,8 +374,8 @@ cd pulse
 pip3 install --user -r requirements.txt
 
 # Configure
-cp config/pulse.example.yaml ~/.pulse/config.yaml
-nano ~/.pulse/config.yaml
+cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
+nano ~/.pulse/config/pulse.yaml
 
 # Set webhook URL to OpenClaw instance
 # If OpenClaw is on the same machine: http://localhost:8080/hooks/agent
@@ -586,7 +586,7 @@ scp pulse-backup.tar.gz newhost:~/
 tar xzf pulse-backup.tar.gz -C ~/
 
 # Update webhook URL
-nano ~/.pulse/config.yaml
+nano ~/.pulse/config/pulse.yaml
 # Change openclaw.webhook_url if needed
 
 # Start
