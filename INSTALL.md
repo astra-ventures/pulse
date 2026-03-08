@@ -264,7 +264,7 @@ cp config/pulse.example.yaml config/pulse.yaml
 nano config/pulse.yaml
 
 # Run
-python -m pulse
+python3 -m pulse
 ```
 
 **Run as systemd service:**
@@ -294,9 +294,9 @@ openclaw:
 cat ~/.openclaw/config.yaml | grep webhookToken
 ```
 
-**Test configuration:**
+**Test configuration / diagnose common issues:**
 ```bash
-python -m pulse --validate-config
+pulse doctor  # or: python3 -m pulse doctor
 ```
 
 ---

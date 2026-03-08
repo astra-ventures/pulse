@@ -321,18 +321,18 @@ export PULSE_STATE_DIR=~/.pulse-custom
 
 ## Config Validation
 
-Pulse validates config on startup:
+Pulse performs startup checks and includes a diagnostics command:
 
 ```bash
-pulse validate
+pulse doctor
 ```
 
-Checks:
-- Required fields present
-- Numeric ranges valid
-- File paths exist
-- Webhook URL reachable
-- Model API accessible (if `evaluator.mode: "model"`)
+Checks include:
+- Config file detection and YAML parse
+- `PULSE_HOOK_TOKEN`/`.pulse/.env` token availability
+- State/log path existence and write permissions
+- `LaunchAgent` presence (macOS)
+- Daemon/process status and local health endpoints
 
 ---
 

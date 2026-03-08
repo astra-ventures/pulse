@@ -29,12 +29,12 @@ Get Pulse running in production — from localhost testing to 24/7 cloud deploym
 
 ```bash
 # Clone or install
-git clone https://github.com/yourusername/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 
 # Install
-python -m pip install -e ".[dev]"  # local dev (includes tests)
-# or: python -m pip install .
+python3 -m pip install -e ".[dev]"  # local dev (includes tests)
+# or: python3 -m pip install .
 
 # Or via pip (when published)
 pip install pulse-agent
@@ -64,7 +64,7 @@ workspace:
 
 ```bash
 # Foreground (for testing)
-python -m pulse
+python3 -m pulse
 
 # Or use the helper script
 ./bin/run.sh
@@ -83,7 +83,7 @@ curl http://localhost:9720/health
 
 ```bash
 # Manually spike a drive
-python -m pulse spike goals 5.0 "Testing manual trigger"
+python3 -m pulse spike goals 5.0 "Testing manual trigger"
 
 # Watch the logs — should trigger an agent turn within 30s
 ```
@@ -103,9 +103,9 @@ sudo su - pulse
 
 ```bash
 cd ~
-git clone https://github.com/yourusername/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
-python -m pip install --user .
+python3 -m pip install --user .
 ```
 
 ### 3. Configure for Production
@@ -145,7 +145,7 @@ export PULSE_STATE_DIR=~/.pulse
 ### 5. Test Before Daemonizing
 
 ```bash
-python -m pulse
+python3 -m pulse
 # Let it run for 5 minutes, watch for errors
 # Ctrl+C to stop
 ```
@@ -370,7 +370,7 @@ useradd -r -m -s /bin/bash pulse
 su - pulse
 
 # Install Pulse
-git clone https://github.com/yourusername/pulse.git
+git clone https://github.com/astra-ventures/pulse.git
 cd pulse
 python3 -m pip install --user .
 
@@ -468,8 +468,8 @@ Pulse will expose `/metrics` endpoint with:
 ### Pulse won't start
 
 ```bash
-# Check config validity
-python -m pulse validate
+# Run diagnostics (config discovery + YAML parse + token checks)
+pulse doctor  # or: python3 -m pulse doctor
 
 # Check PID lock
 rm ~/.pulse/pulse.pid
@@ -591,7 +591,7 @@ nano ~/.pulse/config.yaml
 # Change openclaw.webhook_url if needed
 
 # Start
-python -m pulse
+pulse  # or: python3 -m pulse
 ```
 
 Your agent picks up exactly where it left off.
