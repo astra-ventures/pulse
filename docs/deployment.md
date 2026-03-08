@@ -468,7 +468,7 @@ Pulse will expose `/metrics` endpoint with:
 
 ```bash
 # Check config validity
-python -m pulse validate
+pulse doctor
 
 # Check PID lock
 rm ~/.pulse/pulse.pid

@@ -321,10 +321,10 @@ export PULSE_STATE_DIR=~/.pulse-custom
 
 ## Config Validation
 
-Pulse validates config on startup:
+Pulse checks startup and runtime diagnostics with:
 
 ```bash
-pulse validate
+pulse doctor
 ```
 
 Checks:

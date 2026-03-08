@@ -399,7 +399,7 @@ docker logs pulse
 
 **Common issues:**
 - Missing `.env` file → copy from `.env.example`
-- Invalid `config/pulse.yaml` → validate with `python -m pulse --validate-config` (run locally first)
+- Invalid `config/pulse.yaml` → validate with `pulse doctor` (run locally first)
 - Port 9720 already in use → change in docker-compose.yml
 
 ### Can't reach OpenClaw webhook

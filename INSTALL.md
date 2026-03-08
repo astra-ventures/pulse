@@ -296,7 +296,7 @@ cat ~/.openclaw/config.yaml | grep webhookToken
 
 **Test configuration:**
 ```bash
-python -m pulse --validate-config
+pulse doctor
 ```
 
 ---
