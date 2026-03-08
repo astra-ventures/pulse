@@ -18,6 +18,7 @@ Usage:
     pulse logs [n]            Show recent log lines
     pulse feedback <drives...>  Send turn feedback to Pulse (decays drive pressure)
     pulse health              Raw health check
+    pulse doctor              Diagnostic checks for common setup issues
 """
 
 import argparse
@@ -1365,6 +1366,7 @@ def cmd_help(args):
         ("pulse triggers [-n 20]", "Recent trigger history with success/failure and reasons"),
         ("pulse mutations [-n 20]", "Mutation audit log — every self-modification recorded"),
         ("pulse health", "Raw JSON from /health, /status, and /evolution endpoints"),
+        ("pulse doctor", "Read-only diagnostics for common setup/runtime issues"),
         ("pulse logs [-n 30]", "Colored log viewer (errors red, triggers magenta, mutations cyan)"),
         ("pulse feedback <drives...>", "Send turn feedback (decays drive pressure)"),
         ("pulse config", "Show current configuration from pulse.yaml"),
@@ -1428,6 +1430,118 @@ def cmd_health(args):
             console.print(json.dumps(data, indent=2, default=str))
         else:
             console.print(f"\n[red]{endpoint}: unreachable[/]")
+
+
+def cmd_doctor(args):
+    """Run diagnostic checks for common setup/runtime issues."""
+    import socket
+    import shutil
+    import platform
+
+    # We keep this command safe: read-only checks, no network except localhost.
+    checks = []
+
+    def add(name: str, ok: bool, detail: str = ""):
+        checks.append((name, ok, detail))
+
+    # ── Runtime / Python ─────────────────────────────────────────────────────
+    py = sys.version_info
+    add("Python", py >= (3, 9), f"{py.major}.{py.minor}.{py.micro}")
+    add("Platform", True, f"{platform.system()} {platform.release()}")
+
+    # ── pulse binary visibility ─────────────────────────────────────────────
+    pulse_bin = shutil.which("pulse")
+    add("pulse in PATH", bool(pulse_bin), pulse_bin or "not found")
+
+    # ── Config detection / parse ────────────────────────────────────────────
+    cfg_candidates = [
+        Path("pulse.yaml"),
+        Path("~/.pulse/pulse.yaml").expanduser(),
+        Path(__file__).parent.parent / "config" / "pulse.yaml",
+    ]
+    cfg_path = next((p for p in cfg_candidates if p.exists()), None)
+
+    if not cfg_path:
+        add("Config", False, "pulse.yaml not found (run: pulse init)")
+        cfg = None
+    else:
+        try:
+            import yaml
+            cfg = yaml.safe_load(cfg_path.read_text()) or {}
+            add("Config", True, str(cfg_path))
+        except Exception as e:
+            add("Config", False, f"Failed to parse {cfg_path}: {e}")
+            cfg = None
+
+    # ── Token presence ──────────────────────────────────────────────────────
+    env_file = Path("~/.pulse/.env").expanduser()
+    token_env = os.environ.get("PULSE_HOOK_TOKEN") or os.environ.get("OPENCLAW_HOOKS_TOKEN")
+    token_ok = bool(token_env) or env_file.exists()
+    token_detail = "env" if token_env else ("~/.pulse/.env" if env_file.exists() else "missing")
+    add("Webhook token", token_ok, token_detail)
+
+    # ── State/log dirs ──────────────────────────────────────────────────────
+    state_dir = _DEFAULT_STATE_DIR
+    logs_dir = LOG_FILE.parent
+    add("State dir", state_dir.exists(), str(state_dir))
+    add("State dir writable", state_dir.exists() and os.access(state_dir, os.W_OK), "")
+    add("Logs dir", logs_dir.exists(), str(logs_dir))
+    add("Logs dir writable", logs_dir.exists() and os.access(logs_dir, os.W_OK), "")
+
+    # ── LaunchAgent ─────────────────────────────────────────────────────────
+    add("LaunchAgent", PLIST.exists(), str(PLIST) if PLIST.exists() else "not installed")
+
+    # ── Daemon + localhost health ───────────────────────────────────────────
+    running, pid = _is_running()
+    add("Daemon", running, f"pid {pid}" if pid else "stopped")
+
+    # Port reachability (localhost only)
+    port = _port()
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=1):
+            port_open = True
+    except Exception:
+        port_open = False
+
+    if running:
+        add("Health port", port_open, f"127.0.0.1:{port}")
+        health = _get("/health")
+        add("/health", bool(health), "ok" if health else "unreachable")
+        status = _get("/status")
+        add("/status", bool(status), "ok" if status else "unreachable")
+    else:
+        # If not running, port open would be surprising (another process?)
+        add("Health port", not port_open, f"127.0.0.1:{port}" + (" (in use?)" if port_open else ""))
+
+    # ── Print results ───────────────────────────────────────────────────────
+    ok_count = sum(1 for _, ok, _ in checks if ok)
+    total = len(checks)
+    title = "🩺 pulse doctor"
+    border = "green" if ok_count == total else "yellow" if ok_count >= total - 2 else "red"
+
+    console.print()
+    console.print(Panel(
+        f"Checks passed: [bold]{ok_count}/{total}[/]\n"
+        "This command performs read-only diagnostics (localhost only).",
+        title=title,
+        border_style=border,
+    ))
+
+    table = Table(box=box.SIMPLE_HEAVY, padding=(0, 1), show_edge=False)
+    table.add_column("Check", style="bold")
+    table.add_column("Status")
+    table.add_column("Detail", overflow="fold")
+
+    for name, ok, detail in checks:
+        status = "[green]✓[/]" if ok else "[red]✗[/]"
+        table.add_row(name, status, detail or "—")
+
+    console.print(table)
+    console.print()
+
+    if not cfg_path:
+        console.print("[dim]Tip: run [bold]pulse init[/] to generate config + LaunchAgent.[/]")
+        console.print()
 
 
 def cmd_feedback(args):
@@ -1527,6 +1641,9 @@ def main():
     # config
     sub.add_parser("config", help="Show current configuration")
 
+    # doctor
+    sub.add_parser("doctor", help="Run diagnostic checks for common setup issues")
+
     # start/stop/restart
     sub.add_parser("start", help="Start the daemon")
     sub.add_parser("stop", help="Stop the daemon")
@@ -1607,6 +1724,7 @@ def main():
         "spike": cmd_spike,
         "decay": cmd_decay,
         "config": cmd_config,
+        "doctor": cmd_doctor,
         "start": cmd_start,
         "stop": cmd_stop,
         "restart": cmd_restart,
