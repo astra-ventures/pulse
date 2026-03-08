@@ -17,40 +17,71 @@ from pulse.src import thalamus
 def tmp_broadcast(tmp_path):
     """Redirect broadcast to temp dir."""
     bf = tmp_path / "thalamus.jsonl"
-    with patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield bf
 
 
 class TestAppend:
     def test_basic_append(self):
-        entry = {"source": "test", "type": "state", "salience": 0.5, "data": {"msg": "hello"}}
+        entry = {
+            "source": "test",
+            "type": "state",
+            "salience": 0.5,
+            "data": {"msg": "hello"},
+        }
         result = thalamus.append(entry)
         assert "ts" in result
         assert thalamus.read_recent(1) == [result]
 
     def test_preserves_existing_ts(self):
-        entry = {"ts": 12345, "source": "test", "type": "state", "salience": 0.5, "data": {}}
+        entry = {
+            "ts": 12345,
+            "source": "test",
+            "type": "state",
+            "salience": 0.5,
+            "data": {},
+        }
         result = thalamus.append(entry)
         assert result["ts"] == 12345
 
     def test_multiple_appends(self):
         for i in range(5):
-            thalamus.append({"source": "test", "type": "state", "salience": 0.1, "data": {"i": i}})
+            thalamus.append(
+                {"source": "test", "type": "state", "salience": 0.1, "data": {"i": i}}
+            )
         assert len(thalamus.read_recent(10)) == 5
 
 
 class TestRead:
     def test_read_recent(self):
         for i in range(20):
-            thalamus.append({"ts": i, "source": "test", "type": "state", "salience": 0.1, "data": {"i": i}})
+            thalamus.append(
+                {
+                    "ts": i,
+                    "source": "test",
+                    "type": "state",
+                    "salience": 0.1,
+                    "data": {"i": i},
+                }
+            )
         recent = thalamus.read_recent(5)
         assert len(recent) == 5
         assert recent[0]["data"]["i"] == 15
 
     def test_read_since(self):
         for i in range(10):
-            thalamus.append({"ts": i * 1000, "source": "test", "type": "state", "salience": 0.1, "data": {}})
+            thalamus.append(
+                {
+                    "ts": i * 1000,
+                    "source": "test",
+                    "type": "state",
+                    "salience": 0.1,
+                    "data": {},
+                }
+            )
         result = thalamus.read_since(5000)
         assert len(result) == 5
 
@@ -74,14 +105,26 @@ class TestRead:
 
 class TestRotation:
     def test_rotation_triggers(self, tmp_broadcast):
-        with patch.object(thalamus, "MAX_ENTRIES", 20), \
-             patch.object(thalamus, "KEEP_ENTRIES", 10):
+        with (
+            patch.object(thalamus, "MAX_ENTRIES", 20),
+            patch.object(thalamus, "KEEP_ENTRIES", 10),
+        ):
             for i in range(25):
-                thalamus.append({"ts": i, "source": "test", "type": "state", "salience": 0.1, "data": {"i": i}})
+                thalamus.append(
+                    {
+                        "ts": i,
+                        "source": "test",
+                        "type": "state",
+                        "salience": 0.1,
+                        "data": {"i": i},
+                    }
+                )
             remaining = thalamus.read_recent(100)
             assert len(remaining) <= 20  # After rotation, kept entries + new ones
             # Archived entries should exist
-            archives = list(thalamus._DEFAULT_STATE_DIR.glob("broadcast-archive-*.jsonl"))
+            archives = list(
+                thalamus._DEFAULT_STATE_DIR.glob("broadcast-archive-*.jsonl")
+            )
             assert len(archives) >= 1
 
 
@@ -91,7 +134,14 @@ class TestConcurrency:
 
         def writer(n):
             for i in range(10):
-                thalamus.append({"source": f"thread-{n}", "type": "state", "salience": 0.1, "data": {"i": i}})
+                thalamus.append(
+                    {
+                        "source": f"thread-{n}",
+                        "type": "state",
+                        "salience": 0.1,
+                        "data": {"i": i},
+                    }
+                )
             results.append(n)
 
         threads = [threading.Thread(target=writer, args=(i,)) for i in range(4)]

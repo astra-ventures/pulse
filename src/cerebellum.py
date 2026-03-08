@@ -41,7 +41,11 @@ class Cerebellum:
             "task_history": {},  # task_name -> list of {input_hash, output_hash, output_pattern, tokens_used, ts}
             "graduated_tasks": {},  # task_name -> {script_path, graduated_at}
             "habit_candidates": {},  # task_name -> {first_detected, matching_count}
-            "savings_tracker": {"tokens_saved_total": 0, "tokens_saved_today": 0, "today_date": ""},
+            "savings_tracker": {
+                "tokens_saved_total": 0,
+                "tokens_saved_today": 0,
+                "today_date": "",
+            },
             "escalation_log": [],
         }
 
@@ -49,7 +53,9 @@ class Cerebellum:
         _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
         _DEFAULT_STATE_FILE.write_text(json.dumps(self.state, indent=2))
 
-    def track_execution(self, task_name: str, input_hash: str, output_pattern: str, tokens_used: int):
+    def track_execution(
+        self, task_name: str, input_hash: str, output_pattern: str, tokens_used: int
+    ):
         """Record a task execution for habit detection."""
         history = self.state["task_history"]
         if task_name not in history:
@@ -66,7 +72,11 @@ class Cerebellum:
         history[task_name] = history[task_name][-MAX_TASK_HISTORY:]
         self._save_state()
 
-    def detect_habits(self, min_repetitions: int = DEFAULT_MIN_REPS, similarity_threshold: float = DEFAULT_SIMILARITY) -> list:
+    def detect_habits(
+        self,
+        min_repetitions: int = DEFAULT_MIN_REPS,
+        similarity_threshold: float = DEFAULT_SIMILARITY,
+    ) -> list:
         """Find tasks that consistently produce similar outputs."""
         candidates = []
         for task_name, executions in self.state["task_history"].items():
@@ -80,24 +90,28 @@ class Cerebellum:
             patterns = [e["output_pattern"] for e in recent]
             base = patterns[0]
             similarities = [
-                SequenceMatcher(None, base, p).ratio()
-                for p in patterns[1:]
+                SequenceMatcher(None, base, p).ratio() for p in patterns[1:]
             ]
             avg_sim = sum(similarities) / len(similarities) if similarities else 0
 
             if avg_sim >= similarity_threshold:
                 avg_tokens = sum(e["tokens_used"] for e in recent) / len(recent)
-                candidates.append({
-                    "task_name": task_name,
-                    "similarity": round(avg_sim, 3),
-                    "executions": len(executions),
-                    "avg_tokens": round(avg_tokens),
-                })
+                candidates.append(
+                    {
+                        "task_name": task_name,
+                        "similarity": round(avg_sim, 3),
+                        "executions": len(executions),
+                        "avg_tokens": round(avg_tokens),
+                    }
+                )
 
                 # Track as candidate for auto-graduation
                 hc = self.state["habit_candidates"]
                 if task_name not in hc:
-                    hc[task_name] = {"first_detected": int(time.time() * 1000), "matching_count": 1}
+                    hc[task_name] = {
+                        "first_detected": int(time.time() * 1000),
+                        "matching_count": 1,
+                    }
                 else:
                     hc[task_name]["matching_count"] += 1
 
@@ -124,12 +138,14 @@ class Cerebellum:
         self.state["habit_candidates"].pop(task_name, None)
         self._save_state()
 
-        thalamus.append({
-            "source": "cerebellum",
-            "type": "habit_graduated",
-            "salience": 0.6,
-            "data": {"task_name": task_name, "script_path": str(script_path)},
-        })
+        thalamus.append(
+            {
+                "source": "cerebellum",
+                "type": "habit_graduated",
+                "salience": 0.6,
+                "data": {"task_name": task_name, "script_path": str(script_path)},
+            }
+        )
         return str(script_path)
 
     def should_use_habit(self, task_name: str) -> tuple[bool, Optional[str]]:
@@ -153,12 +169,14 @@ class Cerebellum:
         self.state["escalation_log"] = self.state["escalation_log"][-50:]
         self._save_state()
 
-        thalamus.append({
-            "source": "cerebellum",
-            "type": "habit_escalated",
-            "salience": 0.8,
-            "data": entry,
-        })
+        thalamus.append(
+            {
+                "source": "cerebellum",
+                "type": "habit_escalated",
+                "salience": 0.8,
+                "data": entry,
+            }
+        )
 
     def record_savings(self, tokens_saved: int):
         """Record tokens saved by using a habit instead of LLM."""

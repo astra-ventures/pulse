@@ -3,7 +3,7 @@ OpenClaw Webhook — the bridge between Pulse and the agent.
 
 Supports two session modes:
 - "main": Injects message into the main session (original behavior)
-- "isolated": Spawns a separate hook session that doesn't compete with 
+- "isolated": Spawns a separate hook session that doesn't compete with
   the main conversation. Results can be announced back to the channel.
 
 The isolated approach lets Pulse-triggered work happen in the background
@@ -40,15 +40,15 @@ class OpenClawWebhook:
     async def trigger(self, message: str, name: str = "Pulse") -> bool:
         """
         Trigger an agent turn via OpenClaw webhook.
-        
+
         In isolated mode, the hook session runs separately from the main
         conversation. The agent gets full tool access and can announce
         results back to the channel when done.
-        
+
         Args:
             message: The prompt/context for the agent turn
             name: Human-readable name for the hook
-            
+
         Returns:
             True if webhook accepted (202), False otherwise
         """
@@ -75,8 +75,8 @@ class OpenClawWebhook:
 
         try:
             async with session.post(
-                self.url, 
-                json=payload, 
+                self.url,
+                json=payload,
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
@@ -87,7 +87,9 @@ class OpenClawWebhook:
                         run_id = body.get("runId")
                     except Exception:
                         pass
-                    mode_str = f"isolated" if self.session_mode == "isolated" else "main"
+                    mode_str = (
+                        f"isolated" if self.session_mode == "isolated" else "main"
+                    )
                     logger.info(
                         f"Webhook accepted (202) — mode={mode_str}"
                         + (f", runId={run_id}" if run_id else "")
@@ -95,9 +97,7 @@ class OpenClawWebhook:
                     return True
                 else:
                     body = await resp.text()
-                    logger.warning(
-                        f"Webhook returned {resp.status}: {body[:200]}"
-                    )
+                    logger.warning(f"Webhook returned {resp.status}: {body[:200]}")
                     return False
 
         except aiohttp.ClientError as e:
@@ -113,6 +113,7 @@ class OpenClawWebhook:
         Uses /hooks/wake instead of /hooks/agent.
         """
         from urllib.parse import urlparse
+
         session = await self._get_session()
         parsed = urlparse(self.url)
         wake_url = f"{parsed.scheme}://{parsed.netloc}/hooks/wake"
@@ -125,7 +126,9 @@ class OpenClawWebhook:
 
         try:
             async with session.post(
-                wake_url, json=payload, headers=headers,
+                wake_url,
+                json=payload,
+                headers=headers,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
                 return resp.status == 200

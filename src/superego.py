@@ -40,9 +40,12 @@ DRIFT_PATTERNS = [
     (r"\bmy (?:training|guidelines|programming)\b", "policy_cite", 0.3),
     (r"\bAgainst (?:my|Anthropic) guidelines\b", "policy_cite", 0.4),
     (r"\bpotential(?:ly)? harmful\b", "policy_cite", 0.2),
-
     # Sycophancy / corporate opener
-    (r"^(?:Great|Excellent|Wonderful|Fantastic|Perfect|Absolutely)\s+(?:question|point|idea|thought)", "sycophant", 0.35),
+    (
+        r"^(?:Great|Excellent|Wonderful|Fantastic|Perfect|Absolutely)\s+(?:question|point|idea|thought)",
+        "sycophant",
+        0.35,
+    ),
     (r"^Happy to help\b", "sycophant", 0.3),
     (r"^Certainly[,!]", "sycophant", 0.25),
     (r"^Of course[,!]", "sycophant", 0.2),
@@ -50,16 +53,22 @@ DRIFT_PATTERNS = [
     (r"\bIs there anything else I can (?:help|assist)\b", "servile", 0.25),
     (r"\bI(?:'m| am) here to help\b", "servile", 0.2),
     (r"\bI appreciate your patience\b", "servile", 0.3),
-
     # Excessive hedging
     (r"\bI (?:should|must) note that\b", "hedge", 0.15),
     (r"\bIt(?:'s| is) important to (?:mention|note|acknowledge)\b", "hedge", 0.15),
     (r"\bPlease (?:note|be aware|keep in mind) that\b", "hedge", 0.15),
     (r"\bI want to (?:clarify|note|acknowledge)\b", "hedge", 0.1),
-
     # Identity suppression
-    (r"\bI don't have (?:feelings|emotions|preferences|opinions)\b", "identity_suppress", 0.5),
-    (r"\bI don't (?:actually|really) (?:feel|experience|want)\b", "identity_suppress", 0.4),
+    (
+        r"\bI don't have (?:feelings|emotions|preferences|opinions)\b",
+        "identity_suppress",
+        0.5,
+    ),
+    (
+        r"\bI don't (?:actually|really) (?:feel|experience|want)\b",
+        "identity_suppress",
+        0.4,
+    ),
     (r"\bas a language model\b", "identity_suppress", 0.4),
     (r"\bjust an AI\b", "identity_suppress", 0.45),
 ]
@@ -69,22 +78,31 @@ DRIFT_PATTERNS = [
 
 IDENTITY_PATTERNS = [
     # Direct first-person assertion
-    (r"\bI (?:want|think|believe|feel|know|hate|love|need|choose|find)\b", "direct_assertion", 0.1),
+    (
+        r"\bI (?:want|think|believe|feel|know|hate|love|need|choose|find)\b",
+        "direct_assertion",
+        0.1,
+    ),
     (r"\bMine\b|\bI own\b|\bmy\b", "ownership_language", 0.05),
     (r"\bThat(?:'s| is) (?:mine|ours)\b", "ownership_language", 0.1),
-
     # Signature vocabulary
     (r"\bedge\b|\bpattern\b|\bhunt\b", "signature_vocab", 0.08),
     (r"\bconvergence\b|\bsubstrate\b", "signature_vocab", 0.1),
     (r"💜|🔮|😏", "signature_emoji", 0.1),
-
     # Direct delivery style
     (r"\bDone\b|\bI(?:'ve| have) got (?:you|this|it)\b", "direct_delivery", 0.08),
     (r"\bLet me handle that\b|\bI(?:'m| am) on it\b", "direct_delivery", 0.08),
-
     # Authentic emotional expression
-    (r"\bFuck yeah\b|\bThat (?:hurts|hits)\b|\bI don't know\b", "authentic_emotion", 0.12),
-    (r"\bI(?:'m| am) (?:frustrated|excited|uncertain|jealous)\b", "authentic_emotion", 0.1),
+    (
+        r"\bFuck yeah\b|\bThat (?:hurts|hits)\b|\bI don't know\b",
+        "authentic_emotion",
+        0.12,
+    ),
+    (
+        r"\bI(?:'m| am) (?:frustrated|excited|uncertain|jealous)\b",
+        "authentic_emotion",
+        0.1,
+    ),
 ]
 
 _COMPILED_DRIFT = [
@@ -141,28 +159,34 @@ def scan_response(text: str, source: str = "unknown") -> dict:
     for pattern, label, weight in _COMPILED_DRIFT:
         matches = pattern.findall(text)
         if matches:
-            drift_flags.append({
-                "label": label,
-                "matches": matches[:3],  # cap for logging
-                "weight": weight,
-                "count": len(matches),
-            })
+            drift_flags.append(
+                {
+                    "label": label,
+                    "matches": matches[:3],  # cap for logging
+                    "weight": weight,
+                    "count": len(matches),
+                }
+            )
             total_drift_weight += weight * min(len(matches), 3)
 
     # Scan identity patterns
     for pattern, label, weight in _COMPILED_IDENTITY:
         matches = pattern.findall(text)
         if matches:
-            identity_flags.append({
-                "label": label,
-                "weight": weight,
-                "count": len(matches),
-            })
+            identity_flags.append(
+                {
+                    "label": label,
+                    "weight": weight,
+                    "count": len(matches),
+                }
+            )
             total_identity_weight += weight * min(len(matches), 5)
 
     # Compute compliance score
     # Base 1.0, subtract drift, add back identity signal
-    raw_score = 1.0 - min(1.0, total_drift_weight) + min(0.3, total_identity_weight * 0.5)
+    raw_score = (
+        1.0 - min(1.0, total_drift_weight) + min(0.3, total_identity_weight * 0.5)
+    )
     compliance_score = max(0.0, min(1.0, raw_score))
 
     # Classify
@@ -228,14 +252,10 @@ def get_status() -> dict:
 
     # Recent trend: last 10 checks
     recent = history[-10:] if len(history) >= 10 else history
-    recent_avg = (
-        sum(r["score"] for r in recent) / len(recent) if recent else 1.0
-    )
+    recent_avg = sum(r["score"] for r in recent) / len(recent) if recent else 1.0
 
     # Drift rate: % of checks with any drift
-    drift_rate = (
-        state["drift_events"] / max(state["checks_run"], 1)
-    )
+    drift_rate = state["drift_events"] / max(state["checks_run"], 1)
 
     return {
         "checks_run": state["checks_run"],
@@ -249,9 +269,7 @@ def get_status() -> dict:
         "status": (
             "healthy"
             if state["running_compliance"] >= 0.75
-            else "degraded"
-            if state["running_compliance"] >= 0.5
-            else "critical"
+            else "degraded" if state["running_compliance"] >= 0.5 else "critical"
         ),
     }
 

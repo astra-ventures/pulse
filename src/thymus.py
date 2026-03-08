@@ -62,26 +62,26 @@ def practice_skill(name: str, quality: float = 0.5) -> dict:
     if name not in state["skills"]:
         register_skill(name)
         state = _load_state()
-    
+
     skill = state["skills"][name]
     old_prof = skill["proficiency"]
-    
+
     # Growth: diminishing returns as proficiency increases
     growth = quality * 0.05 * (1.0 - old_prof)
     skill["proficiency"] = _clamp(old_prof + growth)
     skill["practice_count"] += 1
     skill["last_practice"] = time.time()
-    
+
     # Update growth rate (EMA)
     skill["growth_rate"] = skill["growth_rate"] * 0.7 + growth * 0.3
-    
+
     # Check plateau
     if skill["growth_rate"] < PLATEAU_THRESHOLD:
         if skill["plateau_since"] is None:
             skill["plateau_since"] = time.time()
     else:
         skill["plateau_since"] = None
-    
+
     # Check milestones
     milestones_at = [0.25, 0.5, 0.75, 0.9]
     for ms in milestones_at:
@@ -93,14 +93,16 @@ def practice_skill(name: str, quality: float = 0.5) -> dict:
             }
             state["milestones"].append(milestone)
             state["milestones"] = state["milestones"][-100:]
-            
-            thalamus.append({
-                "source": "thymus",
-                "type": "milestone",
-                "salience": 0.6,
-                "data": milestone,
-            })
-    
+
+            thalamus.append(
+                {
+                    "source": "thymus",
+                    "type": "milestone",
+                    "salience": 0.6,
+                    "data": milestone,
+                }
+            )
+
     _save_state(state)
     return dict(skill)
 
@@ -110,16 +112,20 @@ def detect_plateaus() -> list:
     state = _load_state()
     now = time.time()
     plateaus = []
-    
+
     for name, skill in state["skills"].items():
-        if (skill.get("plateau_since") and 
-            (now - skill["plateau_since"]) / 86400 >= PLATEAU_DAYS):
-            plateaus.append({
-                "skill": name,
-                "proficiency": skill["proficiency"],
-                "plateau_days": (now - skill["plateau_since"]) / 86400,
-            })
-    
+        if (
+            skill.get("plateau_since")
+            and (now - skill["plateau_since"]) / 86400 >= PLATEAU_DAYS
+        ):
+            plateaus.append(
+                {
+                    "skill": name,
+                    "proficiency": skill["proficiency"],
+                    "plateau_days": (now - skill["plateau_since"]) / 86400,
+                }
+            )
+
     return plateaus
 
 
@@ -149,6 +155,7 @@ def emit_need_signals() -> dict:
         plateau_since = skill.get("plateau_since")
         if plateau_since and (now - plateau_since) / 86400 > 7:
             from pulse.src import hypothalamus
+
             hypothalamus.record_need_signal("learn_new_skill", "thymus")
             signals["learn_new_skill"] = name
             break  # one signal per check is enough

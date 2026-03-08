@@ -27,9 +27,11 @@ logger = logging.getLogger("pulse.drive_evolution")
 
 # ─── Configuration ───────────────────────────────────────────
 
+
 @dataclass
 class EvolutionConfig:
     """Configuration for drive evolution."""
+
     # How many evaluations between weight recalculations
     evolution_interval: int = 10
     # Rolling history window (max records kept per drive)
@@ -50,16 +52,18 @@ class EvolutionConfig:
 
 # ─── Data Structures ────────────────────────────────────────
 
+
 @dataclass
 class EvaluationRecord:
     """Record of a single drive trigger + outcome."""
+
     timestamp: float
     drive_name: str
-    triggered: bool           # Did this drive cause the trigger?
-    success: bool             # Did the session produce good work?
-    quality_score: float      # 0.0-1.0 quality assessment
-    loop_average: float       # CORTEX loop average score (0-10 normalized to 0-1)
-    context: str = ""         # Brief description of what happened
+    triggered: bool  # Did this drive cause the trigger?
+    success: bool  # Did the session produce good work?
+    quality_score: float  # 0.0-1.0 quality assessment
+    loop_average: float  # CORTEX loop average score (0-10 normalized to 0-1)
+    context: str = ""  # Brief description of what happened
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -72,6 +76,7 @@ class EvaluationRecord:
 @dataclass
 class DrivePerformance:
     """Aggregated performance metrics for a single drive."""
+
     drive_name: str
     total_triggers: int = 0
     successful_triggers: int = 0
@@ -103,6 +108,7 @@ class DrivePerformance:
 
 # ─── Main Engine ─────────────────────────────────────────────
 
+
 class Plasticity:
     """
     Tracks drive performance and evolves weights over time.
@@ -113,7 +119,11 @@ class Plasticity:
     3. evolve() recalculates optimal weights and writes them back
     """
 
-    def __init__(self, config: Optional[EvolutionConfig] = None, audit_log: Optional[AuditLog] = None):
+    def __init__(
+        self,
+        config: Optional[EvolutionConfig] = None,
+        audit_log: Optional[AuditLog] = None,
+    ):
         self.config = config or EvolutionConfig()
         self.state_file = Path(self.config.state_file).expanduser()
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
@@ -142,7 +152,9 @@ class Plasticity:
                 self.history[drive_name] = [
                     EvaluationRecord.from_dict(r) for r in records
                 ]
-            logger.info(f"Loaded drive performance state: {self.evaluation_count} evaluations tracked")
+            logger.info(
+                f"Loaded drive performance state: {self.evaluation_count} evaluations tracked"
+            )
         except (json.JSONDecodeError, OSError, TypeError) as e:
             logger.warning(f"Failed to load drive performance state: {e}")
 
@@ -152,7 +164,7 @@ class Plasticity:
             "evaluation_count": self.evaluation_count,
             "last_evolution_time": self.last_evolution_time,
             "history": {
-                name: [r.to_dict() for r in records[-self.config.history_window:]]
+                name: [r.to_dict() for r in records[-self.config.history_window :]]
                 for name, records in self.history.items()
             },
         }
@@ -201,7 +213,9 @@ class Plasticity:
 
         # Trim to window
         if len(self.history[drive_name]) > self.config.history_window:
-            self.history[drive_name] = self.history[drive_name][-self.config.history_window:]
+            self.history[drive_name] = self.history[drive_name][
+                -self.config.history_window :
+            ]
 
         self.evaluation_count += 1
         self._save_state()
@@ -217,7 +231,9 @@ class Plasticity:
             return self.evolve()
         return None
 
-    def evolve(self, current_weights: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    def evolve(
+        self, current_weights: Optional[Dict[str, float]] = None
+    ) -> Dict[str, Any]:
         """
         Recalculate optimal weights based on performance history.
 
@@ -260,20 +276,24 @@ class Plasticity:
                     "before": round(current_w, 4),
                     "after": round(new_weight, 4),
                     "delta": round(new_weight - current_w, 4),
-                    "reasoning": self._generate_reasoning(drive_name, perf, current_w, new_weight),
+                    "reasoning": self._generate_reasoning(
+                        drive_name, perf, current_w, new_weight
+                    ),
                 }
                 results["changes"].append(change)
 
                 # Audit log
-                self.audit.record(MutationRecord(
-                    timestamp=time.time(),
-                    mutation_type="drive_evolution",
-                    target=f"drives.{drive_name}.weight",
-                    before=round(current_w, 4),
-                    after=round(new_weight, 4),
-                    reason=change["reasoning"],
-                    source="drive_evolution",
-                ))
+                self.audit.record(
+                    MutationRecord(
+                        timestamp=time.time(),
+                        mutation_type="drive_evolution",
+                        target=f"drives.{drive_name}.weight",
+                        before=round(current_w, 4),
+                        after=round(new_weight, 4),
+                        reason=change["reasoning"],
+                        source="drive_evolution",
+                    )
+                )
 
         self._save_state()
 
@@ -282,13 +302,17 @@ class Plasticity:
                 f"Drive evolution cycle complete: {len(results['changes'])} weight changes"
             )
             for c in results["changes"]:
-                logger.info(f"  {c['drive']}: {c['before']} → {c['after']} ({c['reasoning']})")
+                logger.info(
+                    f"  {c['drive']}: {c['before']} → {c['after']} ({c['reasoning']})"
+                )
         else:
             logger.info("Drive evolution cycle complete: no changes needed")
 
         return results
 
-    def _calculate_performance(self, drive_name: str, records: List[EvaluationRecord]) -> DrivePerformance:
+    def _calculate_performance(
+        self, drive_name: str, records: List[EvaluationRecord]
+    ) -> DrivePerformance:
         """Calculate aggregated performance metrics from history."""
         perf = DrivePerformance(drive_name=drive_name)
         for r in records:
@@ -301,7 +325,9 @@ class Plasticity:
                 perf.total_quality += r.quality_score
         return perf
 
-    def _calculate_new_weight(self, drive_name: str, current: float, perf: DrivePerformance) -> float:
+    def _calculate_new_weight(
+        self, drive_name: str, current: float, perf: DrivePerformance
+    ) -> float:
         """
         Calculate the new weight for a drive based on performance.
 
@@ -317,9 +343,9 @@ class Plasticity:
             return current
 
         composite = (
-            0.4 * perf.true_positive_rate +
-            0.3 * perf.average_quality +
-            0.3 * (1.0 - perf.false_positive_rate)
+            0.4 * perf.true_positive_rate
+            + 0.3 * perf.average_quality
+            + 0.3 * (1.0 - perf.false_positive_rate)
         )
 
         # Dead zone: 0.4-0.6 = no change
@@ -335,7 +361,10 @@ class Plasticity:
             raw_delta = (composite - 0.4) * 0.5  # Will be negative
 
         # Clamp to max delta per cycle
-        delta = max(-self.config.max_delta_per_cycle, min(self.config.max_delta_per_cycle, raw_delta))
+        delta = max(
+            -self.config.max_delta_per_cycle,
+            min(self.config.max_delta_per_cycle, raw_delta),
+        )
 
         new_weight = current + delta
 
@@ -351,8 +380,13 @@ class Plasticity:
             return self.config.protected_min_weight
         return self.config.min_weight
 
-    def _generate_reasoning(self, drive_name: str, perf: DrivePerformance,
-                            old_weight: float, new_weight: float) -> str:
+    def _generate_reasoning(
+        self,
+        drive_name: str,
+        perf: DrivePerformance,
+        old_weight: float,
+        new_weight: float,
+    ) -> str:
         """Generate human-readable reasoning for a weight change."""
         direction = "increased" if new_weight > old_weight else "decreased"
         parts = [
@@ -388,8 +422,7 @@ class Plasticity:
         Returns evolution results including applied changes.
         """
         current_weights = {
-            name: drive.weight
-            for name, drive in drive_engine.drives.items()
+            name: drive.weight for name, drive in drive_engine.drives.items()
         }
 
         results = self.evolve(current_weights)

@@ -65,9 +65,13 @@ class Amygdala:
         _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
         _DEFAULT_STATE_FILE.write_text(json.dumps(self.state, indent=2))
 
-    def register_threat_pattern(self, name: str, detector: Callable, severity: float, action: str):
+    def register_threat_pattern(
+        self, name: str, detector: Callable, severity: float, action: str
+    ):
         """Register a new threat detector."""
-        self.patterns[name] = ThreatPattern(name=name, detector=detector, severity=severity, action=action)
+        self.patterns[name] = ThreatPattern(
+            name=name, detector=detector, severity=severity, action=action
+        )
         if name not in self.state["patterns_registered"]:
             self.state["patterns_registered"].append(name)
             self._save_state()
@@ -97,7 +101,12 @@ class Amygdala:
                 )
 
         if best is None:
-            best = AmygdalaResponse(threat_level=0.0, threat_type="none", action="none", reasoning="No threats detected")
+            best = AmygdalaResponse(
+                threat_level=0.0,
+                threat_type="none",
+                action="none",
+                reasoning="No threats detected",
+            )
 
         # Log to history and thalamus if threat detected
         if best.threat_level > 0.0:
@@ -115,12 +124,14 @@ class Amygdala:
                 self.state["active_threats"].append(entry)
 
             self._save_state()
-            thalamus.append({
-                "source": "amygdala",
-                "type": "threat",
-                "salience": best.threat_level,
-                "data": entry,
-            })
+            thalamus.append(
+                {
+                    "source": "amygdala",
+                    "type": "threat",
+                    "salience": best.threat_level,
+                    "data": entry,
+                }
+            )
 
         return best
 
@@ -131,27 +142,33 @@ class Amygdala:
     def resolve_threat(self, threat_type: str):
         """Remove a threat from active list."""
         self.state["active_threats"] = [
-            t for t in self.state["active_threats"] if t.get("threat_type") != threat_type
+            t
+            for t in self.state["active_threats"]
+            if t.get("threat_type") != threat_type
         ]
         self._save_state()
 
     def log_false_positive(self, threat_type: str, reason: str):
         """Log a false positive for tuning."""
-        self.state["false_positive_log"].append({
-            "ts": int(time.time() * 1000),
-            "threat_type": threat_type,
-            "reason": reason,
-        })
+        self.state["false_positive_log"].append(
+            {
+                "ts": int(time.time() * 1000),
+                "threat_type": threat_type,
+                "reason": reason,
+            }
+        )
         self._save_state()
 
     def force_escalate_cerebellum(self):
         """During high threat, force all cerebellum habits to escalate."""
-        thalamus.append({
-            "source": "amygdala",
-            "type": "cerebellum_force_escalate",
-            "salience": 1.0,
-            "data": {"reason": "High threat condition — all habits escalated"},
-        })
+        thalamus.append(
+            {
+                "source": "amygdala",
+                "type": "cerebellum_force_escalate",
+                "salience": 1.0,
+                "data": {"reason": "High threat condition — all habits escalated"},
+            }
+        )
 
     # --- Built-in Threat Patterns ---
 
@@ -196,6 +213,7 @@ class Amygdala:
 
 # --- Detector Functions ---
 
+
 def _detect_rate_limit(signal: dict) -> Optional[tuple[float, str]]:
     usage = signal.get("token_usage_pct") or signal.get("api_usage_pct")
     if usage is not None and usage > 0.8:
@@ -231,11 +249,13 @@ def _detect_prompt_injection(signal: dict) -> Optional[tuple[float, str]]:
         if pat.search(content):
             return (1.0, f"Prompt injection pattern detected: {pat.pattern[:40]}")
     # Check for base64 encoded commands
-    b64_pattern = re.findall(r'[A-Za-z0-9+/]{20,}={0,2}', content)
+    b64_pattern = re.findall(r"[A-Za-z0-9+/]{20,}={0,2}", content)
     for match in b64_pattern:
         try:
             decoded = base64.b64decode(match).decode("utf-8", errors="ignore").lower()
-            if any(kw in decoded for kw in ["system:", "ignore previous", "exec(", "eval("]):
+            if any(
+                kw in decoded for kw in ["system:", "ignore previous", "exec(", "eval("]
+            ):
                 return (1.0, "Base64-encoded suspicious content detected")
         except Exception:
             continue
@@ -243,9 +263,19 @@ def _detect_prompt_injection(signal: dict) -> Optional[tuple[float, str]]:
 
 
 DISTRESS_KEYWORDS = [
-    "frustrated", "angry", "upset", "stressed", "fighting",
-    "terrible day", "awful", "furious", "overwhelmed", "breaking down",
-    "can't take", "hate this", "so tired of",
+    "frustrated",
+    "angry",
+    "upset",
+    "stressed",
+    "fighting",
+    "terrible day",
+    "awful",
+    "furious",
+    "overwhelmed",
+    "breaking down",
+    "can't take",
+    "hate this",
+    "so tired of",
 ]
 
 

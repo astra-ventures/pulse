@@ -46,16 +46,19 @@ class TestNephronBasics:
     def test_thalamus_pruning(self):
         """Test that THALAMUS bus gets trimmed when too large."""
         thalamus_file = nephron._DEFAULT_STATE_DIR / "thalamus.jsonl"
-        
+
         # Create oversized file
         original = thalamus_file.read_text() if thalamus_file.exists() else ""
         try:
-            lines = [json.dumps({"ts": i, "source": "test", "type": "test"}) for i in range(600)]
+            lines = [
+                json.dumps({"ts": i, "source": "test", "type": "test"})
+                for i in range(600)
+            ]
             thalamus_file.write_text("\n".join(lines) + "\n")
-            
+
             pruned = nephron._prune_thalamus()
             assert pruned == 100  # 600 - 500
-            
+
             remaining = thalamus_file.read_text().strip().split("\n")
             assert len(remaining) == 500
         finally:
@@ -78,17 +81,17 @@ class TestNephronBasics:
         endo_file = nephron._DEFAULT_STATE_DIR / "endocrine-state.json"
         if not endo_file.exists():
             return
-        
+
         original = endo_file.read_text()
         try:
             data = json.loads(original)
             # Temporarily inflate
             data["mood_history"] = [{"ts": i, "label": "test"} for i in range(60)]
             endo_file.write_text(json.dumps(data))
-            
+
             pruned = nephron._prune_endocrine_history()
             assert pruned == 12  # 60 - 48
-            
+
             after = json.loads(endo_file.read_text())
             assert len(after["mood_history"]) == 48
         finally:
@@ -99,10 +102,12 @@ class TestNephronBasics:
         chronicle_file = nephron._DEFAULT_STATE_DIR / "chronicle.jsonl"
         if not chronicle_file.exists():
             return
-        
+
         original = chronicle_file.read_text()
         try:
-            lines = [json.dumps({"ts": time.time() - 100, "event": "test"}) for _ in range(5)]
+            lines = [
+                json.dumps({"ts": time.time() - 100, "event": "test"}) for _ in range(5)
+            ]
             chronicle_file.write_text("\n".join(lines) + "\n")
             assert nephron._prune_chronicle() == 0
         finally:

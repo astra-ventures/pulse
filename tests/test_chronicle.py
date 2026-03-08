@@ -13,16 +13,20 @@ from pulse.src import chronicle, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     cf = tmp_path / "chronicle.jsonl"
-    with patch.object(chronicle, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(chronicle, "_DEFAULT_CHRONICLE_FILE", cf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(chronicle, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(chronicle, "_DEFAULT_CHRONICLE_FILE", cf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 
 class TestRecordEvent:
     def test_record_significant(self):
-        result = chronicle.record_event("test", "important", {"key": "val"}, salience=0.7)
+        result = chronicle.record_event(
+            "test", "important", {"key": "val"}, salience=0.7
+        )
         assert result is not None
         assert result["source"] == "test"
 
@@ -39,8 +43,12 @@ class TestRecordEvent:
 
 class TestCaptureFromThalamus:
     def test_capture(self):
-        thalamus.append({"source": "endocrine", "type": "mood_update", "salience": 0.7, "data": {}})
-        thalamus.append({"source": "retina", "type": "attention", "salience": 0.2, "data": {}})
+        thalamus.append(
+            {"source": "endocrine", "type": "mood_update", "salience": 0.7, "data": {}}
+        )
+        thalamus.append(
+            {"source": "retina", "type": "attention", "salience": 0.2, "data": {}}
+        )
         count = chronicle.capture_from_thalamus()
         assert count >= 1  # only the high-salience one
 

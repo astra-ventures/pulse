@@ -25,15 +25,32 @@ _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "parietal-state.json"
 
 # Project-type detection keywords
-_TRADING_KEYWORDS = {"trade", "kelly", "polymarket", "kalshi", "bet", "wager", "prediction"}
+_TRADING_KEYWORDS = {
+    "trade",
+    "kelly",
+    "polymarket",
+    "kalshi",
+    "bet",
+    "wager",
+    "prediction",
+}
 
 # Directories to always skip during scanning
-_IGNORED_DIRS = {".git", "node_modules", "__pycache__", "venv", ".venv", "dist", "build"}
+_IGNORED_DIRS = {
+    ".git",
+    "node_modules",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+}
 
 
 @dataclass
 class HealthSignal:
     """A single health signal for a discovered system."""
+
     id: str
     type: str  # file_age, file_content, http_health, git_status
     target: str  # file path or URL
@@ -52,6 +69,7 @@ class HealthSignal:
 @dataclass
 class GoalCondition:
     """A measurable goal extracted from project files."""
+
     description: str
     measurable: str
     status: str = "pending"  # pending, met, failed
@@ -67,6 +85,7 @@ class GoalCondition:
 @dataclass
 class Project:
     """A discovered project in the workspace."""
+
     name: str
     path: str
     type: str
@@ -101,6 +120,7 @@ class Project:
 @dataclass
 class Deployment:
     """A discovered deployment/service."""
+
     name: str
     url: str
     expected_status: int = 200
@@ -120,6 +140,7 @@ class Deployment:
 @dataclass
 class WorldModel:
     """The complete world model maintained by PARIETAL."""
+
     projects: List[Project] = field(default_factory=list)
     deployments: List[Deployment] = field(default_factory=list)
     goal_conditions: List[GoalCondition] = field(default_factory=list)
@@ -138,7 +159,9 @@ class WorldModel:
         return cls(
             projects=[Project.from_dict(p) for p in d.get("projects", [])],
             deployments=[Deployment.from_dict(dp) for dp in d.get("deployments", [])],
-            goal_conditions=[GoalCondition.from_dict(g) for g in d.get("goal_conditions", [])],
+            goal_conditions=[
+                GoalCondition.from_dict(g) for g in d.get("goal_conditions", [])
+            ],
             signal_weights=d.get("signal_weights", {}),
         )
 
@@ -146,6 +169,7 @@ class WorldModel:
 @dataclass
 class SignalResult:
     """Result of checking a single health signal."""
+
     signal_id: str
     healthy: bool
     details: Dict[str, Any] = field(default_factory=dict)
@@ -157,10 +181,13 @@ class SignalResult:
 class Parietal:
     """World Model — environment discovery, signal inference, dynamic sensors."""
 
-    def __init__(self, state_dir: Optional[Path] = None,
-                 max_projects: int = 50,
-                 max_sensors_per_project: int = 5,
-                 scan_interval_hours: float = 6.0):
+    def __init__(
+        self,
+        state_dir: Optional[Path] = None,
+        max_projects: int = 50,
+        max_sensors_per_project: int = 5,
+        scan_interval_hours: float = 6.0,
+    ):
         self.state_dir = Path(state_dir) if state_dir else _DEFAULT_STATE_DIR
         self.state_file = self.state_dir / "parietal-state.json"
         self.max_projects = max_projects
@@ -204,7 +231,9 @@ class Parietal:
 
     # ─── Discovery ────────────────────────────────────────────
 
-    def scan(self, workspace_root: str, llm_endpoint: Optional[str] = None) -> WorldModel:
+    def scan(
+        self, workspace_root: str, llm_endpoint: Optional[str] = None
+    ) -> WorldModel:
         """Main discovery method. Walk workspace, detect projects, infer signals."""
         root = Path(workspace_root).expanduser()
         if not root.exists():
@@ -228,8 +257,10 @@ class Parietal:
             name = dirpath.name
             description = self._read_description(dirpath)
 
-            signals = self._infer_signals(dirpath, project_type, description, llm_endpoint)
-            signals = signals[:self.max_sensors_per_project]
+            signals = self._infer_signals(
+                dirpath, project_type, description, llm_endpoint
+            )
+            signals = signals[: self.max_sensors_per_project]
 
             goals = self._extract_goal_conditions(dirpath)
 
@@ -237,16 +268,18 @@ class Parietal:
             deps = self._extract_deployments(dirpath, name)
             discovered_deployments.extend(deps)
 
-            discovered_projects.append(Project(
-                name=name,
-                path=str(dirpath),
-                type=project_type,
-                description=description[:500],
-                health_signals=signals,
-                goal_conditions=goals,
-                discovered_at=now,
-                last_checked=now,
-            ))
+            discovered_projects.append(
+                Project(
+                    name=name,
+                    path=str(dirpath),
+                    type=project_type,
+                    description=description[:500],
+                    health_signals=signals,
+                    goal_conditions=goals,
+                    discovered_at=now,
+                    last_checked=now,
+                )
+            )
 
             discovered_goals.extend(goals)
 
@@ -289,17 +322,29 @@ class Parietal:
 
         try:
             for entry in sorted(root.iterdir()):
-                if entry.is_dir() and entry.name not in _IGNORED_DIRS and not entry.name.startswith("."):
+                if (
+                    entry.is_dir()
+                    and entry.name not in _IGNORED_DIRS
+                    and not entry.name.startswith(".")
+                ):
                     dirs.append(entry)
                     if max_depth > 1:
                         try:
                             for sub in sorted(entry.iterdir()):
-                                if sub.is_dir() and sub.name not in _IGNORED_DIRS and not sub.name.startswith("."):
+                                if (
+                                    sub.is_dir()
+                                    and sub.name not in _IGNORED_DIRS
+                                    and not sub.name.startswith(".")
+                                ):
                                     dirs.append(sub)
                                     if max_depth > 2:
                                         try:
                                             for subsub in sorted(sub.iterdir()):
-                                                if subsub.is_dir() and subsub.name not in _IGNORED_DIRS and not subsub.name.startswith("."):
+                                                if (
+                                                    subsub.is_dir()
+                                                    and subsub.name not in _IGNORED_DIRS
+                                                    and not subsub.name.startswith(".")
+                                                ):
                                                     dirs.append(subsub)
                                         except PermissionError:
                                             pass
@@ -404,8 +449,13 @@ class Parietal:
 
     # ─── Signal Inference ─────────────────────────────────────
 
-    def _infer_signals(self, path: Path, project_type: str, description: str,
-                       llm_endpoint: Optional[str] = None) -> List[HealthSignal]:
+    def _infer_signals(
+        self,
+        path: Path,
+        project_type: str,
+        description: str,
+        llm_endpoint: Optional[str] = None,
+    ) -> List[HealthSignal]:
         """Infer health signals using heuristics first, LLM second."""
         signals: List[HealthSignal] = []
         name = path.name
@@ -414,17 +464,22 @@ class Parietal:
         logs_dir = path / "logs"
         if logs_dir.exists() and logs_dir.is_dir():
             try:
-                log_files = [f for f in logs_dir.iterdir()
-                             if f.suffix in (".log", ".jsonl") and f.is_file()]
+                log_files = [
+                    f
+                    for f in logs_dir.iterdir()
+                    if f.suffix in (".log", ".jsonl") and f.is_file()
+                ]
                 for lf in log_files[:3]:
-                    signals.append(HealthSignal(
-                        id=f"{name}_log_{lf.stem}",
-                        type="file_age",
-                        target=str(lf),
-                        healthy_if="age_hours < 48",
-                        drive_impact="system",
-                        weight=0.6,
-                    ))
+                    signals.append(
+                        HealthSignal(
+                            id=f"{name}_log_{lf.stem}",
+                            type="file_age",
+                            target=str(lf),
+                            healthy_if="age_hours < 48",
+                            drive_impact="system",
+                            weight=0.6,
+                        )
+                    )
             except PermissionError:
                 pass
 
@@ -432,66 +487,76 @@ class Parietal:
         if project_type == "trading_bot":
             trade_logs = list(logs_dir.glob("*trade*")) if logs_dir.exists() else []
             for tl in trade_logs[:2]:
-                signals.append(HealthSignal(
-                    id=f"{name}_trades_{tl.stem}",
-                    type="file_age",
-                    target=str(tl),
-                    healthy_if="age_hours < 24",
-                    drive_impact="goals",
-                    weight=0.8,
-                ))
+                signals.append(
+                    HealthSignal(
+                        id=f"{name}_trades_{tl.stem}",
+                        type="file_age",
+                        target=str(tl),
+                        healthy_if="age_hours < 24",
+                        drive_impact="goals",
+                        weight=0.8,
+                    )
+                )
 
         # Cloudflare worker — infer health endpoint
         wrangler = path / "wrangler.toml"
         if wrangler.exists():
             url = self._extract_cf_health_url(wrangler)
             if url:
-                signals.append(HealthSignal(
-                    id=f"{name}_cf_health",
-                    type="http_health",
-                    target=url,
-                    healthy_if="status == 200",
-                    drive_impact="system",
-                    weight=0.9,
-                ))
+                signals.append(
+                    HealthSignal(
+                        id=f"{name}_cf_health",
+                        type="http_health",
+                        target=url,
+                        healthy_if="status == 200",
+                        drive_impact="system",
+                        weight=0.9,
+                    )
+                )
 
         # Fly.io app — infer health endpoint
         fly_toml = path / "fly.toml"
         if fly_toml.exists():
             url = self._extract_fly_health_url(fly_toml)
             if url:
-                signals.append(HealthSignal(
-                    id=f"{name}_fly_health",
-                    type="http_health",
-                    target=url,
-                    healthy_if="status == 200",
-                    drive_impact="system",
-                    weight=0.9,
-                ))
+                signals.append(
+                    HealthSignal(
+                        id=f"{name}_fly_health",
+                        type="http_health",
+                        target=url,
+                        healthy_if="status == 200",
+                        drive_impact="system",
+                        weight=0.9,
+                    )
+                )
 
         # Git status — uncommitted changes
         git_dir = path / ".git"
         if git_dir.exists():
-            signals.append(HealthSignal(
-                id=f"{name}_git_status",
-                type="git_status",
-                target=str(path),
-                healthy_if="no_uncommitted",
-                drive_impact="system",
-                weight=0.3,
-            ))
+            signals.append(
+                HealthSignal(
+                    id=f"{name}_git_status",
+                    type="git_status",
+                    target=str(path),
+                    healthy_if="no_uncommitted",
+                    drive_impact="system",
+                    weight=0.3,
+                )
+            )
 
         # Tests directory — watch for output
         tests_dir = path / "tests"
         if tests_dir.exists() and tests_dir.is_dir():
-            signals.append(HealthSignal(
-                id=f"{name}_tests",
-                type="file_age",
-                target=str(tests_dir),
-                healthy_if="age_hours < 168",
-                drive_impact="curiosity",
-                weight=0.3,
-            ))
+            signals.append(
+                HealthSignal(
+                    id=f"{name}_tests",
+                    type="file_age",
+                    target=str(tests_dir),
+                    healthy_if="age_hours < 168",
+                    drive_impact="curiosity",
+                    weight=0.3,
+                )
+            )
 
         return signals
 
@@ -534,10 +599,12 @@ class Parietal:
                 content = env_file.read_text(errors="ignore")
                 urls = re.findall(r'https?://[^\s"\']+/health', content)
                 for url in urls[:3]:
-                    deployments.append(Deployment(
-                        name=f"{project_name}_env",
-                        url=url,
-                    ))
+                    deployments.append(
+                        Deployment(
+                            name=f"{project_name}_env",
+                            url=url,
+                        )
+                    )
             except (OSError, PermissionError):
                 pass
 
@@ -559,19 +626,23 @@ class Parietal:
                     if line.startswith("- [ ]"):
                         desc = line[5:].strip()[:200]
                         if desc:
-                            goals.append(GoalCondition(
-                                description=desc,
-                                measurable=f"Checkbox item in {fname}",
-                                status="pending",
-                            ))
+                            goals.append(
+                                GoalCondition(
+                                    description=desc,
+                                    measurable=f"Checkbox item in {fname}",
+                                    status="pending",
+                                )
+                            )
                     elif line.startswith("- [x]") or line.startswith("- [X]"):
                         desc = line[5:].strip()[:200]
                         if desc:
-                            goals.append(GoalCondition(
-                                description=desc,
-                                measurable=f"Checkbox item in {fname}",
-                                status="met",
-                            ))
+                            goals.append(
+                                GoalCondition(
+                                    description=desc,
+                                    measurable=f"Checkbox item in {fname}",
+                                    status="met",
+                                )
+                            )
             except (OSError, PermissionError):
                 pass
 
@@ -604,7 +675,7 @@ class Parietal:
                 elif signal.type == "git_status":
                     sensor = ParietalGitSensor(signal)
 
-                if sensor and hasattr(sensor_manager, 'add_sensor'):
+                if sensor and hasattr(sensor_manager, "add_sensor"):
                     sensor_manager.add_sensor(sensor)
                     self._registered_sensor_ids.add(signal.id)
                     count += 1
@@ -695,10 +766,13 @@ class Parietal:
     def _check_git_status(self, signal: HealthSignal) -> SignalResult:
         """Check git status for uncommitted changes."""
         import subprocess
+
         try:
             result = subprocess.run(
                 ["git", "-C", signal.target, "status", "--porcelain"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             has_changes = bool(result.stdout.strip())
             return SignalResult(
@@ -760,7 +834,9 @@ class Parietal:
         last_scan_str = f"{elapsed / 3600:.1f}h ago" if elapsed is not None else "never"
 
         return {
-            "systems_monitored": sum(len(p.health_signals) for p in self.world_model.projects),
+            "systems_monitored": sum(
+                len(p.health_signals) for p in self.world_model.projects
+            ),
             "unhealthy": unhealthy,
             "healthy": healthy,
             "goal_conditions_pending": pending_goals[:10],
@@ -784,7 +860,7 @@ def _eval_condition(condition: str, variables: dict) -> bool:
     Supports simple comparisons: 'age_hours < 24', 'status == 200', etc.
     """
     # Parse simple conditions like "age_hours < 24", "status == 200"
-    match = re.match(r'(\w+)\s*(<=?|>=?|==|!=)\s*(\d+\.?\d*)', condition)
+    match = re.match(r"(\w+)\s*(<=?|>=?|==|!=)\s*(\d+\.?\d*)", condition)
     if match:
         var_name, op, val_str = match.groups()
         var_val = variables.get(var_name)

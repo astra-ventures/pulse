@@ -24,7 +24,9 @@ class Engram:
     emotion: dict  # {"valence": float, "intensity": float, "label": str}
     location: str
     timestamp: float  # epoch_ms
-    sensory: dict = field(default_factory=lambda: {"voice": False, "image": False, "text_tone": "neutral"})
+    sensory: dict = field(
+        default_factory=lambda: {"voice": False, "image": False, "text_tone": "neutral"}
+    )
     associations: list = field(default_factory=list)
     recall_count: int = 0
     last_recalled: Optional[float] = None
@@ -38,6 +40,7 @@ class Engram:
 
 
 # ── State persistence ───────────────────────────────────────────────────
+
 
 def _load_store() -> list[dict]:
     _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -56,11 +59,23 @@ def _save_store(store: list[dict]):
 
 # ── Core functions ──────────────────────────────────────────────────────
 
-VALID_LOCATIONS = {"main_session", "cron_session", "dream", "x_timeline", "website", "discord"}
+VALID_LOCATIONS = {
+    "main_session",
+    "cron_session",
+    "dream",
+    "x_timeline",
+    "website",
+    "discord",
+}
 
 
-def encode(event: str, emotion: dict, location: str, timestamp: float = None,
-           sensory: dict = None) -> Engram:
+def encode(
+    event: str,
+    emotion: dict,
+    location: str,
+    timestamp: float = None,
+    sensory: dict = None,
+) -> Engram:
     """Create an indexed memory trace."""
     if timestamp is None:
         timestamp = time.time() * 1000
@@ -89,13 +104,19 @@ def encode(event: str, emotion: dict, location: str, timestamp: float = None,
 
     # Broadcast to thalamus if high-intensity
     if engram.emotion["intensity"] >= 0.7:
-        thalamus.append({
-            "source": "engram",
-            "type": "encode",
-            "salience": min(1.0, engram.emotion["intensity"]),
-            "data": {"id": engram.id, "event": engram.event[:100],
-                     "location": engram.location, "emotion_label": engram.emotion["label"]},
-        })
+        thalamus.append(
+            {
+                "source": "engram",
+                "type": "encode",
+                "salience": min(1.0, engram.emotion["intensity"]),
+                "data": {
+                    "id": engram.id,
+                    "event": engram.event[:100],
+                    "location": engram.location,
+                    "emotion_label": engram.emotion["label"],
+                },
+            }
+        )
 
     return engram
 
@@ -103,13 +124,15 @@ def encode(event: str, emotion: dict, location: str, timestamp: float = None,
 def _score_memory(entry: dict, keywords: list[str], now_s: float) -> float:
     """Score a memory entry using weighted keyword-overlap + importance + recency."""
     # Build searchable text from all relevant fields
-    searchable = " ".join([
-        entry.get("event", ""),
-        entry.get("content", ""),
-        entry.get("source", ""),
-        " ".join(entry.get("tags", [])),
-        entry.get("emotion", {}).get("label", ""),
-    ]).lower()
+    searchable = " ".join(
+        [
+            entry.get("event", ""),
+            entry.get("content", ""),
+            entry.get("source", ""),
+            " ".join(entry.get("tags", [])),
+            entry.get("emotion", {}).get("label", ""),
+        ]
+    ).lower()
 
     # Relevance: count keyword matches
     matches = sum(1 for kw in keywords if kw in searchable)
@@ -201,7 +224,9 @@ def recall_by_place(location: str, limit: int = 5) -> list[Engram]:
     return [Engram.from_dict(e) for e in matches[:limit]]
 
 
-def recall_by_emotion(valence_range: tuple, intensity_min: float, limit: int = 5) -> list[Engram]:
+def recall_by_emotion(
+    valence_range: tuple, intensity_min: float, limit: int = 5
+) -> list[Engram]:
     """Emotion-filtered recall."""
     store = _load_store()
     vmin, vmax = valence_range

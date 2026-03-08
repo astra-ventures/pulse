@@ -40,8 +40,11 @@ class TestFlockPresent:
             mock_fcntl.flock = tracking_flock
 
             daily_sync.log_trigger(
-                turn=1, reason="test", top_drive="goals",
-                pressure=5.0, success=True,
+                turn=1,
+                reason="test",
+                top_drive="goals",
+                pressure=5.0,
+                success=True,
             )
 
         assert "lock" in locked
@@ -64,8 +67,9 @@ class TestFlockPresent:
             mock_fcntl.LOCK_UN = fcntl.LOCK_UN
             mock_fcntl.flock = tracking_flock
 
-            daily_sync.log_mutation({"type": "adjust_weight", "drive": "goals",
-                                     "before": 0.5, "after": 0.7})
+            daily_sync.log_mutation(
+                {"type": "adjust_weight", "drive": "goals", "before": 0.5, "after": 0.7}
+            )
 
         assert "lock" in locked
         assert "unlock" in locked
@@ -111,8 +115,11 @@ class TestConcurrentWrites:
         """Each write must produce exactly one entry, no duplicates."""
         for i in range(20):
             daily_sync.log_trigger(
-                turn=i, reason=f"unique-{i}-end", top_drive="curiosity",
-                pressure=1.5, success=True,
+                turn=i,
+                reason=f"unique-{i}-end",
+                top_drive="curiosity",
+                pressure=1.5,
+                success=True,
             )
 
         notes_file = daily_sync._get_file()
@@ -127,8 +134,11 @@ class TestConcurrentWrites:
         """Long reason strings must not be truncated or corrupted."""
         long_reason = "A" * 200
         daily_sync.log_trigger(
-            turn=1, reason=long_reason, top_drive="goals",
-            pressure=3.0, success=True,
+            turn=1,
+            reason=long_reason,
+            top_drive="goals",
+            pressure=3.0,
+            success=True,
         )
 
         notes_file = daily_sync._get_file()

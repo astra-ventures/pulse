@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.drives.engine import Drive, DriveState
@@ -79,8 +80,12 @@ class TestDriveState:
 
     def test_top_drive_considers_weight(self):
         drives = [
-            Drive(name="goals", category="goals", pressure=2.0, weight=2.0),  # weighted=4
-            Drive(name="curiosity", category="curiosity", pressure=3.0, weight=1.0),  # weighted=3
+            Drive(
+                name="goals", category="goals", pressure=2.0, weight=2.0
+            ),  # weighted=4
+            Drive(
+                name="curiosity", category="curiosity", pressure=3.0, weight=1.0
+            ),  # weighted=3
         ]
         state = DriveState(drives=drives, timestamp=time.time())
         assert state.top_drive.name == "goals"

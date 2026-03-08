@@ -14,10 +14,12 @@ from pulse.src import adipose, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "adipose-state.json"
-    with patch.object(adipose, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(adipose, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(adipose, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(adipose, "_DEFAULT_STATE_FILE", sf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 

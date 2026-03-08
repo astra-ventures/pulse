@@ -19,7 +19,9 @@ class DailyNoteSync:
     """Appends Pulse events to the agent's daily notes."""
 
     def __init__(self, config: PulseConfig):
-        self.daily_dir = Path(config.workspace.root).expanduser() / config.workspace.daily_notes
+        self.daily_dir = (
+            Path(config.workspace.root).expanduser() / config.workspace.daily_notes
+        )
         self._last_date: str = ""
         self._header_written: bool = False
 
@@ -45,7 +47,9 @@ class DailyNoteSync:
             f.write("\n### 🫀 Pulse Activity\n")
             self._header_written = True
 
-    def log_trigger(self, turn: int, reason: str, top_drive: str, pressure: float, success: bool):
+    def log_trigger(
+        self, turn: int, reason: str, top_drive: str, pressure: float, success: bool
+    ):
         """Log a trigger event."""
         try:
             path = self._get_file()
@@ -56,8 +60,10 @@ class DailyNoteSync:
                 fcntl.flock(f, fcntl.LOCK_EX)
                 try:
                     self._ensure_header(f)
-                    f.write(f"- {now} {status} Trigger #{turn}: {reason} "
-                            f"(drive: {top_drive}, pressure: {pressure:.2f})\n")
+                    f.write(
+                        f"- {now} {status} Trigger #{turn}: {reason} "
+                        f"(drive: {top_drive}, pressure: {pressure:.2f})\n"
+                    )
                 finally:
                     fcntl.flock(f, fcntl.LOCK_UN)
         except OSError as e:

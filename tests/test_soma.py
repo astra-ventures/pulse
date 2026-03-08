@@ -12,10 +12,12 @@ from pulse.src import soma, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "soma-state.json"
-    with patch.object(soma, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(soma, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(soma, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(soma, "_DEFAULT_STATE_FILE", sf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 
@@ -56,10 +58,23 @@ class TestTemperature:
         assert soma.update_temperature({"adrenaline": 0.6}) == "hot"
 
     def test_warm_oxytocin(self):
-        assert soma.update_temperature({"oxytocin": 0.6, "cortisol": 0.1, "dopamine": 0.1}) == "warm"
+        assert (
+            soma.update_temperature({"oxytocin": 0.6, "cortisol": 0.1, "dopamine": 0.1})
+            == "warm"
+        )
 
     def test_cool_cortisol(self):
-        assert soma.update_temperature({"cortisol": 0.6, "dopamine": 0.1, "oxytocin": 0.1, "adrenaline": 0.0}) == "cool"
+        assert (
+            soma.update_temperature(
+                {"cortisol": 0.6, "dopamine": 0.1, "oxytocin": 0.1, "adrenaline": 0.0}
+            )
+            == "cool"
+        )
 
     def test_cold_all_low(self):
-        assert soma.update_temperature({"cortisol": 0.1, "dopamine": 0.1, "oxytocin": 0.1, "adrenaline": 0.0}) == "cold"
+        assert (
+            soma.update_temperature(
+                {"cortisol": 0.1, "dopamine": 0.1, "oxytocin": 0.1, "adrenaline": 0.0}
+            )
+            == "cold"
+        )

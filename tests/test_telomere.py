@@ -19,13 +19,15 @@ def tmp_state(tmp_path):
     memory_dir.mkdir()
     (memory_dir / "2026-01-01.md").write_text("test")
     (memory_dir / "2026-01-02.md").write_text("test")
-    with patch.object(telomere, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(telomere, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(telomere, "_DEFAULT_SNAPSHOT_DIR", snap_dir), \
-         patch.object(telomere, "SOUL_PATH", soul), \
-         patch.object(telomere, "MEMORY_DIR", memory_dir), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(telomere, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(telomere, "_DEFAULT_STATE_FILE", sf),
+        patch.object(telomere, "_DEFAULT_SNAPSHOT_DIR", snap_dir),
+        patch.object(telomere, "SOUL_PATH", soul),
+        patch.object(telomere, "MEMORY_DIR", memory_dir),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 
@@ -59,7 +61,9 @@ class TestCheckIdentity:
     def test_high_drift_triggers_alert(self, tmp_path):
         # Add snapshots with different hashes
         state = telomere._load_state()
-        state["snapshots"] = [{"hash": "different", "ts": 0, "month": "2025-01"} for _ in range(5)]
+        state["snapshots"] = [
+            {"hash": "different", "ts": 0, "month": "2025-01"} for _ in range(5)
+        ]
         telomere._save_state(state)
         result = telomere.check_identity()
         assert result["drift_score"] > 0

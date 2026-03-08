@@ -24,13 +24,13 @@ _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "nephron-state.json"
 
 # Pruning thresholds
-THALAMUS_MAX_ENTRIES = 500       # Keep last 500 bus messages
-CHRONICLE_MAX_AGE_DAYS = 30      # Archive entries older than 30 days
-MOOD_HISTORY_MAX = 48            # Already enforced by endocrine, but double-check
-ENGRAM_MIN_IMPORTANCE = 2        # Prune memories with importance < 2
-ENGRAM_MAX_AGE_DAYS = 90         # Prune memories older than 90 days (unless high importance)
-RETINA_LEARNING_MAX = 200        # Max outcome learning entries
-LOOP_INTERVAL = 100              # Run every N daemon loops
+THALAMUS_MAX_ENTRIES = 500  # Keep last 500 bus messages
+CHRONICLE_MAX_AGE_DAYS = 30  # Archive entries older than 30 days
+MOOD_HISTORY_MAX = 48  # Already enforced by endocrine, but double-check
+ENGRAM_MIN_IMPORTANCE = 2  # Prune memories with importance < 2
+ENGRAM_MAX_AGE_DAYS = 90  # Prune memories older than 90 days (unless high importance)
+RETINA_LEARNING_MAX = 200  # Max outcome learning entries
+LOOP_INTERVAL = 100  # Run every N daemon loops
 
 
 def _default_state() -> dict:
@@ -117,25 +117,29 @@ def filter_all() -> dict:
     state["total_pruned"] += total
     state["last_run"] = time.time()
     state["last_results"] = results
-    state["history"].append({
-        "ts": time.time(),
-        "pruned": total,
-        "breakdown": results["pruned"],
-    })
+    state["history"].append(
+        {
+            "ts": time.time(),
+            "pruned": total,
+            "breakdown": results["pruned"],
+        }
+    )
     state["history"] = state["history"][-10:]  # keep last 10
     _save_state(state)
 
     # Broadcast to THALAMUS
-    thalamus.append({
-        "source": "nephron",
-        "type": "filter_cycle",
-        "salience": 0.3,
-        "data": {
-            "total_pruned": total,
-            "breakdown": results["pruned"],
-            "errors": len(results["errors"]),
-        },
-    })
+    thalamus.append(
+        {
+            "source": "nephron",
+            "type": "filter_cycle",
+            "salience": 0.3,
+            "data": {
+                "total_pruned": total,
+                "breakdown": results["pruned"],
+                "errors": len(results["errors"]),
+            },
+        }
+    )
 
     return results
 
@@ -264,11 +268,14 @@ def get_status() -> dict:
         "total_pruned": state["total_pruned"],
         "last_run": state["last_run"],
         "last_results": state["last_results"],
-        "seconds_since_last": time.time() - state["last_run"] if state["last_run"] else None,
+        "seconds_since_last": (
+            time.time() - state["last_run"] if state["last_run"] else None
+        ),
     }
 
 
 # --- Tests ---
+
 
 def _run_tests():
     """Basic self-tests."""
@@ -305,7 +312,9 @@ def _run_tests():
     results = filter_all()
     assert "pruned" in results
     assert "errors" in results
-    print(f"  ✅ Full filter cycle (pruned: {sum(results['pruned'].values())}, errors: {len(results['errors'])})")
+    print(
+        f"  ✅ Full filter cycle (pruned: {sum(results['pruned'].values())}, errors: {len(results['errors'])})"
+    )
 
     # Verify state was updated
     status = get_status()

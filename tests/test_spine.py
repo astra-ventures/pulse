@@ -1,4 +1,5 @@
 """Tests for SPINE — System Health Monitor."""
+
 import json
 from pathlib import Path
 
@@ -14,7 +15,9 @@ def clean_state(tmp_path, monkeypatch):
     monkeypatch.setattr(spine, "_DEFAULT_STATE_DIR", state_dir)
     monkeypatch.setattr(spine, "_DEFAULT_HEALTH_FILE", state_dir / "spine-health.json")
     monkeypatch.setattr(thalamus, "_DEFAULT_STATE_DIR", state_dir)
-    monkeypatch.setattr(thalamus, "_DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl")
+    monkeypatch.setattr(
+        thalamus, "_DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl"
+    )
 
 
 class TestTokenUsage:

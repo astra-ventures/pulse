@@ -6,17 +6,28 @@ import tempfile
 from pathlib import Path
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.plasticity import Plasticity, EvolutionConfig, EvaluationRecord, DrivePerformance
+from src.plasticity import (
+    Plasticity,
+    EvolutionConfig,
+    EvaluationRecord,
+    DrivePerformance,
+)
 from src.drives.engine import Drive, DriveEngine
 
 
 class TestEvaluationRecord:
     def test_roundtrip(self):
         r = EvaluationRecord(
-            timestamp=time.time(), drive_name="goals", triggered=True,
-            success=True, quality_score=0.8, loop_average=0.85, context="test"
+            timestamp=time.time(),
+            drive_name="goals",
+            triggered=True,
+            success=True,
+            quality_score=0.8,
+            loop_average=0.85,
+            context="test",
         )
         d = r.to_dict()
         r2 = EvaluationRecord.from_dict(d)
@@ -26,11 +37,15 @@ class TestEvaluationRecord:
 
 class TestDrivePerformance:
     def test_true_positive_rate(self):
-        p = DrivePerformance("goals", total_triggers=10, successful_triggers=7, failed_triggers=3)
+        p = DrivePerformance(
+            "goals", total_triggers=10, successful_triggers=7, failed_triggers=3
+        )
         assert p.true_positive_rate == 0.7
 
     def test_false_positive_rate(self):
-        p = DrivePerformance("goals", total_triggers=10, successful_triggers=7, failed_triggers=3)
+        p = DrivePerformance(
+            "goals", total_triggers=10, successful_triggers=7, failed_triggers=3
+        )
         assert p.false_positive_rate == 0.3
 
     def test_average_quality(self):
@@ -218,8 +233,13 @@ class TestPlasticity:
 
     def test_generate_reasoning(self):
         evo = self._make_evolution()
-        perf = DrivePerformance("goals", total_triggers=10, successful_triggers=8,
-                                failed_triggers=2, total_quality=7.5)
+        perf = DrivePerformance(
+            "goals",
+            total_triggers=10,
+            successful_triggers=8,
+            failed_triggers=2,
+            total_quality=7.5,
+        )
         reason = evo._generate_reasoning("goals", perf, 1.0, 1.1)
         assert "goals" in reason
         assert "increased" in reason

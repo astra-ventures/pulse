@@ -53,7 +53,9 @@ def workspace(tmp_path):
     proj_b = ws / "weather-edge"
     proj_b.mkdir()
     (proj_b / "requirements.txt").write_text("requests\n")
-    (proj_b / "README.md").write_text("# Weather Edge\nPolymarket weather prediction trading system.\n")
+    (proj_b / "README.md").write_text(
+        "# Weather Edge\nPolymarket weather prediction trading system.\n"
+    )
     logs_b = proj_b / "logs"
     logs_b.mkdir()
     (logs_b / "live-trades.jsonl").write_text('{"trade": "buy"}\n')
@@ -62,25 +64,33 @@ def workspace(tmp_path):
     # Node project
     proj_c = ws / "web-app"
     proj_c.mkdir()
-    (proj_c / "package.json").write_text('{"name": "web-app", "description": "A web application"}\n')
+    (proj_c / "package.json").write_text(
+        '{"name": "web-app", "description": "A web application"}\n'
+    )
 
     # Cloudflare worker
     proj_d = ws / "api-worker"
     proj_d.mkdir()
-    (proj_d / "wrangler.toml").write_text('name = "api-worker"\nroute = "api.example.com/*"\n')
+    (proj_d / "wrangler.toml").write_text(
+        'name = "api-worker"\nroute = "api.example.com/*"\n'
+    )
     (proj_d / "package.json").write_text('{"name": "api-worker"}\n')
 
     # Fly.io app
     proj_e = ws / "voice-agent"
     proj_e.mkdir()
-    (proj_e / "fly.toml").write_text('app = "voice-agent"\n[http_service]\n  internal_port = 8080\n')
+    (proj_e / "fly.toml").write_text(
+        'app = "voice-agent"\n[http_service]\n  internal_port = 8080\n'
+    )
     (proj_e / "Dockerfile").write_text("FROM node:18\n")
 
     # Project with goals
     proj_f = ws / "companion"
     proj_f.mkdir()
     (proj_f / "pyproject.toml").write_text("[project]\nname = 'companion'\n")
-    (proj_f / "PROJECTS.md").write_text("# Goals\n- [ ] Deploy to production\n- [x] Write tests\n- [ ] Add auth\n")
+    (proj_f / "PROJECTS.md").write_text(
+        "# Goals\n- [ ] Deploy to production\n- [x] Write tests\n- [ ] Add auth\n"
+    )
 
     # Empty dir — not a project
     (ws / "random-dir").mkdir()
@@ -89,6 +99,7 @@ def workspace(tmp_path):
 
 
 # ─── Discovery Tests ──────────────────────────────────────────
+
 
 class TestDiscovery:
     def test_scan_detects_projects(self, parietal, workspace):
@@ -140,11 +151,14 @@ class TestDiscovery:
 
 # ─── Signal Inference Tests ───────────────────────────────────
 
+
 class TestSignalInference:
     def test_log_file_watchers_generated(self, parietal, workspace):
         model = parietal.scan(str(workspace))
         bot = [p for p in model.projects if p.name == "my-bot"][0]
-        log_signals = [s for s in bot.health_signals if s.type == "file_age" and "log" in s.id]
+        log_signals = [
+            s for s in bot.health_signals if s.type == "file_age" and "log" in s.id
+        ]
         assert len(log_signals) >= 1
 
     def test_trading_bot_trade_signals(self, parietal, workspace):
@@ -177,12 +191,15 @@ class TestSignalInference:
 
 # ─── File Age Sensor Tests ────────────────────────────────────
 
+
 class TestFileAgeSensor:
     def test_healthy_recent_file(self, parietal, tmp_path):
         f = tmp_path / "test.log"
         f.write_text("data")
         signal = HealthSignal(
-            id="test_log", type="file_age", target=str(f),
+            id="test_log",
+            type="file_age",
+            target=str(f),
             healthy_if="age_hours < 24",
         )
         result = parietal._check_file_age(signal)
@@ -196,7 +213,9 @@ class TestFileAgeSensor:
         old_time = time.time() - (48 * 3600)
         os.utime(f, (old_time, old_time))
         signal = HealthSignal(
-            id="old_log", type="file_age", target=str(f),
+            id="old_log",
+            type="file_age",
+            target=str(f),
             healthy_if="age_hours < 24",
         )
         result = parietal._check_file_age(signal)
@@ -205,7 +224,9 @@ class TestFileAgeSensor:
 
     def test_missing_file(self, parietal):
         signal = HealthSignal(
-            id="missing", type="file_age", target="/nonexistent/file.log",
+            id="missing",
+            type="file_age",
+            target="/nonexistent/file.log",
             healthy_if="age_hours < 24",
         )
         result = parietal._check_file_age(signal)
@@ -215,10 +236,13 @@ class TestFileAgeSensor:
 
 # ─── Git Sensor Tests ────────────────────────────────────────
 
+
 class TestGitSensor:
     def test_clean_repo(self, parietal, tmp_path):
         signal = HealthSignal(
-            id="git_test", type="git_status", target=str(tmp_path),
+            id="git_test",
+            type="git_status",
+            target=str(tmp_path),
             healthy_if="no_uncommitted",
         )
         with patch("subprocess.run") as mock_run:
@@ -229,7 +253,9 @@ class TestGitSensor:
 
     def test_dirty_repo(self, parietal, tmp_path):
         signal = HealthSignal(
-            id="git_test", type="git_status", target=str(tmp_path),
+            id="git_test",
+            type="git_status",
+            target=str(tmp_path),
             healthy_if="no_uncommitted",
         )
         with patch("subprocess.run") as mock_run:
@@ -240,6 +266,7 @@ class TestGitSensor:
 
 
 # ─── Weight Update Tests (PLASTICITY feedback) ───────────────
+
 
 class TestWeightUpdates:
     def test_actionable_increases_weight(self, parietal, workspace):
@@ -295,10 +322,13 @@ class TestWeightUpdates:
 
         # Reload from disk
         p2 = Parietal(state_dir=state_dir)
-        assert p2.world_model.signal_weights.get(sig.id) == pytest.approx(expected, abs=0.001)
+        assert p2.world_model.signal_weights.get(sig.id) == pytest.approx(
+            expected, abs=0.001
+        )
 
 
 # ─── Context Output Tests ────────────────────────────────────
+
 
 class TestContext:
     def test_get_context_structure(self, parietal, workspace):
@@ -322,6 +352,7 @@ class TestContext:
 
 
 # ─── Re-scan Tests ────────────────────────────────────────────
+
 
 class TestRescan:
     def test_rescan_does_not_duplicate_sensors(self, parietal, workspace):
@@ -347,6 +378,7 @@ class TestRescan:
 
 # ─── State Isolation Tests ────────────────────────────────────
 
+
 class TestStateIsolation:
     def test_two_instances_independent(self, tmp_path, workspace):
         sd1 = tmp_path / "state1"
@@ -371,6 +403,7 @@ class TestStateIsolation:
 
 # ─── Goal Condition Tests ─────────────────────────────────────
 
+
 class TestGoalConditions:
     def test_extract_pending_goals(self, parietal, workspace):
         parietal.scan(str(workspace))
@@ -388,6 +421,7 @@ class TestGoalConditions:
 
 
 # ─── Condition Evaluation Tests ───────────────────────────────
+
 
 class TestEvalCondition:
     def test_less_than(self):
@@ -414,11 +448,16 @@ class TestEvalCondition:
 
 # ─── Serialization Tests ─────────────────────────────────────
 
+
 class TestSerialization:
     def test_health_signal_roundtrip(self):
         sig = HealthSignal(
-            id="test", type="file_age", target="/tmp/test.log",
-            healthy_if="age_hours < 24", drive_impact="goals", weight=0.8,
+            id="test",
+            type="file_age",
+            target="/tmp/test.log",
+            healthy_if="age_hours < 24",
+            drive_impact="goals",
+            weight=0.8,
         )
         d = sig.to_dict()
         sig2 = HealthSignal.from_dict(d)
@@ -438,6 +477,7 @@ class TestSerialization:
 
 
 # ─── Sensor Registration Tests ───────────────────────────────
+
 
 class TestSensorRegistration:
     def test_register_sensors_returns_count(self, parietal, workspace):
@@ -462,11 +502,14 @@ class TestSensorRegistration:
 
 # ─── HTTP Sensor Async Tests ─────────────────────────────────
 
+
 class TestHttpSensor:
     def test_http_sensor_success(self):
         from pulse.src.sensors.parietal_sensors import ParietalHttpSensor
+
         signal = HealthSignal(
-            id="http_test", type="http_health",
+            id="http_test",
+            type="http_health",
             target="https://example.com/health",
             healthy_if="status == 200",
         )
@@ -475,8 +518,10 @@ class TestHttpSensor:
 
     def test_http_sensor_read_error(self):
         from pulse.src.sensors.parietal_sensors import ParietalHttpSensor
+
         signal = HealthSignal(
-            id="http_fail", type="http_health",
+            id="http_fail",
+            type="http_health",
             target="https://doesnotexist.invalid/health",
             healthy_if="status == 200",
         )
@@ -488,6 +533,7 @@ class TestHttpSensor:
 
 
 # ─── Max Projects Cap Test ────────────────────────────────────
+
 
 class TestCaps:
     def test_max_projects_respected(self, tmp_path):
@@ -507,6 +553,7 @@ class TestCaps:
 
 
 # ─── Get Status Test ──────────────────────────────────────────
+
 
 class TestGetStatus:
     def test_status_structure(self, parietal, workspace):

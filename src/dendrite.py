@@ -47,11 +47,13 @@ def _clamp(v: float) -> float:
     return max(0.0, min(1.0, v))
 
 
-def record_interaction(person: str, valence: float = 0.0, style: Optional[str] = None) -> dict:
+def record_interaction(
+    person: str, valence: float = 0.0, style: Optional[str] = None
+) -> dict:
     """Record an interaction with a person."""
     state = _load_state()
     person_lower = person.lower()
-    
+
     if person_lower not in state["people"]:
         state["people"][person_lower] = {
             "trust": 0.3,
@@ -61,35 +63,41 @@ def record_interaction(person: str, valence: float = 0.0, style: Optional[str] =
             "emotional_valence": 0.5,
             "is_primary": False,
         }
-    
+
     p = state["people"][person_lower]
     p["interaction_count"] += 1
     p["last_interaction"] = time.time()
-    
+
     # Update emotional valence (exponential moving average)
     p["emotional_valence"] = _clamp(p["emotional_valence"] * 0.8 + valence * 0.2)
-    
+
     # Trust slowly builds with positive interactions
     if valence > 0:
         p["trust"] = _clamp(p["trust"] + 0.01)
     elif valence < -0.5:
         p["trust"] = _clamp(p["trust"] - 0.05)
-    
+
     if style:
         p["communication_style"] = style
-    
+
     state["last_update"] = time.time()
     _save_state(state)
-    
+
     # Broadcast significant interactions
     if person_lower == PRIMARY_PERSON or p["interaction_count"] % 10 == 0:
-        thalamus.append({
-            "source": "dendrite",
-            "type": "interaction",
-            "salience": 0.4 if person_lower != PRIMARY_PERSON else 0.6,
-            "data": {"person": person_lower, "valence": valence, "trust": p["trust"]},
-        })
-    
+        thalamus.append(
+            {
+                "source": "dendrite",
+                "type": "interaction",
+                "salience": 0.4 if person_lower != PRIMARY_PERSON else 0.6,
+                "data": {
+                    "person": person_lower,
+                    "valence": valence,
+                    "trust": p["trust"],
+                },
+            }
+        )
+
     return dict(p)
 
 

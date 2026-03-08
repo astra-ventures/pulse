@@ -10,39 +10,76 @@ import pytest
 
 # fastapi is an optional dependency (pip install pulse-agent[observation])
 # Skip this entire module if it isn't installed rather than error.
-fastapi = pytest.importorskip("fastapi", reason="fastapi not installed; run: pip install 'pulse-agent[observation]'")
+fastapi = pytest.importorskip(
+    "fastapi",
+    reason="fastapi not installed; run: pip install 'pulse-agent[observation]'",
+)
 from fastapi.testclient import TestClient
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture()
 def state_dir(tmp_path):
     """Temporary state directory pre-populated with sample state files."""
     # drive-performance.json
-    (tmp_path / "drive-performance.json").write_text(json.dumps({
-        "drives": {"curiosity": 1.8, "goals": 2.1, "connection": 0.9, "autonomy": 1.4}
-    }))
+    (tmp_path / "drive-performance.json").write_text(
+        json.dumps(
+            {
+                "drives": {
+                    "curiosity": 1.8,
+                    "goals": 2.1,
+                    "connection": 0.9,
+                    "autonomy": 1.4,
+                }
+            }
+        )
+    )
     # endocrine-state.json
-    (tmp_path / "endocrine-state.json").write_text(json.dumps({
-        "hormones": {"cortisol": 0.22, "dopamine": 0.65, "serotonin": 0.78,
-                     "oxytocin": 0.40, "adrenaline": 0.08, "melatonin": 0.12}
-    }))
+    (tmp_path / "endocrine-state.json").write_text(
+        json.dumps(
+            {
+                "hormones": {
+                    "cortisol": 0.22,
+                    "dopamine": 0.65,
+                    "serotonin": 0.78,
+                    "oxytocin": 0.40,
+                    "adrenaline": 0.08,
+                    "melatonin": 0.12,
+                }
+            }
+        )
+    )
     # limbic-state.json
-    (tmp_path / "limbic-state.json").write_text(json.dumps({
-        "current_valence": 0.4, "current_intensity": 0.6,
-        "current_emotion": "curious", "active_pattern": "exploration",
-        "recent_memories": [{"event": "built the 3D Internet moon", "valence": 0.8}],
-    }))
+    (tmp_path / "limbic-state.json").write_text(
+        json.dumps(
+            {
+                "current_valence": 0.4,
+                "current_intensity": 0.6,
+                "current_emotion": "curious",
+                "active_pattern": "exploration",
+                "recent_memories": [
+                    {"event": "built the 3D Internet moon", "valence": 0.8}
+                ],
+            }
+        )
+    )
     # circadian-state.json
-    (tmp_path / "circadian-state.json").write_text(json.dumps({
-        "energy_level": 0.55, "sleep_phase": "late-night",
-        "peak_energy_hour": 14, "is_resting": False, "sleep_quality_avg": 0.72,
-    }))
+    (tmp_path / "circadian-state.json").write_text(
+        json.dumps(
+            {
+                "energy_level": 0.55,
+                "sleep_phase": "late-night",
+                "peak_energy_hour": 14,
+                "is_resting": False,
+                "sleep_quality_avg": 0.72,
+            }
+        )
+    )
     # soma-state.json
-    (tmp_path / "soma-state.json").write_text(json.dumps({
-        "energy": 0.65, "strain": 0.12, "readiness": 0.78
-    }))
+    (tmp_path / "soma-state.json").write_text(
+        json.dumps({"energy": 0.65, "strain": 0.12, "readiness": 0.78})
+    )
     # chronicle.jsonl
     events = [
         {"timestamp": time.time() - i * 60, "level": "info", "message": f"Event {i}"}
@@ -50,13 +87,21 @@ def state_dir(tmp_path):
     ]
     (tmp_path / "chronicle.jsonl").write_text("\n".join(json.dumps(e) for e in events))
     # engram-store.json
-    (tmp_path / "engram-store.json").write_text(json.dumps({
-        "engrams": [
-            {"id": "e1", "content": "built the moon at 1 AM", "importance": 0.9},
-            {"id": "e2", "content": "Pulse v0.3.0 planning", "importance": 0.8},
-            {"id": "e3", "content": "unrelated entry", "importance": 0.3},
-        ]
-    }))
+    (tmp_path / "engram-store.json").write_text(
+        json.dumps(
+            {
+                "engrams": [
+                    {
+                        "id": "e1",
+                        "content": "built the moon at 1 AM",
+                        "importance": 0.9,
+                    },
+                    {"id": "e2", "content": "Pulse v0.3.0 planning", "importance": 0.8},
+                    {"id": "e3", "content": "unrelated entry", "importance": 0.3},
+                ]
+            }
+        )
+    )
     return tmp_path
 
 
@@ -69,6 +114,7 @@ def client(state_dir, monkeypatch):
     # Re-import app after env patch to pick up new STATE_DIR
     import importlib
     import pulse.src.observation_api as obs_mod
+
     importlib.reload(obs_mod)
 
     return TestClient(obs_mod.app)
@@ -82,12 +128,14 @@ def auth_client(state_dir, monkeypatch):
 
     import importlib
     import pulse.src.observation_api as obs_mod
+
     importlib.reload(obs_mod)
 
     return TestClient(obs_mod.app)
 
 
 # ── /health ───────────────────────────────────────────────────────────────────
+
 
 class TestHealth:
     def test_health_ok(self, client):
@@ -108,6 +156,7 @@ class TestHealth:
     def test_health_stale_files(self, state_dir, monkeypatch):
         """Files older than 5 min → daemon_alive=False."""
         import importlib
+
         monkeypatch.setenv("PULSE_STATE_DIR", str(state_dir))
         monkeypatch.setenv("PULSE_OBS_TOKEN", "")
         # Age the drive file
@@ -116,6 +165,7 @@ class TestHealth:
         os.utime(drive_file, (old_time, old_time))
 
         import pulse.src.observation_api as obs_mod
+
         importlib.reload(obs_mod)
         c = TestClient(obs_mod.app)
         r = c.get("/health")
@@ -127,6 +177,7 @@ class TestHealth:
 
 
 # ── /state ────────────────────────────────────────────────────────────────────
+
 
 class TestFullState:
     def test_state_ok(self, client):
@@ -144,6 +195,7 @@ class TestFullState:
 
 
 # ── /state/drives ─────────────────────────────────────────────────────────────
+
 
 class TestDrives:
     def test_drives_ok(self, client):
@@ -170,9 +222,11 @@ class TestDrives:
     def test_drives_missing_file(self, tmp_path, monkeypatch):
         """Empty state dir returns empty drives without crashing."""
         import importlib
+
         monkeypatch.setenv("PULSE_STATE_DIR", str(tmp_path))
         monkeypatch.setenv("PULSE_OBS_TOKEN", "")
         import pulse.src.observation_api as obs_mod
+
         importlib.reload(obs_mod)
         c = TestClient(obs_mod.app)
         r = c.get("/state/drives")
@@ -180,6 +234,7 @@ class TestDrives:
 
 
 # ── /state/emotional ──────────────────────────────────────────────────────────
+
 
 class TestEmotional:
     def test_emotional_ok(self, client):
@@ -207,6 +262,7 @@ class TestEmotional:
 
 # ── /state/endocrine ──────────────────────────────────────────────────────────
 
+
 class TestEndocrine:
     def test_endocrine_ok(self, client):
         r = client.get("/state/endocrine")
@@ -214,7 +270,14 @@ class TestEndocrine:
 
     def test_endocrine_all_hormones(self, client):
         data = client.get("/state/endocrine").json()
-        for h in ("cortisol", "dopamine", "serotonin", "oxytocin", "adrenaline", "melatonin"):
+        for h in (
+            "cortisol",
+            "dopamine",
+            "serotonin",
+            "oxytocin",
+            "adrenaline",
+            "melatonin",
+        ):
             assert h in data, f"Missing hormone: {h}"
 
     def test_endocrine_values_rounded(self, client):
@@ -232,6 +295,7 @@ class TestEndocrine:
 
 
 # ── /state/circadian ─────────────────────────────────────────────────────────
+
 
 class TestCircadian:
     def test_circadian_ok(self, client):
@@ -251,6 +315,7 @@ class TestCircadian:
 
 # ── /state/soma ──────────────────────────────────────────────────────────────
 
+
 class TestSoma:
     def test_soma_ok(self, client):
         r = client.get("/state/soma")
@@ -269,6 +334,7 @@ class TestSoma:
 
 
 # ── /chronicle/recent ────────────────────────────────────────────────────────
+
 
 class TestChronicle:
     def test_chronicle_ok(self, client):
@@ -295,9 +361,11 @@ class TestChronicle:
 
     def test_chronicle_empty_file(self, tmp_path, monkeypatch):
         import importlib
+
         monkeypatch.setenv("PULSE_STATE_DIR", str(tmp_path))
         monkeypatch.setenv("PULSE_OBS_TOKEN", "")
         import pulse.src.observation_api as obs_mod
+
         importlib.reload(obs_mod)
         c = TestClient(obs_mod.app)
         r = c.get("/chronicle/recent")
@@ -306,6 +374,7 @@ class TestChronicle:
 
 
 # ── /engram/search ────────────────────────────────────────────────────────────
+
 
 class TestEngramSearch:
     def test_search_ok(self, client):
@@ -337,6 +406,7 @@ class TestEngramSearch:
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
+
 class TestAuth:
     def test_no_auth_required_when_no_token_set(self, client):
         r = client.get("/health")
@@ -347,7 +417,9 @@ class TestAuth:
         assert r.status_code == 401
 
     def test_auth_accepted_with_correct_token(self, auth_client):
-        r = auth_client.get("/health", headers={"Authorization": "Bearer test-token-123"})
+        r = auth_client.get(
+            "/health", headers={"Authorization": "Bearer test-token-123"}
+        )
         assert r.status_code == 200
 
     def test_auth_rejected_with_wrong_token(self, auth_client):
@@ -360,6 +432,7 @@ class TestAuth:
 
 
 # ── /dashboard ────────────────────────────────────────────────────────────────
+
 
 class TestDashboard:
     def test_dashboard_ok(self, client):

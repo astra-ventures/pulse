@@ -11,14 +11,29 @@ from pulse.src.core.daemon import PulseDaemon
 
 class StructuredFormatter(logging.Formatter):
     """Formatter that appends structured extra fields as JSON when present."""
+
     def format(self, record):
         base = super().format(record)
-        event = getattr(record, 'event', None)
+        event = getattr(record, "event", None)
         if event:
             import json
-            extras = {k: v for k, v in record.__dict__.items()
-                      if k in ('event', 'turn', 'reason', 'pressure', 'top_drive',
-                               'mutation_type', 'target', 'before', 'after')}
+
+            extras = {
+                k: v
+                for k, v in record.__dict__.items()
+                if k
+                in (
+                    "event",
+                    "turn",
+                    "reason",
+                    "pressure",
+                    "top_drive",
+                    "mutation_type",
+                    "target",
+                    "before",
+                    "after",
+                )
+            }
             base += f" | {json.dumps(extras, default=str)}"
         return base
 
@@ -44,7 +59,11 @@ def setup_logging(config: PulseConfig):
         handlers.append(console_handler)
 
     logging.basicConfig(
-        level=getattr(logging, os.environ.get("PULSE_LOG_LEVEL", config.logging.level).upper(), logging.INFO),
+        level=getattr(
+            logging,
+            os.environ.get("PULSE_LOG_LEVEL", config.logging.level).upper(),
+            logging.INFO,
+        ),
         handlers=handlers,
     )
 

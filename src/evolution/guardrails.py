@@ -25,14 +25,14 @@ class GuardrailLimits:
 
     # Drive weights: min/max range
     min_drive_weight: float = 0.05  # can't zero out a drive
-    max_drive_weight: float = 3.0   # can't make one drive dominate everything
+    max_drive_weight: float = 3.0  # can't make one drive dominate everything
 
     # Pressure rates
     min_pressure_rate: float = 0.001
     max_pressure_rate: float = 0.1
 
     # Trigger thresholds
-    min_trigger_threshold: float = 0.2   # can't trigger on every tick
+    min_trigger_threshold: float = 0.2  # can't trigger on every tick
     max_trigger_threshold: float = 0.95  # can't make itself unreachable
 
     # Rate limits (turns per hour)
@@ -40,13 +40,13 @@ class GuardrailLimits:
     max_turns_per_hour: int = 30
 
     # Cooldown (seconds)
-    min_cooldown: int = 60      # at least 1 minute between triggers
-    max_cooldown: int = 3600    # at most 1 hour
+    min_cooldown: int = 60  # at least 1 minute between triggers
+    max_cooldown: int = 3600  # at most 1 hour
 
     # Max change per mutation (prevents drastic shifts)
-    max_weight_delta: float = 0.5      # can't change a weight by more than 0.5 at once
+    max_weight_delta: float = 0.5  # can't change a weight by more than 0.5 at once
     max_threshold_delta: float = 0.15  # can't shift threshold by more than 0.15 at once
-    max_rate_delta: float = 0.02       # pressure rate changes capped
+    max_rate_delta: float = 0.02  # pressure rate changes capped
 
     # Protected drives (cannot be removed)
     protected_drives: Set[str] = field(default_factory=lambda: {"goals", "growth"})
@@ -60,6 +60,7 @@ class GuardrailLimits:
 
 class GuardrailViolation(Exception):
     """Raised when a mutation violates guardrails."""
+
     pass
 
 
@@ -75,6 +76,7 @@ class Guardrails:
         """Restore mutation timestamps from persisted state."""
         if self._state:
             import time
+
             saved = self._state.get("guardrail_mutation_timestamps", [])
             now = time.time()
             return [t for t in saved if now - t < 3600]
@@ -91,37 +93,50 @@ class Guardrails:
         """Validate and clamp a drive weight change."""
         delta = abs(proposed - current)
         if delta > self.limits.max_weight_delta:
-            clamped = current + (self.limits.max_weight_delta * (1 if proposed > current else -1))
+            clamped = current + (
+                self.limits.max_weight_delta * (1 if proposed > current else -1)
+            )
             logger.warning(
                 f"Weight delta {delta:.2f} exceeds max {self.limits.max_weight_delta}. "
                 f"Clamped {drive_name}: {proposed:.2f} → {clamped:.2f}"
             )
             proposed = clamped
 
-        proposed = max(self.limits.min_drive_weight, min(self.limits.max_drive_weight, proposed))
+        proposed = max(
+            self.limits.min_drive_weight, min(self.limits.max_drive_weight, proposed)
+        )
         return round(proposed, 4)
 
     def validate_threshold_change(self, current: float, proposed: float) -> float:
         """Validate and clamp a trigger threshold change."""
         delta = abs(proposed - current)
         if delta > self.limits.max_threshold_delta:
-            clamped = current + (self.limits.max_threshold_delta * (1 if proposed > current else -1))
+            clamped = current + (
+                self.limits.max_threshold_delta * (1 if proposed > current else -1)
+            )
             logger.warning(
                 f"Threshold delta {delta:.2f} exceeds max. Clamped: {proposed:.2f} → {clamped:.2f}"
             )
             proposed = clamped
 
-        proposed = max(self.limits.min_trigger_threshold, min(self.limits.max_trigger_threshold, proposed))
+        proposed = max(
+            self.limits.min_trigger_threshold,
+            min(self.limits.max_trigger_threshold, proposed),
+        )
         return round(proposed, 4)
 
     def validate_rate_change(self, current: float, proposed: float) -> float:
         """Validate pressure rate change."""
         delta = abs(proposed - current)
         if delta > self.limits.max_rate_delta:
-            clamped = current + (self.limits.max_rate_delta * (1 if proposed > current else -1))
+            clamped = current + (
+                self.limits.max_rate_delta * (1 if proposed > current else -1)
+            )
             proposed = clamped
 
-        proposed = max(self.limits.min_pressure_rate, min(self.limits.max_pressure_rate, proposed))
+        proposed = max(
+            self.limits.min_pressure_rate, min(self.limits.max_pressure_rate, proposed)
+        )
         return round(proposed, 6)
 
     def validate_drive_removal(self, drive_name: str):
@@ -141,7 +156,10 @@ class Guardrails:
 
     def validate_turns_per_hour(self, proposed: int) -> int:
         """Validate turns per hour change."""
-        return max(self.limits.min_turns_per_hour, min(self.limits.max_turns_per_hour, proposed))
+        return max(
+            self.limits.min_turns_per_hour,
+            min(self.limits.max_turns_per_hour, proposed),
+        )
 
     def validate_cooldown(self, proposed: int) -> int:
         """Validate cooldown change."""
@@ -150,9 +168,12 @@ class Guardrails:
     def check_mutation_rate(self):
         """Ensure we're not mutating too fast."""
         import time
+
         now = time.time()
         one_hour_ago = now - 3600
-        self._mutation_timestamps = [t for t in self._mutation_timestamps if t > one_hour_ago]
+        self._mutation_timestamps = [
+            t for t in self._mutation_timestamps if t > one_hour_ago
+        ]
 
         if len(self._mutation_timestamps) >= self.limits.max_mutations_per_hour:
             raise GuardrailViolation(

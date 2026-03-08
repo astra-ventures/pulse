@@ -33,7 +33,7 @@ def _load_state() -> dict:
             pass
     return {
         "pending_signals": {},  # need_name → {modules: set-as-list, first_seen, last_seen, count}
-        "active_drives": {},    # drive_name → {weight, born_ts, last_active_ts, source_modules}
+        "active_drives": {},  # drive_name → {weight, born_ts, last_active_ts, source_modules}
         "retired_drives": [],
         "last_scan": 0,
     }
@@ -48,7 +48,7 @@ def record_need_signal(need_name: str, source_module: str) -> dict:
     """Record a need signal from a module. May birth a drive."""
     state = _load_state()
     now = time.time()
-    
+
     if need_name not in state["pending_signals"]:
         state["pending_signals"][need_name] = {
             "modules": [],
@@ -56,14 +56,18 @@ def record_need_signal(need_name: str, source_module: str) -> dict:
             "last_seen": now,
             "count": 0,
         }
-    
+
     pending = state["pending_signals"][need_name]
     if source_module not in pending["modules"]:
         pending["modules"].append(source_module)
     pending["last_seen"] = now
     pending["count"] += 1
-    
-    result = {"need": need_name, "module_count": len(pending["modules"]), "birthed": False}
+
+    result = {
+        "need": need_name,
+        "module_count": len(pending["modules"]),
+        "birthed": False,
+    }
 
     # Check if threshold met and not already an active drive
     threshold = 2 if need_name in REDUCED_THRESHOLD_NEEDS else SIGNAL_THRESHOLD
@@ -73,7 +77,9 @@ def record_need_signal(need_name: str, source_module: str) -> dict:
     age_hours = (now - pending["first_seen"]) / 3600
     count_escalation = pending["count"] >= 50 and age_hours >= 1.0
 
-    if (len(pending["modules"]) >= threshold or count_escalation) and need_name not in state["active_drives"]:
+    if (
+        len(pending["modules"]) >= threshold or count_escalation
+    ) and need_name not in state["active_drives"]:
         state["active_drives"][need_name] = {
             "weight": 1.0,
             "born_ts": now,
@@ -83,14 +89,19 @@ def record_need_signal(need_name: str, source_module: str) -> dict:
         }
         del state["pending_signals"][need_name]
         result["birthed"] = True
-        
-        thalamus.append({
-            "source": "hypothalamus",
-            "type": "drive_born",
-            "salience": 0.7,
-            "data": {"drive": need_name, "source_modules": result.get("source_modules", pending["modules"])},
-        })
-    
+
+        thalamus.append(
+            {
+                "source": "hypothalamus",
+                "type": "drive_born",
+                "salience": 0.7,
+                "data": {
+                    "drive": need_name,
+                    "source_modules": result.get("source_modules", pending["modules"]),
+                },
+            }
+        )
+
     _save_state(state)
     return result
 
@@ -100,13 +111,13 @@ def scan_drives() -> dict:
     state = _load_state()
     now = time.time()
     retired = []
-    
+
     for name, drive in list(state["active_drives"].items()):
         # Natural weight decay
         age_days = (now - drive["born_ts"]) / 86400
         if age_days > 7:  # start decaying after 1 week
             drive["weight"] = max(WEIGHT_FLOOR, drive["weight"] - 0.01)
-        
+
         # Track time at floor
         if drive["weight"] <= WEIGHT_FLOOR:
             if drive["at_floor_since"] is None:
@@ -115,26 +126,30 @@ def scan_drives() -> dict:
                 retired.append(name)
         else:
             drive["at_floor_since"] = None
-    
+
     for name in retired:
         drive = state["active_drives"].pop(name)
-        state["retired_drives"].append({
-            "name": name,
-            "retired_ts": now,
-            "lifespan_days": (now - drive["born_ts"]) / 86400,
-        })
+        state["retired_drives"].append(
+            {
+                "name": name,
+                "retired_ts": now,
+                "lifespan_days": (now - drive["born_ts"]) / 86400,
+            }
+        )
         state["retired_drives"] = state["retired_drives"][-50:]
-        
-        thalamus.append({
-            "source": "hypothalamus",
-            "type": "drive_retired",
-            "salience": 0.4,
-            "data": {"drive": name},
-        })
-    
+
+        thalamus.append(
+            {
+                "source": "hypothalamus",
+                "type": "drive_retired",
+                "salience": 0.4,
+                "data": {"drive": name},
+            }
+        )
+
     state["last_scan"] = now
     _save_state(state)
-    
+
     return {
         "active_drives": len(state["active_drives"]),
         "retired": retired,

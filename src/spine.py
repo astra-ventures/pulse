@@ -80,13 +80,20 @@ def _max_level(*levels: str) -> str:
     return LEVELS[max_idx]
 
 
-def check_token_usage(current_in: int, current_out: int, budget_1h: int = 100000, budget_24h: int = 1000000) -> dict:
+def check_token_usage(
+    current_in: int,
+    current_out: int,
+    budget_1h: int = 100000,
+    budget_24h: int = 1000000,
+) -> dict:
     """Track token burn rate, warn at thresholds."""
     state = _load()
     total = current_in + current_out
     state["metrics"]["token_usage_1h"] = total
     # Accumulate 24h (simplified: just track reported)
-    state["metrics"]["token_usage_24h"] = state["metrics"].get("token_usage_24h", 0) + total
+    state["metrics"]["token_usage_24h"] = (
+        state["metrics"].get("token_usage_24h", 0) + total
+    )
 
     pct = total / max(budget_1h, 1)
     level = "green"
@@ -99,7 +106,12 @@ def check_token_usage(current_in: int, current_out: int, budget_1h: int = 100000
 
     alert = None
     if level != "green":
-        alert = {"source": "token_usage", "level": level, "pct": round(pct, 3), "ts": int(time.time() * 1000)}
+        alert = {
+            "source": "token_usage",
+            "level": level,
+            "pct": round(pct, 3),
+            "ts": int(time.time() * 1000),
+        }
         _upsert_alert(state, alert)
     else:
         _remove_alert(state, "token_usage")
@@ -123,18 +135,28 @@ def check_context_size(current_tokens: int, max_tokens: int) -> dict:
         level = "yellow"
 
     if level != "green":
-        alert = {"source": "context_size", "level": level, "pct": round(pct, 3), "ts": int(time.time() * 1000)}
+        alert = {
+            "source": "context_size",
+            "level": level,
+            "pct": round(pct, 3),
+            "ts": int(time.time() * 1000),
+        }
         _upsert_alert(state, alert)
     else:
         _remove_alert(state, "context_size")
 
     _save(state)
-    return {"level": level, "pct": round(pct, 4), "current": current_tokens, "max": max_tokens}
+    return {
+        "level": level,
+        "pct": round(pct, 4),
+        "current": current_tokens,
+        "max": max_tokens,
+    }
 
 
 def check_cron_health(job_states: list) -> dict:
     """Track cron success/failure rates.
-    
+
     job_states: list of {"name": str, "success": bool, ...}
     """
     state = _load()
@@ -159,20 +181,41 @@ def check_cron_health(job_states: list) -> dict:
         level = "yellow"
 
     if level != "green":
-        alert = {"source": "cron_health", "level": level, "error_rate": round(error_rate, 3), "ts": int(time.time() * 1000)}
+        alert = {
+            "source": "cron_health",
+            "level": level,
+            "error_rate": round(error_rate, 3),
+            "ts": int(time.time() * 1000),
+        }
         _upsert_alert(state, alert)
     else:
         _remove_alert(state, "cron_health")
 
     _save(state)
-    return {"level": level, "success_rate": round(success_rate, 4), "error_rate": round(error_rate, 4), "total_jobs": total}
+    return {
+        "level": level,
+        "success_rate": round(success_rate, 4),
+        "error_rate": round(error_rate, 4),
+        "total_jobs": total,
+    }
 
 
 def check_provider_health(provider: str, latency_ms: int, success: bool) -> dict:
     """Track API provider responsiveness."""
     state = _load()
     providers = state["metrics"].setdefault("provider_health", {})
-    p = providers.setdefault(provider, {"latency_avg_ms": 0, "success_rate": 1.0, "in_cooldown": False, "_samples": 0, "_latency_sum": 0, "_success_count": 0, "_total_count": 0})
+    p = providers.setdefault(
+        provider,
+        {
+            "latency_avg_ms": 0,
+            "success_rate": 1.0,
+            "in_cooldown": False,
+            "_samples": 0,
+            "_latency_sum": 0,
+            "_success_count": 0,
+            "_total_count": 0,
+        },
+    )
 
     p["_samples"] = p.get("_samples", 0) + 1
     p["_latency_sum"] = p.get("_latency_sum", 0) + latency_ms
@@ -181,7 +224,9 @@ def check_provider_health(provider: str, latency_ms: int, success: bool) -> dict
         p["_success_count"] = p.get("_success_count", 0) + 1
 
     p["latency_avg_ms"] = round(p["_latency_sum"] / p["_samples"])
-    p["success_rate"] = round(p["_success_count"] / p["_total_count"], 4) if p["_total_count"] else 1.0
+    p["success_rate"] = (
+        round(p["_success_count"] / p["_total_count"], 4) if p["_total_count"] else 1.0
+    )
 
     level = "green"
     if not success and p["success_rate"] < 0.5:
@@ -199,13 +244,25 @@ def check_provider_health(provider: str, latency_ms: int, success: bool) -> dict
         p["in_cooldown"] = False
 
     if level != "green":
-        alert = {"source": f"provider:{provider}", "level": level, "latency_ms": latency_ms, "success_rate": p["success_rate"], "ts": int(time.time() * 1000)}
+        alert = {
+            "source": f"provider:{provider}",
+            "level": level,
+            "latency_ms": latency_ms,
+            "success_rate": p["success_rate"],
+            "ts": int(time.time() * 1000),
+        }
         _upsert_alert(state, alert)
     else:
         _remove_alert(state, f"provider:{provider}")
 
     _save(state)
-    return {"level": level, "provider": provider, "latency_avg_ms": p["latency_avg_ms"], "success_rate": p["success_rate"], "in_cooldown": p["in_cooldown"]}
+    return {
+        "level": level,
+        "provider": provider,
+        "latency_avg_ms": p["latency_avg_ms"],
+        "success_rate": p["success_rate"],
+        "in_cooldown": p["in_cooldown"],
+    }
 
 
 def record_metric(metric: str, value: float):
@@ -251,16 +308,18 @@ def check_health() -> dict:
     _save(state)
 
     # Broadcast
-    thalamus.append({
-        "source": "spine",
-        "type": "health",
-        "salience": 0.4 if state["status"] == "green" else 0.8,
-        "data": {
-            "status": state["status"],
-            "alert_count": len(alerts),
-            "paused_crons": state.get("paused_crons", []),
-        },
-    })
+    thalamus.append(
+        {
+            "source": "spine",
+            "type": "health",
+            "salience": 0.4 if state["status"] == "green" else 0.8,
+            "data": {
+                "status": state["status"],
+                "alert_count": len(alerts),
+                "paused_crons": state.get("paused_crons", []),
+            },
+        }
+    )
 
     return state
 
@@ -277,7 +336,9 @@ def _apply_self_correction(state: dict):
 
     if LEVEL_ORDER.get(status, 0) >= LEVEL_ORDER["red"]:
         # At red: flag that all crons should pause (except spine)
-        state["paused_crons"] = list(set(state.get("paused_crons", []) + ["ALL_EXCEPT_SPINE"]))
+        state["paused_crons"] = list(
+            set(state.get("paused_crons", []) + ["ALL_EXCEPT_SPINE"])
+        )
 
     if LEVEL_ORDER.get(status, 0) < LEVEL_ORDER["orange"]:
         # Clear paused crons when healthy
@@ -296,4 +357,6 @@ def _upsert_alert(state: dict, alert: dict):
 
 def _remove_alert(state: dict, source: str):
     """Remove alert by source."""
-    state["active_alerts"] = [a for a in state.get("active_alerts", []) if a.get("source") != source]
+    state["active_alerts"] = [
+        a for a in state.get("active_alerts", []) if a.get("source") != source
+    ]

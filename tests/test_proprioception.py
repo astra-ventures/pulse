@@ -1,4 +1,5 @@
 """Tests for PROPRIOCEPTION — Self-Model / Capability Awareness."""
+
 import json
 import pytest
 from unittest.mock import MagicMock
@@ -9,7 +10,9 @@ from pulse.src import proprioception
 @pytest.fixture(autouse=True)
 def clean_state(tmp_path, monkeypatch):
     monkeypatch.setattr(proprioception, "_DEFAULT_STATE_DIR", tmp_path)
-    monkeypatch.setattr(proprioception, "_DEFAULT_STATE_FILE", tmp_path / "proprioception-state.json")
+    monkeypatch.setattr(
+        proprioception, "_DEFAULT_STATE_FILE", tmp_path / "proprioception-state.json"
+    )
 
 
 @pytest.fixture
@@ -34,6 +37,7 @@ def configured(mock_thalamus):
 
 
 # ── can_i checks ────────────────────────────────────────────────────────
+
 
 def test_can_i_with_available_tool(configured):
     ok, reason = proprioception.can_i("read")
@@ -64,6 +68,7 @@ def test_can_i_unknown_action(configured):
 
 # ── Limit calculations ─────────────────────────────────────────────────
 
+
 def test_get_limits(configured):
     limits = proprioception.get_limits()
     assert limits["context_window"] == 200000
@@ -73,6 +78,7 @@ def test_get_limits(configured):
 
 
 # ── Cost estimation ────────────────────────────────────────────────────
+
 
 def test_estimate_cost_simple():
     cost = proprioception.estimate_cost("say hello")
@@ -89,6 +95,7 @@ def test_estimate_cost_complex():
 
 # ── would_exceed ────────────────────────────────────────────────────────
 
+
 def test_would_exceed_false(configured):
     assert proprioception.would_exceed("simple task") is False
 
@@ -100,6 +107,7 @@ def test_would_exceed_true(mock_thalamus):
 
 
 # ── Capability update ──────────────────────────────────────────────────
+
 
 def test_update_capabilities_saves(mock_thalamus):
     proprioception.update_capabilities("opus", ["read"], 100000)
@@ -119,6 +127,7 @@ def test_model_switch_broadcasts(mock_thalamus):
 
 # ── Identity snapshot ──────────────────────────────────────────────────
 
+
 def test_identity_snapshot(configured):
     snap = proprioception.get_identity_snapshot()
     assert snap["model"] == "claude-opus-4-6"
@@ -127,6 +136,7 @@ def test_identity_snapshot(configured):
 
 
 # ── THALAMUS integration ──────────────────────────────────────────────
+
 
 def test_thalamus_broadcast_on_model_change(mock_thalamus):
     proprioception.update_capabilities("a", [], 100)

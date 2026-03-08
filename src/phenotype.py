@@ -56,19 +56,19 @@ def compute_phenotype(
     buffer_context: Optional[dict] = None,
 ) -> dict:
     """Compute current phenotype from nervous system state.
-    
+
     Returns: {tone, sentence_length, humor, emoji_density, intensity, vulnerability}
     """
     p = _default_phenotype()
     hormones = (mood or {}).get("hormones", {})
     mood_label = (mood or {}).get("label", "neutral")
-    
+
     cortisol = hormones.get("cortisol", 0.2)
     dopamine = hormones.get("dopamine", 0.3)
     oxytocin = hormones.get("oxytocin", 0.2)
     adrenaline = hormones.get("adrenaline", 0.0)
     melatonin = hormones.get("melatonin", 0.1)
-    
+
     # Rule: high cortisol + dopamine = "wired" (short, intense)
     if cortisol >= 0.5 and dopamine >= 0.5:
         p["tone"] = "wired"
@@ -76,7 +76,7 @@ def compute_phenotype(
         p["intensity"] = _clamp(0.7 + cortisol * 0.3)
         p["humor"] = 0.1
         p["emoji_density"] = 0.1
-    
+
     # Rule: TWILIGHT + oxytocin = "vulnerable" (longer, softer)
     elif circadian_mode == "twilight" and oxytocin >= 0.4:
         p["tone"] = "vulnerable"
@@ -85,7 +85,7 @@ def compute_phenotype(
         p["humor"] = 0.1
         p["vulnerability"] = _clamp(0.5 + oxytocin * 0.3)
         p["emoji_density"] = 0.15
-    
+
     # Rule: AMYGDALA threat = "urgent" (no humor)
     elif threat and threat.get("threat_level", 0) > 0:
         p["tone"] = "urgent"
@@ -94,7 +94,7 @@ def compute_phenotype(
         p["emoji_density"] = 0.0
         p["intensity"] = _clamp(0.7 + threat.get("threat_level", 0) * 0.3)
         p["vulnerability"] = 0.0
-    
+
     # Rule: post-REM = "contemplative"
     elif circadian_mode == "dawn" and melatonin < 0.2:
         p["tone"] = "contemplative"
@@ -103,7 +103,7 @@ def compute_phenotype(
         p["intensity"] = 0.3
         p["vulnerability"] = 0.4
         p["emoji_density"] = 0.1
-    
+
     # Default modulations
     else:
         # Dopamine boosts energy/humor
@@ -111,18 +111,18 @@ def compute_phenotype(
             p["tone"] = "energized"
             p["humor"] = _clamp(0.3 + dopamine * 0.3)
             p["intensity"] = _clamp(0.5 + dopamine * 0.2)
-        
+
         # Oxytocin boosts warmth
         if oxytocin >= 0.5:
             p["tone"] = "warm"
             p["emoji_density"] = _clamp(0.2 + oxytocin * 0.2)
             p["vulnerability"] = _clamp(0.2 + oxytocin * 0.2)
-        
+
         # High cortisol alone
         if cortisol >= 0.5:
             p["tone"] = "tense"
             p["humor"] = _clamp(p["humor"] - 0.2)
-    
+
     # Afterimage influence
     if afterimages:
         dominant = max(afterimages, key=lambda a: a.get("current_intensity", 0))
@@ -133,7 +133,7 @@ def compute_phenotype(
         elif emotion in ("elation", "joy"):
             p["humor"] = _clamp(p["humor"] + 0.2)
             p["emoji_density"] = _clamp(p["emoji_density"] + 0.1)
-    
+
     # Save state and broadcast if changed
     state = _load_state()
     old_tone = state["current"].get("tone", "neutral")
@@ -142,16 +142,18 @@ def compute_phenotype(
     state["history"].append({"ts": time.time(), "tone": p["tone"]})
     state["history"] = state["history"][-50:]
     _save_state(state)
-    
+
     # Broadcast shift if tone changed
     if p["tone"] != old_tone:
-        thalamus.append({
-            "source": "phenotype",
-            "type": "shift",
-            "salience": 0.5,
-            "data": {"old_tone": old_tone, "new_tone": p["tone"], "phenotype": p},
-        })
-    
+        thalamus.append(
+            {
+                "source": "phenotype",
+                "type": "shift",
+                "salience": 0.5,
+                "data": {"old_tone": old_tone, "new_tone": p["tone"], "phenotype": p},
+            }
+        )
+
     return p
 
 

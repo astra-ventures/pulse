@@ -15,10 +15,12 @@ from pulse.src import limbic, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "limbic.json"
-    with patch.object(limbic, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(limbic, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(limbic, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(limbic, "_DEFAULT_STATE_FILE", sf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 
@@ -48,7 +50,11 @@ class TestCreationThresholds:
 
 class TestDecayMath:
     def test_no_decay_at_creation(self):
-        ai = {"intensity": 9.0, "created_at": int(time.time() * 1000), "half_life_ms": 14400000}
+        ai = {
+            "intensity": 9.0,
+            "created_at": int(time.time() * 1000),
+            "half_life_ms": 14400000,
+        }
         decayed = limbic._decayed_intensity(ai)
         assert abs(decayed - 9.0) < 0.1
 
@@ -73,7 +79,7 @@ class TestCleanup:
         # Backdate it heavily
         state[0]["created_at"] = int(time.time() * 1000) - 200_000_000  # ~55 hours
         limbic._save_state(state)
-        
+
         active = limbic.get_current_afterimages()
         assert len(active) == 0
 

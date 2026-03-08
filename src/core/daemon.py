@@ -28,7 +28,12 @@ from pulse.src.state.persistence import StatePersistence
 from pulse.src.core.health import HealthServer
 from pulse.src.core.webhook import OpenClawWebhook
 from pulse.src.core.daily_sync import DailyNoteSync
-from pulse.src.core.events import EventBus, TRIGGER_SUCCESS, TRIGGER_FAILURE, MUTATION_APPLIED
+from pulse.src.core.events import (
+    EventBus,
+    TRIGGER_SUCCESS,
+    TRIGGER_FAILURE,
+    MUTATION_APPLIED,
+)
 from pulse.src.integrations import Integration
 from pulse.src.nervous_system import NervousSystem
 from pulse.src.germinal_tasks import generate_tasks as germinal_generate
@@ -40,32 +45,41 @@ def _load_integration(name: str) -> Integration:
     """Load an integration by name or module path."""
     if name == "iris":
         from pulse.src.integrations.iris import IrisIntegration
+
         return IrisIntegration()
     elif name == "default":
         from pulse.src.integrations.default import DefaultIntegration
+
         return DefaultIntegration()
     else:
         # Try importing as a module path (e.g. "mypackage.integrations.custom")
         try:
             import importlib
+
             module = importlib.import_module(name)
             # Look for a class that subclasses Integration
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if (isinstance(attr, type) and issubclass(attr, Integration) 
-                    and attr is not Integration):
+                if (
+                    isinstance(attr, type)
+                    and issubclass(attr, Integration)
+                    and attr is not Integration
+                ):
                     return attr()
             raise ImportError(f"No Integration subclass found in {name}")
         except ImportError as e:
             logger.warning(f"Could not load integration '{name}': {e}. Using default.")
             from pulse.src.integrations.default import DefaultIntegration
+
             return DefaultIntegration()
 
 
 class PulseDaemon:
     """Main daemon process — the nervous system."""
 
-    def __init__(self, config: Optional[PulseConfig] = None, config_path: Optional[str] = None):
+    def __init__(
+        self, config: Optional[PulseConfig] = None, config_path: Optional[str] = None
+    ):
         self.config = config or PulseConfig.load(config_path)
         self.running = False
         self.start_time: Optional[float] = None
@@ -86,10 +100,14 @@ class PulseDaemon:
 
         # Event bus for decoupled side effects
         self.bus = EventBus()
-        
+
         # Daily note sync (if enabled)
-        self.daily_sync = DailyNoteSync(self.config) if self.config.logging.sync_to_daily_notes else None
-        
+        self.daily_sync = (
+            DailyNoteSync(self.config)
+            if self.config.logging.sync_to_daily_notes
+            else None
+        )
+
         # Wire up event handlers
         if self.daily_sync:
             self.bus.on(TRIGGER_SUCCESS, self._on_trigger_daily_sync)
@@ -98,8 +116,15 @@ class PulseDaemon:
 
         # Nervous system — all 19 modules
         try:
-            workspace = str(self.config.workspace.root) if hasattr(self.config, 'workspace') and hasattr(self.config.workspace, 'root') else "~/.openclaw/workspace"
-            self.nervous_system = NervousSystem(config=self.config, workspace_root=workspace)
+            workspace = (
+                str(self.config.workspace.root)
+                if hasattr(self.config, "workspace")
+                and hasattr(self.config.workspace, "root")
+                else "~/.openclaw/workspace"
+            )
+            self.nervous_system = NervousSystem(
+                config=self.config, workspace_root=workspace
+            )
         except Exception as e:
             logger.warning(f"NervousSystem init failed (continuing without): {e}")
             self.nervous_system = None
@@ -164,20 +189,32 @@ class PulseDaemon:
         if self.nervous_system:
             try:
                 ns_status = self.nervous_system.startup()
-                logger.info(f"NervousSystem: {ns_status.get('modules_loaded', 0)} modules loaded")
+                logger.info(
+                    f"NervousSystem: {ns_status.get('modules_loaded', 0)} modules loaded"
+                )
                 # Warm up all modules — ensures state files exist for health dashboard
                 warmup = self.nervous_system.warm_up()
-                logger.info(f"NervousSystem warm-up: {len(warmup.get('warmed', []))} modules warmed")
+                logger.info(
+                    f"NervousSystem warm-up: {len(warmup.get('warmed', []))} modules warmed"
+                )
             except Exception as e:
                 logger.warning(f"NervousSystem startup failed: {e}")
 
             # PARIETAL — initial world model scan + sensor registration
             if self.nervous_system.parietal:
                 try:
-                    workspace = str(self.config.workspace.root) if hasattr(self.config, 'workspace') else "~/.openclaw/workspace"
+                    workspace = (
+                        str(self.config.workspace.root)
+                        if hasattr(self.config, "workspace")
+                        else "~/.openclaw/workspace"
+                    )
                     self.nervous_system.parietal.scan(workspace_root=workspace)
-                    registered = self.nervous_system.parietal.register_sensors(self.sensors)
-                    logger.info(f"PARIETAL: {registered} sensors auto-registered from world model")
+                    registered = self.nervous_system.parietal.register_sensors(
+                        self.sensors
+                    )
+                    logger.info(
+                        f"PARIETAL: {registered} sensors auto-registered from world model"
+                    )
                 except Exception as e:
                     logger.warning(f"PARIETAL init scan failed: {e}")
 
@@ -189,162 +226,203 @@ class PulseDaemon:
             if "pressure_rate" in overrides:
                 self.config.drives.pressure_rate = overrides["pressure_rate"]
             if "min_trigger_interval" in overrides:
-                self.config.openclaw.min_trigger_interval = overrides["min_trigger_interval"]
+                self.config.openclaw.min_trigger_interval = overrides[
+                    "min_trigger_interval"
+                ]
             if "max_turns_per_hour" in overrides:
-                self.config.openclaw.max_turns_per_hour = overrides["max_turns_per_hour"]
+                self.config.openclaw.max_turns_per_hour = overrides[
+                    "max_turns_per_hour"
+                ]
             logger.info(f"Restored config overrides: {overrides}")
 
         try:
-          logger.info("Entering main loop...")
-          while self.running:
-            loop_start = time.time()
+            logger.info("Entering main loop...")
+            while self.running:
+                loop_start = time.time()
 
-            try:
-                logger.debug(f"Loop tick — uptime {time.time() - self.start_time:.0f}s")
-
-                # SENSE — gather sensor readings
-                logger.debug("SENSE: reading sensors...")
-                sensor_data = await self.sensors.read()
-                logger.debug(f"SENSE: done. Changes: {sensor_data.get('filesystem', {}).get('changes', [])}")
-
-                # NERVOUS SYSTEM — pre-sense enrichment
-                ns_context = {}
-                if self.nervous_system:
-                    try:
-                        ns_context = self.nervous_system.pre_sense(sensor_data)
-                        if ns_context.get("should_pause"):
-                            logger.info("NervousSystem advises pause (threat/health)")
-                    except Exception as e:
-                        logger.warning(f"NervousSystem pre_sense failed: {e}")
-
-                # DRIVE — update drive pressures based on sensors + time
-                self.drives.refresh_sources()  # I/O: read workspace files (cached)
-                drive_state = self.drives.tick(sensor_data)  # Pure state transition
-                convo_info = sensor_data.get("conversation", {})
-                logger.info(f"DRIVE: pressure={drive_state.total_pressure:.3f} | convo_active={convo_info.get('active')} since={convo_info.get('seconds_since')}s")
-
-                # NERVOUS SYSTEM — pre-evaluate enrichment
-                ns_eval_context = {}
-                if self.nervous_system:
-                    try:
-                        ns_eval_context = self.nervous_system.pre_evaluate(drive_state, sensor_data)
-                    except Exception as e:
-                        logger.warning(f"NervousSystem pre_evaluate failed: {e}")
-
-                # EVALUATE — should we trigger an agent turn?
-                if self._model_evaluator:
-                    working_memory = self._load_working_memory()
-                    decision = await self.evaluator.evaluate(
-                        drive_state, sensor_data, working_memory
+                try:
+                    logger.debug(
+                        f"Loop tick — uptime {time.time() - self.start_time:.0f}s"
                     )
-                else:
-                    decision = self.evaluator.evaluate(drive_state, sensor_data)
-                logger.info(f"EVAL: trigger={decision.should_trigger}, reason={decision.reason[:80]}")
 
-                # Hard HIGH-PRESSURE override (model can't suppress this)
-                # If pressure is extremely high and we haven't triggered in a long time,
-                # the agent MUST wake up regardless of what the model says.
-                # Requires at least one individual drive above threshold to avoid
-                # firing on ambient noise from many low-pressure drives.
-                if not decision.should_trigger and drive_state.total_pressure > 10.0:
-                    max_individual = max((d.weighted_pressure for d in drive_state.drives), default=0.0)
-                    time_since_trigger = time.time() - self.last_trigger_time
-                    if time_since_trigger > 1800 and max_individual > self.config.drives.override_min_individual_pressure:
-                        logger.info(
-                            f"🔥 HIGH-PRESSURE OVERRIDE — pressure={drive_state.total_pressure:.1f}, "
-                            f"max_individual={max_individual:.2f}, "
-                            f"last_trigger={time_since_trigger:.0f}s ago. Forcing trigger."
-                        )
-                        decision.should_trigger = True
-                        decision.reason = (
-                            f"high_pressure_override: pressure={drive_state.total_pressure:.1f}, "
-                            f"max_individual={max_individual:.2f}, idle={time_since_trigger:.0f}s"
-                        )
+                    # SENSE — gather sensor readings
+                    logger.debug("SENSE: reading sensors...")
+                    sensor_data = await self.sensors.read()
+                    logger.debug(
+                        f"SENSE: done. Changes: {sensor_data.get('filesystem', {}).get('changes', [])}"
+                    )
 
-                # Hard conversation suppression (model can't override this)
-                convo = sensor_data.get("conversation", {})
-                if convo.get("active") and decision.should_trigger:
+                    # NERVOUS SYSTEM — pre-sense enrichment
+                    ns_context = {}
+                    if self.nervous_system:
+                        try:
+                            ns_context = self.nervous_system.pre_sense(sensor_data)
+                            if ns_context.get("should_pause"):
+                                logger.info(
+                                    "NervousSystem advises pause (threat/health)"
+                                )
+                        except Exception as e:
+                            logger.warning(f"NervousSystem pre_sense failed: {e}")
+
+                    # DRIVE — update drive pressures based on sensors + time
+                    self.drives.refresh_sources()  # I/O: read workspace files (cached)
+                    drive_state = self.drives.tick(sensor_data)  # Pure state transition
+                    convo_info = sensor_data.get("conversation", {})
                     logger.info(
-                        f"Trigger SUPPRESSED — human conversation active "
-                        f"(last activity {convo.get('seconds_since', '?')}s ago)"
+                        f"DRIVE: pressure={drive_state.total_pressure:.3f} | convo_active={convo_info.get('active')} since={convo_info.get('seconds_since')}s"
                     )
-                    decision.should_trigger = False
 
-                if decision.should_trigger:
-                    if self._can_trigger():
-                        await self._trigger_turn(decision)
-                    else:
-                        logger.debug(
-                            f"Trigger suppressed (rate limit/cooldown). "
-                            f"Drive pressure: {decision.total_pressure:.2f}"
-                        )
-
-                # GENERATE — synthesize new tasks when blocked but drives are high
-                if (
-                    not decision.should_trigger
-                    and decision.recommend_generate
-                    and self.config.generative.enabled
-                ):
-                    await self._maybe_generate(drive_state, sensor_data)
-
-                # FEEDBACK — check for turn results from the agent
-                self._process_feedback_file()
-
-                # EVOLVE — process any pending self-modifications
-                mutation_results = self.mutator.process_queue()
-                if mutation_results:
-                    logger.info(f"Evolution: {len(mutation_results)} mutations processed")
-                    for r in mutation_results:
-                        if r.get("status") == "applied":
-                            self.bus.emit(MUTATION_APPLIED, result=r)
-                    # Persist config overrides so mutations survive restarts
-                    self.state.set("config_overrides", {
-                        "trigger_threshold": self.config.drives.trigger_threshold,
-                        "pressure_rate": self.config.drives.pressure_rate,
-                        "min_trigger_interval": self.config.openclaw.min_trigger_interval,
-                        "max_turns_per_hour": self.config.openclaw.max_turns_per_hour,
-                    })
-                    self.state.set("drives", self.drives.save_state())
-                    self.state.save()
-
-                # NERVOUS SYSTEM — post-loop maintenance
-                if self.nervous_system:
-                    try:
-                        self.nervous_system.post_loop()
-                    except Exception as e:
-                        logger.warning(f"NervousSystem post_loop failed: {e}")
-
-                    # Night mode check
-                    try:
-                        night = self.nervous_system.check_night_mode(
-                            drives={n: d for n, d in self.drives.drives.items()} if hasattr(self.drives, 'drives') else None
-                        )
-                        if night.get("rem_eligible"):
-                            logger.info("🌙 REM eligible — starting dream session")
-                            self.nervous_system.run_rem_session(
-                                drives={n: d for n, d in self.drives.drives.items()} if hasattr(self.drives, 'drives') else None
+                    # NERVOUS SYSTEM — pre-evaluate enrichment
+                    ns_eval_context = {}
+                    if self.nervous_system:
+                        try:
+                            ns_eval_context = self.nervous_system.pre_evaluate(
+                                drive_state, sensor_data
                             )
-                    except Exception as e:
-                        logger.warning(f"NervousSystem night mode check failed: {e}")
+                        except Exception as e:
+                            logger.warning(f"NervousSystem pre_evaluate failed: {e}")
 
-                # PERSIST — sync drives to state and save periodically
-                self.state.set("drives", self.drives.save_state())
-                self.state.maybe_save()
+                    # EVALUATE — should we trigger an agent turn?
+                    if self._model_evaluator:
+                        working_memory = self._load_working_memory()
+                        decision = await self.evaluator.evaluate(
+                            drive_state, sensor_data, working_memory
+                        )
+                    else:
+                        decision = self.evaluator.evaluate(drive_state, sensor_data)
+                    logger.info(
+                        f"EVAL: trigger={decision.should_trigger}, reason={decision.reason[:80]}"
+                    )
 
-            except Exception as e:
-                logger.error(f"Loop error: {e}", exc_info=True)
+                    # Hard HIGH-PRESSURE override (model can't suppress this)
+                    # If pressure is extremely high and we haven't triggered in a long time,
+                    # the agent MUST wake up regardless of what the model says.
+                    # Requires at least one individual drive above threshold to avoid
+                    # firing on ambient noise from many low-pressure drives.
+                    if (
+                        not decision.should_trigger
+                        and drive_state.total_pressure > 10.0
+                    ):
+                        max_individual = max(
+                            (d.weighted_pressure for d in drive_state.drives),
+                            default=0.0,
+                        )
+                        time_since_trigger = time.time() - self.last_trigger_time
+                        if (
+                            time_since_trigger > 1800
+                            and max_individual
+                            > self.config.drives.override_min_individual_pressure
+                        ):
+                            logger.info(
+                                f"🔥 HIGH-PRESSURE OVERRIDE — pressure={drive_state.total_pressure:.1f}, "
+                                f"max_individual={max_individual:.2f}, "
+                                f"last_trigger={time_since_trigger:.0f}s ago. Forcing trigger."
+                            )
+                            decision.should_trigger = True
+                            decision.reason = (
+                                f"high_pressure_override: pressure={drive_state.total_pressure:.1f}, "
+                                f"max_individual={max_individual:.2f}, idle={time_since_trigger:.0f}s"
+                            )
 
-            # Sleep until next loop
-            elapsed = time.time() - loop_start
-            sleep_time = max(0, self.config.daemon.loop_interval_seconds - elapsed)
-            await asyncio.sleep(sleep_time)
+                    # Hard conversation suppression (model can't override this)
+                    convo = sensor_data.get("conversation", {})
+                    if convo.get("active") and decision.should_trigger:
+                        logger.info(
+                            f"Trigger SUPPRESSED — human conversation active "
+                            f"(last activity {convo.get('seconds_since', '?')}s ago)"
+                        )
+                        decision.should_trigger = False
+
+                    if decision.should_trigger:
+                        if self._can_trigger():
+                            await self._trigger_turn(decision)
+                        else:
+                            logger.debug(
+                                f"Trigger suppressed (rate limit/cooldown). "
+                                f"Drive pressure: {decision.total_pressure:.2f}"
+                            )
+
+                    # GENERATE — synthesize new tasks when blocked but drives are high
+                    if (
+                        not decision.should_trigger
+                        and decision.recommend_generate
+                        and self.config.generative.enabled
+                    ):
+                        await self._maybe_generate(drive_state, sensor_data)
+
+                    # FEEDBACK — check for turn results from the agent
+                    self._process_feedback_file()
+
+                    # EVOLVE — process any pending self-modifications
+                    mutation_results = self.mutator.process_queue()
+                    if mutation_results:
+                        logger.info(
+                            f"Evolution: {len(mutation_results)} mutations processed"
+                        )
+                        for r in mutation_results:
+                            if r.get("status") == "applied":
+                                self.bus.emit(MUTATION_APPLIED, result=r)
+                        # Persist config overrides so mutations survive restarts
+                        self.state.set(
+                            "config_overrides",
+                            {
+                                "trigger_threshold": self.config.drives.trigger_threshold,
+                                "pressure_rate": self.config.drives.pressure_rate,
+                                "min_trigger_interval": self.config.openclaw.min_trigger_interval,
+                                "max_turns_per_hour": self.config.openclaw.max_turns_per_hour,
+                            },
+                        )
+                        self.state.set("drives", self.drives.save_state())
+                        self.state.save()
+
+                    # NERVOUS SYSTEM — post-loop maintenance
+                    if self.nervous_system:
+                        try:
+                            self.nervous_system.post_loop()
+                        except Exception as e:
+                            logger.warning(f"NervousSystem post_loop failed: {e}")
+
+                        # Night mode check
+                        try:
+                            night = self.nervous_system.check_night_mode(
+                                drives=(
+                                    {n: d for n, d in self.drives.drives.items()}
+                                    if hasattr(self.drives, "drives")
+                                    else None
+                                )
+                            )
+                            if night.get("rem_eligible"):
+                                logger.info("🌙 REM eligible — starting dream session")
+                                self.nervous_system.run_rem_session(
+                                    drives=(
+                                        {n: d for n, d in self.drives.drives.items()}
+                                        if hasattr(self.drives, "drives")
+                                        else None
+                                    )
+                                )
+                        except Exception as e:
+                            logger.warning(
+                                f"NervousSystem night mode check failed: {e}"
+                            )
+
+                    # PERSIST — sync drives to state and save periodically
+                    self.state.set("drives", self.drives.save_state())
+                    self.state.maybe_save()
+
+                except Exception as e:
+                    logger.error(f"Loop error: {e}", exc_info=True)
+
+                # Sleep until next loop
+                elapsed = time.time() - loop_start
+                sleep_time = max(0, self.config.daemon.loop_interval_seconds - elapsed)
+                await asyncio.sleep(sleep_time)
         finally:
             # Async cleanup INSIDE the event loop (C2 fix)
             logger.info("Shutting down async resources...")
             await self.sensors.stop()
             await self.webhook.close()
             await self.health.stop()
-            if self._model_evaluator and hasattr(self.evaluator, 'close'):
+            if self._model_evaluator and hasattr(self.evaluator, "close"):
                 await self.evaluator.close()
 
     async def _trigger_turn(self, decision):
@@ -362,9 +440,13 @@ class PulseDaemon:
                 world_ctx = self.nervous_system.parietal.get_context()
                 parts = []
                 if world_ctx.get("unhealthy"):
-                    parts.append(f"Unhealthy systems: {', '.join(world_ctx['unhealthy'])}")
+                    parts.append(
+                        f"Unhealthy systems: {', '.join(world_ctx['unhealthy'])}"
+                    )
                 if world_ctx.get("goal_conditions_pending"):
-                    parts.append(f"Pending goals: {', '.join(world_ctx['goal_conditions_pending'])}")
+                    parts.append(
+                        f"Pending goals: {', '.join(world_ctx['goal_conditions_pending'])}"
+                    )
                 if parts:
                     message += "\n\n[PARIETAL: " + " | ".join(parts) + "]"
             except Exception as e:
@@ -401,11 +483,15 @@ class PulseDaemon:
         if success:
             self.drives.on_trigger_success(decision)
             self.state.log_trigger(decision, success=True)
-            self.bus.emit(TRIGGER_SUCCESS, decision=decision, success=True, turn=self.turn_count)
+            self.bus.emit(
+                TRIGGER_SUCCESS, decision=decision, success=True, turn=self.turn_count
+            )
         else:
             self.drives.on_trigger_failure(decision)
             self.state.log_trigger(decision, success=False)
-            self.bus.emit(TRIGGER_FAILURE, decision=decision, success=False, turn=self.turn_count)
+            self.bus.emit(
+                TRIGGER_FAILURE, decision=decision, success=False, turn=self.turn_count
+            )
 
         # NERVOUS SYSTEM — post-trigger
         if self.nervous_system:
@@ -415,7 +501,7 @@ class PulseDaemon:
                 logger.warning(f"NervousSystem post_trigger failed: {e}")
 
         # Feed outcome back to model evaluator for history context
-        if self._model_evaluator and hasattr(self.evaluator, 'record_trigger'):
+        if self._model_evaluator and hasattr(self.evaluator, "record_trigger"):
             self.evaluator.record_trigger(decision, success)
 
     def _on_trigger_daily_sync(self, decision, success, turn, **kwargs):
@@ -438,7 +524,7 @@ class PulseDaemon:
     def _mark_self_write(self, path: str):
         """Mark a path as a Pulse self-write so the filesystem sensor ignores it."""
         for sensor in self.sensors.sensors:
-            if hasattr(sensor, 'mark_self_write'):
+            if hasattr(sensor, "mark_self_write"):
                 sensor.mark_self_write(path)
 
     def _load_working_memory(self) -> Optional[dict]:
@@ -482,7 +568,9 @@ class PulseDaemon:
                     drive.decay(decay_amount)
                     drive.last_addressed = now
 
-            logger.info(f"Feedback file processed: {outcome} — {drives_addressed} — {summary[:60]}")
+            logger.info(
+                f"Feedback file processed: {outcome} — {drives_addressed} — {summary[:60]}"
+            )
 
         except (json.JSONDecodeError, OSError) as e:
             logger.warning(f"Failed to process feedback file: {e}")
@@ -502,16 +590,19 @@ class PulseDaemon:
             # Build context from what Pulse already has
             goals = self._load_goals_list()
             working_memory = self._load_working_memory()
-            recent_memory = json.dumps(working_memory, default=str)[:1000] if working_memory else ""
+            recent_memory = (
+                json.dumps(working_memory, default=str)[:1000] if working_memory else ""
+            )
 
             drives_dict = {}
-            if hasattr(drive_state, 'drives'):
+            if hasattr(drive_state, "drives"):
                 for d in drive_state.drives:
                     drives_dict[d.name] = d.pressure
 
             thalamus_recent = []
             try:
                 from pulse.src import thalamus
+
                 thalamus_recent = thalamus.read_recent(5)
             except Exception:
                 pass
@@ -559,7 +650,9 @@ class PulseDaemon:
                             fcntl.flock(f, fcntl.LOCK_EX)
                             try:
                                 self.daily_sync._ensure_header(f)
-                                f.write(f"- {now_str} 🌱 GENERATE: {len(tasks)} tasks synthesized\n")
+                                f.write(
+                                    f"- {now_str} 🌱 GENERATE: {len(tasks)} tasks synthesized\n"
+                                )
                                 for t in tasks:
                                     f.write(f"  - [{t['effort']}] {t['title']}\n")
                             finally:
@@ -573,12 +666,18 @@ class PulseDaemon:
                 # Broadcast to thalamus
                 try:
                     from pulse.src import thalamus
-                    thalamus.append({
-                        "source": "germinal_tasks",
-                        "type": "tasks_generated",
-                        "salience": 0.7,
-                        "data": {"count": len(tasks), "titles": [t["title"] for t in tasks]},
-                    })
+
+                    thalamus.append(
+                        {
+                            "source": "germinal_tasks",
+                            "type": "tasks_generated",
+                            "salience": 0.7,
+                            "data": {
+                                "count": len(tasks),
+                                "titles": [t["title"] for t in tasks],
+                            },
+                        }
+                    )
                 except Exception:
                     pass
 
@@ -595,7 +694,9 @@ class PulseDaemon:
                 lines = [
                     line.strip().lstrip("- ").strip()
                     for line in content.splitlines()
-                    if line.strip() and not line.strip().startswith("#") and not line.strip().startswith("\"\"\"")
+                    if line.strip()
+                    and not line.strip().startswith("#")
+                    and not line.strip().startswith('"""')
                 ]
                 return [l for l in lines if len(l) > 5][:20]
         except Exception as e:
@@ -642,7 +743,9 @@ class PulseDaemon:
             try:
                 old_pid = int(pid_path.read_text().strip())
                 os.kill(old_pid, 0)  # signal 0 = check if alive
-                logger.error(f"Another Pulse instance is running (PID {old_pid}). Exiting.")
+                logger.error(
+                    f"Another Pulse instance is running (PID {old_pid}). Exiting."
+                )
                 sys.exit(1)
             except (ValueError, ProcessLookupError, PermissionError):
                 logger.info("Removing stale PID file")

@@ -41,7 +41,7 @@ class SensorManager:
         # Conversation sensor always on (feeds evaluator suppression)
         self.sensors.append(ConversationSensor(config))
         # Stub sensors — log if enabled but not yet implemented
-        if getattr(config.sensors, 'discord', None) and config.sensors.discord.enabled:
+        if getattr(config.sensors, "discord", None) and config.sensors.discord.enabled:
             logger.warning("Discord sensor enabled in config but not yet implemented")
         # Web and git sensors are Phase 3+
 
@@ -82,6 +82,7 @@ class SensorManager:
 
 class BaseSensor:
     """Base class for sensors."""
+
     name: str = "base"
 
     async def initialize(self):
@@ -110,7 +111,7 @@ class _WatchdogHandler(FileSystemEventHandler):
     def _should_ignore(self, path: str) -> bool:
         name = Path(path).name
         for pattern in self._ignore_patterns:
-            if '*' in pattern or '?' in pattern:
+            if "*" in pattern or "?" in pattern:
                 if fnmatch.fnmatch(name, pattern) or fnmatch.fnmatch(path, pattern):
                     return True
             else:
@@ -155,6 +156,7 @@ class _WatchdogHandler(FileSystemEventHandler):
 
 class FileSystemSensor(BaseSensor):
     """Watch filesystem for changes using watchdog (event-driven, not polling)."""
+
     name = "filesystem"
 
     def __init__(self, config: PulseConfig):
@@ -208,10 +210,11 @@ class FileSystemSensor(BaseSensor):
 
 class ConversationSensor(BaseSensor):
     """Detect when a human is actively chatting with the agent.
-    
+
     Watches OpenClaw's session directory for recent human messages.
     This feeds the evaluator's suppress_during_conversation logic.
     """
+
     name = "conversation"
 
     def __init__(self, config: PulseConfig):
@@ -240,7 +243,7 @@ class ConversationSensor(BaseSensor):
 
     async def read(self) -> dict:
         """Check for recent human conversation activity.
-        
+
         Strategy: Hit the OpenClaw webhook status endpoint to check
         if a session is currently active with a human. Falls back to
         checking session file mtimes.
@@ -252,7 +255,7 @@ class ConversationSensor(BaseSensor):
         # Strategy 1: Check the MAIN session transcript recency
         # Only the main session represents human conversation.
         # Cron, hook, and sub-agent sessions should NOT count as conversation.
-        # The main session transcript is the largest .jsonl file and is 
+        # The main session transcript is the largest .jsonl file and is
         # typically stored at the workspace root (symlinked from sessions/).
         main_session_candidates = [
             # OpenClaw workspace root — main session transcript lives here
@@ -267,7 +270,11 @@ class ConversationSensor(BaseSensor):
                 largest_file = None
                 largest_size = 0
                 for f in session_dir.iterdir():
-                    if f.is_file() and f.suffix == ".jsonl" and not f.name.startswith("probe-"):
+                    if (
+                        f.is_file()
+                        and f.suffix == ".jsonl"
+                        and not f.name.startswith("probe-")
+                    ):
                         try:
                             stat = f.stat()
                             if stat.st_size > largest_size:
@@ -286,18 +293,27 @@ class ConversationSensor(BaseSensor):
             pass
 
         cooldown_sec = self.config.evaluator.rules.conversation_cooldown_minutes * 60
-        in_cooldown = (now - self._last_human_activity) < cooldown_sec if self._last_human_activity else False
+        in_cooldown = (
+            (now - self._last_human_activity) < cooldown_sec
+            if self._last_human_activity
+            else False
+        )
 
         return {
             "active": active,
             "in_cooldown": in_cooldown,
             "last_human_activity": self._last_human_activity,
-            "seconds_since": round(now - self._last_human_activity) if self._last_human_activity else None,
+            "seconds_since": (
+                round(now - self._last_human_activity)
+                if self._last_human_activity
+                else None
+            ),
         }
 
 
 class SystemSensor(BaseSensor):
     """Monitor system health."""
+
     name = "system"
 
     def __init__(self, config: PulseConfig):
@@ -319,7 +335,7 @@ class SystemSensor(BaseSensor):
                 lines = stdout.decode().strip().split("\n")
                 page_size = 16384  # default ARM64
                 if lines and "page size of" in lines[0]:
-                    m = re.search(r'page size of (\d+)', lines[0])
+                    m = re.search(r"page size of (\d+)", lines[0])
                     if m:
                         page_size = int(m.group(1))
                 for line in lines:
@@ -327,11 +343,13 @@ class SystemSensor(BaseSensor):
                         free_pages = int(line.split(":")[1].strip().rstrip("."))
                         free_mb = (free_pages * page_size) / (1024 * 1024)
                         if free_mb < 200:
-                            alerts.append({
-                                "type": "memory_pressure",
-                                "free_mb": round(free_mb),
-                                "severity": "high",
-                            })
+                            alerts.append(
+                                {
+                                    "type": "memory_pressure",
+                                    "free_mb": round(free_mb),
+                                    "severity": "high",
+                                }
+                            )
         except (asyncio.TimeoutError, OSError):
             pass
 
@@ -339,17 +357,21 @@ class SystemSensor(BaseSensor):
         for proc_name in self.config.sensors.system.watch_processes:
             try:
                 proc = await asyncio.create_subprocess_exec(
-                    "pgrep", "-f", proc_name,
+                    "pgrep",
+                    "-f",
+                    proc_name,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
                 await asyncio.wait_for(proc.communicate(), timeout=5)
                 if proc.returncode != 0:
-                    alerts.append({
-                        "type": "process_down",
-                        "process": proc_name,
-                        "severity": "medium",
-                    })
+                    alerts.append(
+                        {
+                            "type": "process_down",
+                            "process": proc_name,
+                            "severity": "medium",
+                        }
+                    )
             except (asyncio.TimeoutError, OSError):
                 pass
 

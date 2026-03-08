@@ -1,4 +1,5 @@
 """Tests for BUFFER — Working Memory."""
+
 import json
 import time
 from pathlib import Path
@@ -20,7 +21,9 @@ def clean_state(tmp_path, monkeypatch):
     monkeypatch.setattr(buffer, "_DEFAULT_BUFFER_FILE", state_dir / "buffer.json")
     monkeypatch.setattr(buffer, "_DEFAULT_ARCHIVE_DIR", archive_dir)
     monkeypatch.setattr(thalamus, "_DEFAULT_STATE_DIR", state_dir)
-    monkeypatch.setattr(thalamus, "_DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl")
+    monkeypatch.setattr(
+        thalamus, "_DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl"
+    )
 
 
 class TestCaptureGet:
@@ -47,7 +50,15 @@ class TestCaptureGet:
         assert buffer.get_buffer()["key_context"] == "second"
 
     def test_capture_with_participants_and_topic(self):
-        result = buffer.capture("summary", [], [], {}, [], participants=["Josh", "Iris"], topic="Architecture")
+        result = buffer.capture(
+            "summary",
+            [],
+            [],
+            {},
+            [],
+            participants=["Josh", "Iris"],
+            topic="Architecture",
+        )
         assert result["participants"] == ["Josh", "Iris"]
         assert result["topic"] == "Architecture"
 
@@ -115,7 +126,13 @@ class TestCompactSummary:
         assert len(summary) <= 200 + 3  # 50*4 chars + "..."
 
     def test_summary_under_default_limit(self):
-        buffer.capture("Short context", ["d1"], ["a1"], {"valence": 0.0, "intensity": 0.0, "context": ""}, [])
+        buffer.capture(
+            "Short context",
+            ["d1"],
+            ["a1"],
+            {"valence": 0.0, "intensity": 0.0, "context": ""},
+            [],
+        )
         summary = buffer.get_compact_summary(max_tokens=500)
         assert len(summary) <= 2000
 
@@ -181,7 +198,10 @@ class TestAutoCapture:
 
     def test_detects_negative_sentiment(self):
         messages = [
-            {"role": "user", "content": "I'm frustrated and disappointed with the results"},
+            {
+                "role": "user",
+                "content": "I'm frustrated and disappointed with the results",
+            },
         ]
         result = buffer.auto_capture(messages)
         assert result["emotional_state"]["valence"] < 0

@@ -12,13 +12,14 @@ import pytest
 
 from pulse.src import cli
 
-
 # ===========================================================================
 # Helpers
 # ===========================================================================
 
+
 class Args:
     """Minimal argparse namespace for CLI tests."""
+
     def __init__(self, genome_cmd="show", output=None, file=None):
         self.genome_cmd = genome_cmd
         self.output = output
@@ -29,14 +30,17 @@ class Args:
 def tmp_genome(tmp_path):
     """Redirect genome state to temp dir."""
     genome_file = tmp_path / "genome.json"
-    with patch.object(cli, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(cli, "_GENOME_FILE", genome_file):
+    with (
+        patch.object(cli, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(cli, "_GENOME_FILE", genome_file),
+    ):
         yield tmp_path, genome_file
 
 
 # ===========================================================================
 # _read_genome / _write_genome
 # ===========================================================================
+
 
 class TestReadWriteGenome:
     def test_read_returns_default_when_file_absent(self, tmp_genome):
@@ -75,6 +79,7 @@ class TestReadWriteGenome:
 # pulse genome show
 # ===========================================================================
 
+
 class TestGenomeShow:
     def test_show_no_error(self, tmp_genome, capsys):
         cli.cmd_genome(Args(genome_cmd="show"))
@@ -84,10 +89,9 @@ class TestGenomeShow:
         assert len(captured.out) + len(captured.err) >= 0  # ran without exception
 
     def test_show_with_mutations_displays_modules(self, tmp_genome):
-        cli._write_genome({
-            "version": "3.0",
-            "modules": {"endocrine": {"high_threshold": 0.8}}
-        })
+        cli._write_genome(
+            {"version": "3.0", "modules": {"endocrine": {"high_threshold": 0.8}}}
+        )
         # Should not raise
         cli.cmd_genome(Args(genome_cmd="show"))
 
@@ -95,6 +99,7 @@ class TestGenomeShow:
 # ===========================================================================
 # pulse genome export
 # ===========================================================================
+
 
 class TestGenomeExport:
     def test_export_to_file(self, tmp_genome, tmp_path):
@@ -134,14 +139,19 @@ class TestGenomeExport:
 # pulse genome import
 # ===========================================================================
 
+
 class TestGenomeImport:
     def test_import_loads_file(self, tmp_genome, tmp_path):
         # Write a genome file to import
         import_file = tmp_path / "to_import.json"
-        import_file.write_text(json.dumps({
-            "version": "4.0",
-            "modules": {"soma": {"energy_cost_per_token": 0.002}}
-        }))
+        import_file.write_text(
+            json.dumps(
+                {
+                    "version": "4.0",
+                    "modules": {"soma": {"energy_cost_per_token": 0.002}},
+                }
+            )
+        )
         with patch.object(cli, "_is_running", return_value=(False, None)):
             cli.cmd_genome(Args(genome_cmd="import", file=str(import_file)))
         # Read back and verify
@@ -151,7 +161,9 @@ class TestGenomeImport:
 
     def test_import_nonexistent_file_exits(self, tmp_genome):
         with pytest.raises(SystemExit):
-            cli.cmd_genome(Args(genome_cmd="import", file="/tmp/does_not_exist_xyz.json"))
+            cli.cmd_genome(
+                Args(genome_cmd="import", file="/tmp/does_not_exist_xyz.json")
+            )
 
     def test_import_invalid_json_exits(self, tmp_genome, tmp_path):
         bad_file = tmp_path / "bad.json"
@@ -170,6 +182,7 @@ class TestGenomeImport:
 # pulse genome diff
 # ===========================================================================
 
+
 class TestGenomeDiff:
     def test_diff_identical_shows_no_differences(self, tmp_genome, tmp_path, capsys):
         # Export current, then diff against itself
@@ -185,13 +198,19 @@ class TestGenomeDiff:
 
     def test_diff_shows_differences(self, tmp_genome, tmp_path):
         # Set a known genome
-        cli._write_genome({"version": "3.0", "modules": {"soma": {"energy_cost_per_token": 0.001}}})
+        cli._write_genome(
+            {"version": "3.0", "modules": {"soma": {"energy_cost_per_token": 0.001}}}
+        )
         # Write a different file
         diff_file = tmp_path / "other.json"
-        diff_file.write_text(json.dumps({
-            "version": "3.0",
-            "modules": {"soma": {"energy_cost_per_token": 0.005}}
-        }))
+        diff_file.write_text(
+            json.dumps(
+                {
+                    "version": "3.0",
+                    "modules": {"soma": {"energy_cost_per_token": 0.005}},
+                }
+            )
+        )
         # Should not raise even when there are differences
         cli.cmd_genome(Args(genome_cmd="diff", file=str(diff_file)))
 

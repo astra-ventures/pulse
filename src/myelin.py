@@ -19,8 +19,19 @@ REFERENCE_THRESHOLD = 5  # must be referenced this many times before compression
 DEMOTION_DAYS = 7  # unused concepts demoted after this many days
 NEVER_COMPRESS = {"josh", "iris"}  # names never compressed
 EMOTION_WORDS = {
-    "love", "hate", "fear", "joy", "anger", "sadness", "grief", "hope",
-    "anxiety", "excitement", "gratitude", "loneliness", "jealousy",
+    "love",
+    "hate",
+    "fear",
+    "joy",
+    "anger",
+    "sadness",
+    "grief",
+    "hope",
+    "anxiety",
+    "excitement",
+    "gratitude",
+    "loneliness",
+    "jealousy",
 }
 
 # Pre-seeded concepts
@@ -51,7 +62,9 @@ class Myelin:
 
     def __init__(self):
         self._concepts: dict[str, dict] = {}
-        self._tracking: dict[str, dict] = {}  # concepts being tracked but not yet in lexicon
+        self._tracking: dict[str, dict] = (
+            {}
+        )  # concepts being tracked but not yet in lexicon
         self._total_tokens_saved = 0
         self._compression_ratio = 1.0
         self._load_state()
@@ -102,10 +115,7 @@ class Myelin:
 
     def get_lexicon(self) -> dict:
         """Return current concept→shorthand mapping."""
-        return {
-            k: {"shorthand": f"[{k}]", **v}
-            for k, v in self._concepts.items()
-        }
+        return {k: {"shorthand": f"[{k}]", **v} for k, v in self._concepts.items()}
 
     def update_lexicon(self):
         """Promote tracked concepts that hit threshold; demote stale ones."""
@@ -121,12 +131,18 @@ class Myelin:
         for key in to_promote:
             info = self._tracking.pop(key)
             self._concepts[key] = info
-            thalamus.append({
-                "source": "myelin",
-                "type": "compression",
-                "salience": 0.3,
-                "data": {"action": "promoted", "concept": key, "references": info["references"]},
-            })
+            thalamus.append(
+                {
+                    "source": "myelin",
+                    "type": "compression",
+                    "salience": 0.3,
+                    "data": {
+                        "action": "promoted",
+                        "concept": key,
+                        "references": info["references"],
+                    },
+                }
+            )
 
         # Demote stale concepts (but not pre-seeded)
         to_demote = []

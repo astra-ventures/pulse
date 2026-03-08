@@ -14,7 +14,9 @@ def ns(tmp_path, monkeypatch):
     state_dir = tmp_path / ".pulse" / "state"
     state_dir.mkdir(parents=True)
     monkeypatch.setattr("pulse.src.thalamus._DEFAULT_STATE_DIR", state_dir)
-    monkeypatch.setattr("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl")
+    monkeypatch.setattr(
+        "pulse.src.thalamus._DEFAULT_BROADCAST_FILE", state_dir / "broadcast.jsonl"
+    )
     return NervousSystem(workspace_root=str(tmp_path))
 
 
@@ -28,10 +30,23 @@ class TestInit:
         status = ns.get_status()
         # Should have entries for all 17 expected modules
         expected = [
-            "thalamus", "proprioception", "circadian", "endocrine",
-            "adipose", "myelin", "immune", "cerebellum", "buffer",
-            "spine", "retina", "amygdala", "vagus", "limbic",
-            "enteric", "plasticity", "rem",
+            "thalamus",
+            "proprioception",
+            "circadian",
+            "endocrine",
+            "adipose",
+            "myelin",
+            "immune",
+            "cerebellum",
+            "buffer",
+            "spine",
+            "retina",
+            "amygdala",
+            "vagus",
+            "limbic",
+            "enteric",
+            "plasticity",
+            "rem",
         ]
         for mod in expected:
             assert mod in status, f"Missing module: {mod}"
@@ -96,7 +111,7 @@ class TestPostTrigger:
         decision.total_pressure = 1.0
         decision.top_drive = MagicMock()
         decision.top_drive.name = "test_drive"
-        
+
         result = ns.post_trigger(decision, success=True)
         assert isinstance(result, dict)
         assert "buffer_updated" in result
@@ -107,7 +122,7 @@ class TestPostTrigger:
         decision.reason = "test"
         decision.total_pressure = 0.5
         decision.top_drive = None
-        
+
         result = ns.post_trigger(decision, success=False)
         assert isinstance(result, dict)
 
@@ -152,9 +167,14 @@ class TestDendriteWiring:
 
     def test_dendrite_fires_in_post_trigger(self, ns, tmp_path):
         from pulse.src import dendrite
+
         state_dir = tmp_path / ".pulse" / "state"
-        with patch.object(dendrite, "_DEFAULT_STATE_DIR", state_dir), \
-             patch.object(dendrite, "_DEFAULT_STATE_FILE", state_dir / "dendrite-state.json"):
+        with (
+            patch.object(dendrite, "_DEFAULT_STATE_DIR", state_dir),
+            patch.object(
+                dendrite, "_DEFAULT_STATE_FILE", state_dir / "dendrite-state.json"
+            ),
+        ):
             decision = MagicMock()
             decision.reason = "test"
             decision.total_pressure = 1.0
@@ -207,7 +227,9 @@ class TestMyelinWiring:
     def test_myelin_handles_afterimages(self, ns):
         # Inject fake afterimages via limbic
         if ns._mod_limbic:
-            ns._mod_limbic.record_emotion(valence=2.5, intensity=9.0, context="test event")
+            ns._mod_limbic.record_emotion(
+                valence=2.5, intensity=9.0, context="test event"
+            )
         ctx = ns.pre_evaluate(None, {})
         if ns.myelin and ctx.get("afterimages"):
             assert "myelin_context" in ctx
@@ -218,9 +240,14 @@ class TestVestibularWiring:
 
     def test_vestibular_fires_every_5th_loop(self, ns, tmp_path):
         from pulse.src import vestibular
+
         state_dir = tmp_path / ".pulse" / "state"
-        with patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir), \
-             patch.object(vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"):
+        with (
+            patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir),
+            patch.object(
+                vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"
+            ),
+        ):
             for _ in range(5):
                 result = ns.post_loop()
             if ns._mod_vestibular:
@@ -261,11 +288,18 @@ class TestOximeterWiring:
 
     def test_oximeter_gap_fires_every_20th_loop(self, ns, tmp_path):
         from pulse.src import oximeter, vestibular
+
         state_dir = tmp_path / ".pulse" / "state"
-        with patch.object(oximeter, "_DEFAULT_STATE_DIR", state_dir), \
-             patch.object(oximeter, "_DEFAULT_STATE_FILE", state_dir / "oximeter-state.json"), \
-             patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir), \
-             patch.object(vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"):
+        with (
+            patch.object(oximeter, "_DEFAULT_STATE_DIR", state_dir),
+            patch.object(
+                oximeter, "_DEFAULT_STATE_FILE", state_dir / "oximeter-state.json"
+            ),
+            patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir),
+            patch.object(
+                vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"
+            ),
+        ):
             for _ in range(20):
                 result = ns.post_loop()
             if ns._mod_oximeter:
@@ -277,15 +311,24 @@ class TestGenomeWiring:
 
     def test_genome_fires_every_100th_loop(self, ns, tmp_path):
         from pulse.src import genome, vestibular, oximeter, thymus
+
         state_dir = tmp_path / ".pulse" / "state"
-        with patch.object(genome, "_DEFAULT_STATE_DIR", state_dir), \
-             patch.object(genome, "_DEFAULT_STATE_FILE", state_dir / "genome.json"), \
-             patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir), \
-             patch.object(vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"), \
-             patch.object(oximeter, "_DEFAULT_STATE_DIR", state_dir), \
-             patch.object(oximeter, "_DEFAULT_STATE_FILE", state_dir / "oximeter-state.json"), \
-             patch.object(thymus, "_DEFAULT_STATE_DIR", state_dir), \
-             patch.object(thymus, "_DEFAULT_STATE_FILE", state_dir / "thymus-state.json"):
+        with (
+            patch.object(genome, "_DEFAULT_STATE_DIR", state_dir),
+            patch.object(genome, "_DEFAULT_STATE_FILE", state_dir / "genome.json"),
+            patch.object(vestibular, "_DEFAULT_STATE_DIR", state_dir),
+            patch.object(
+                vestibular, "_DEFAULT_STATE_FILE", state_dir / "vestibular-state.json"
+            ),
+            patch.object(oximeter, "_DEFAULT_STATE_DIR", state_dir),
+            patch.object(
+                oximeter, "_DEFAULT_STATE_FILE", state_dir / "oximeter-state.json"
+            ),
+            patch.object(thymus, "_DEFAULT_STATE_DIR", state_dir),
+            patch.object(
+                thymus, "_DEFAULT_STATE_FILE", state_dir / "thymus-state.json"
+            ),
+        ):
             ns._loop_count = 99
             result = ns.post_loop()
             if ns._mod_genome:
@@ -321,6 +364,7 @@ class TestRemSessionWiring:
 
     def test_rem_session_with_pons_guard(self, ns):
         from pulse.src.rem import Pons
+
         # Ensure guard is released even if session returns None
         result = ns.run_rem_session(drives=None, force=False)
         assert Pons.is_active() is False
@@ -338,7 +382,7 @@ class TestGracefulDegradation:
         # Manually break a module
         ns.amygdala = None
         ns.retina = None
-        
+
         # Should still work
         ctx = ns.pre_sense({"text": "test"})
         assert isinstance(ctx, dict)
@@ -350,48 +394,92 @@ class TestGracefulDegradation:
         ns.plasticity = None
         ns._mod_endocrine = None
         ns._mod_thalamus = None
-        
+
         decision = MagicMock()
         decision.reason = "test"
         decision.total_pressure = 1.0
         decision.top_drive = None
-        
+
         result = ns.post_trigger(decision, success=True)
         assert isinstance(result, dict)
 
     def test_startup_with_all_modules_broken(self):
         ns = NervousSystem()
         # Break everything
-        for attr in ["thalamus", "proprioception", "circadian", "endocrine",
-                      "adipose", "myelin", "immune", "cerebellum", "buffer",
-                      "spine", "retina", "amygdala", "vagus", "limbic",
-                      "enteric", "plasticity", "rem", "engram", "mirror",
-                      "callosum",
-                      "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
-                      "parietal"]:
+        for attr in [
+            "thalamus",
+            "proprioception",
+            "circadian",
+            "endocrine",
+            "adipose",
+            "myelin",
+            "immune",
+            "cerebellum",
+            "buffer",
+            "spine",
+            "retina",
+            "amygdala",
+            "vagus",
+            "limbic",
+            "enteric",
+            "plasticity",
+            "rem",
+            "engram",
+            "mirror",
+            "callosum",
+            "phenotype",
+            "telomere",
+            "hypothalamus",
+            "soma",
+            "dendrite",
+            "vestibular",
+            "thymus",
+            "oximeter",
+            "genome",
+            "aura",
+            "chronicle",
+            "parietal",
+        ]:
             setattr(ns, attr, None)
-        for attr in ["_mod_thalamus", "_mod_circadian", "_mod_adipose",
-                      "_mod_vagus", "_mod_limbic", "_mod_endocrine",
-                      "_mod_buffer", "_mod_retina", "_mod_proprioception",
-                      "_mod_myelin", "_mod_immune", "_mod_engram",
-                      "_mod_mirror", "_mod_callosum",
-                      "_mod_phenotype", "_mod_telomere", "_mod_hypothalamus",
-                      "_mod_soma", "_mod_dendrite", "_mod_vestibular",
-                      "_mod_thymus", "_mod_oximeter", "_mod_genome",
-                      "_mod_aura", "_mod_chronicle",
-                      "_mod_parietal"]:
+        for attr in [
+            "_mod_thalamus",
+            "_mod_circadian",
+            "_mod_adipose",
+            "_mod_vagus",
+            "_mod_limbic",
+            "_mod_endocrine",
+            "_mod_buffer",
+            "_mod_retina",
+            "_mod_proprioception",
+            "_mod_myelin",
+            "_mod_immune",
+            "_mod_engram",
+            "_mod_mirror",
+            "_mod_callosum",
+            "_mod_phenotype",
+            "_mod_telomere",
+            "_mod_hypothalamus",
+            "_mod_soma",
+            "_mod_dendrite",
+            "_mod_vestibular",
+            "_mod_thymus",
+            "_mod_oximeter",
+            "_mod_genome",
+            "_mod_aura",
+            "_mod_chronicle",
+            "_mod_parietal",
+        ]:
             setattr(ns, attr, None)
-        
+
         # Should not crash
         status = ns.startup()
         assert status["modules_loaded"] == 0
-        
+
         ctx = ns.pre_sense({})
         assert isinstance(ctx, dict)
-        
+
         ctx = ns.pre_evaluate(None, {})
         assert isinstance(ctx, dict)
-        
+
         ns.post_loop()
         ns.shutdown()

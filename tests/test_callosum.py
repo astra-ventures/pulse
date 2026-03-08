@@ -7,9 +7,16 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 
 from pulse.src.callosum import (
-    BridgeInsight, bridge, get_recent_insights, get_integration_score,
-    detect_split, should_run, _load_state, _save_state,
-    _calculate_integration, _detect_tension,
+    BridgeInsight,
+    bridge,
+    get_recent_insights,
+    get_integration_score,
+    detect_split,
+    should_run,
+    _load_state,
+    _save_state,
+    _calculate_integration,
+    _detect_tension,
 )
 
 
@@ -25,7 +32,10 @@ def clean_state(tmp_path, monkeypatch):
 
 class TestBridge:
     @patch("pulse.src.callosum._get_logical_state", return_value="processing tasks")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: content", {"label": "content"}))
+    @patch(
+        "pulse.src.callosum._get_emotional_state",
+        return_value=("mood: content", {"label": "content"}),
+    )
     @patch("pulse.src.callosum._get_gut_signal", return_value="toward")
     def test_produces_insight(self, mock_gut, mock_emo, mock_logic):
         insight = bridge()
@@ -35,15 +45,23 @@ class TestBridge:
         assert 0 <= insight.integration_score <= 1.0
 
     @patch("pulse.src.callosum._get_logical_state", return_value="shipping feature")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: stressed | cortisol high", {}))
+    @patch(
+        "pulse.src.callosum._get_emotional_state",
+        return_value=("mood: stressed | cortisol high", {}),
+    )
     @patch("pulse.src.callosum._get_gut_signal", return_value="away")
     def test_detects_split(self, mock_gut, mock_emo, mock_logic):
         insight = bridge()
         assert insight.split_detected is True
         assert insight.tension
 
-    @patch("pulse.src.callosum._get_logical_state", return_value="quiet — no recent logical activity")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: content", {}))
+    @patch(
+        "pulse.src.callosum._get_logical_state",
+        return_value="quiet — no recent logical activity",
+    )
+    @patch(
+        "pulse.src.callosum._get_emotional_state", return_value=("mood: content", {})
+    )
     @patch("pulse.src.callosum._get_gut_signal", return_value="neutral")
     def test_no_split_when_aligned(self, mock_gut, mock_emo, mock_logic):
         insight = bridge()
@@ -63,6 +81,7 @@ class TestBridge:
     @patch("pulse.src.callosum._get_gut_signal", return_value="neutral")
     def test_broadcasts_to_thalamus(self, mock_gut, mock_emo, mock_logic):
         import pulse.src.callosum as cal
+
         bridge()
         cal.thalamus.append.assert_called_once()
         call_data = cal.thalamus.append.call_args[0][0]
@@ -92,21 +111,30 @@ class TestIntegrationScore:
 
     def test_score_from_history(self, tmp_path):
         state = _load_state()
-        state["integration_history"] = [{"ts": 1, "score": 0.8}, {"ts": 2, "score": 0.6}]
+        state["integration_history"] = [
+            {"ts": 1, "score": 0.8},
+            {"ts": 2, "score": 0.6},
+        ]
         _save_state(state)
         score = get_integration_score()
         assert abs(score - 0.7) < 0.01
 
 
 class TestDetectSplit:
-    @patch("pulse.src.callosum._get_logical_state", return_value="quiet — no recent logical activity")
+    @patch(
+        "pulse.src.callosum._get_logical_state",
+        return_value="quiet — no recent logical activity",
+    )
     @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: calm", {}))
     @patch("pulse.src.callosum._get_gut_signal", return_value="neutral")
     def test_no_split(self, *mocks):
         assert detect_split() is None
 
     @patch("pulse.src.callosum._get_logical_state", return_value="active shipping")
-    @patch("pulse.src.callosum._get_emotional_state", return_value=("mood: stressed | cortisol", {}))
+    @patch(
+        "pulse.src.callosum._get_emotional_state",
+        return_value=("mood: stressed | cortisol", {}),
+    )
     @patch("pulse.src.callosum._get_gut_signal", return_value="away")
     def test_split_detected(self, *mocks):
         result = detect_split()
@@ -139,15 +167,24 @@ class TestDetectTension:
         assert split is True
 
     def test_no_tension_when_quiet(self):
-        split, _, _ = _detect_tension("quiet — no recent logical activity", "mood: calm", "neutral")
+        split, _, _ = _detect_tension(
+            "quiet — no recent logical activity", "mood: calm", "neutral"
+        )
         assert split is False
 
 
 class TestBridgeInsightDataclass:
     def test_roundtrip(self):
-        bi = BridgeInsight(timestamp=1000, logical_state="x", emotional_state="y",
-                          gut_signal="toward", split_detected=False, tension="",
-                          bridge="all good", integration_score=0.8)
+        bi = BridgeInsight(
+            timestamp=1000,
+            logical_state="x",
+            emotional_state="y",
+            gut_signal="toward",
+            split_detected=False,
+            tension="",
+            bridge="all good",
+            integration_score=0.8,
+        )
         d = bi.to_dict()
         bi2 = BridgeInsight.from_dict(d)
         assert bi2.integration_score == 0.8

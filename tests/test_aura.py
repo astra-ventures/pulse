@@ -12,20 +12,24 @@ from pulse.src import aura, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "aura.json"
-    with patch.object(aura, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(aura, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(aura, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(aura, "_DEFAULT_STATE_FILE", sf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 
 class TestEmit:
     def test_emit_returns_aura(self):
         # Mock the imports inside emit to avoid cross-module dependencies
-        with patch("pulse.src.aura.endocrine", create=True) as mock_endo, \
-             patch("pulse.src.aura.circadian", create=True) as mock_circ, \
-             patch("pulse.src.aura.soma", create=True) as mock_soma, \
-             patch("pulse.src.aura.adipose", create=True) as mock_adip:
+        with (
+            patch("pulse.src.aura.endocrine", create=True) as mock_endo,
+            patch("pulse.src.aura.circadian", create=True) as mock_circ,
+            patch("pulse.src.aura.soma", create=True) as mock_soma,
+            patch("pulse.src.aura.adipose", create=True) as mock_adip,
+        ):
             # These will fail on import inside emit, which is fine - they're try/excepted
             result = aura.emit()
             assert "mood" in result

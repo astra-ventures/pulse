@@ -79,25 +79,25 @@ def start_session() -> dict:
 def check_identity() -> dict:
     """Run identity integrity check. Returns status dict."""
     state = _load_state()
-    
+
     current_hash = _hash_file(SOUL_PATH)
     state["current_soul_hash"] = current_hash
-    
+
     # Compute drift
     drift = _compute_drift(current_hash, state["snapshots"])
     state["drift_score"] = drift
-    
+
     # Memory completeness
     state["memory_completeness"] = _compute_memory_completeness()
-    
+
     # Update uptime
     if state.get("session_start"):
         state["total_uptime_seconds"] += time.time() - state["session_start"]
         state["session_start"] = time.time()
-    
+
     state["last_check"] = time.time()
     _save_state(state)
-    
+
     result = {
         "session_count": state["session_count"],
         "drift_score": drift,
@@ -105,51 +105,55 @@ def check_identity() -> dict:
         "soul_hash": current_hash,
         "uptime_hours": state["total_uptime_seconds"] / 3600,
     }
-    
+
     # Flag high drift as AMYGDALA threat
     if drift > DRIFT_THRESHOLD:
-        thalamus.append({
+        thalamus.append(
+            {
+                "source": "telomere",
+                "type": "identity_drift_alert",
+                "salience": 0.8,
+                "data": {
+                    "drift_score": drift,
+                    "threshold": DRIFT_THRESHOLD,
+                    "action": "amygdala_threat",
+                },
+            }
+        )
+
+    thalamus.append(
+        {
             "source": "telomere",
-            "type": "identity_drift_alert",
-            "salience": 0.8,
-            "data": {
-                "drift_score": drift,
-                "threshold": DRIFT_THRESHOLD,
-                "action": "amygdala_threat",
-            },
-        })
-    
-    thalamus.append({
-        "source": "telomere",
-        "type": "identity_check",
-        "salience": 0.3,
-        "data": result,
-    })
-    
+            "type": "identity_check",
+            "salience": 0.3,
+            "data": result,
+        }
+    )
+
     return result
 
 
 def take_snapshot() -> dict:
     """Take a monthly snapshot of SOUL.md hash."""
     _DEFAULT_SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     current_hash = _hash_file(SOUL_PATH)
     snapshot = {
         "ts": time.time(),
         "hash": current_hash,
         "month": time.strftime("%Y-%m"),
     }
-    
+
     # Save snapshot file
     snap_file = _DEFAULT_SNAPSHOT_DIR / f"{snapshot['month']}.json"
     snap_file.write_text(json.dumps(snapshot, indent=2))
-    
+
     # Update state
     state = _load_state()
     state["snapshots"].append(snapshot)
     state["snapshots"] = state["snapshots"][-12:]  # keep last 12 months
     _save_state(state)
-    
+
     return snapshot
 
 
@@ -165,6 +169,7 @@ def emit_need_signals() -> dict:
 
     if drift > 0.3:
         from pulse.src import hypothalamus
+
         hypothalamus.record_need_signal("realign_identity", "telomere")
         signals["realign_identity"] = drift
 

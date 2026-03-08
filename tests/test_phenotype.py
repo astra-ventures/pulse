@@ -12,10 +12,12 @@ from pulse.src import phenotype, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "phenotype-state.json"
-    with patch.object(phenotype, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(phenotype, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(phenotype, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(phenotype, "_DEFAULT_STATE_FILE", sf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 
@@ -28,14 +30,32 @@ class TestComputePhenotype:
         assert 0 <= p["intensity"] <= 1
 
     def test_wired_state(self):
-        mood = {"hormones": {"cortisol": 0.7, "dopamine": 0.7, "oxytocin": 0.1, "adrenaline": 0.0, "melatonin": 0.0}, "label": "wired"}
+        mood = {
+            "hormones": {
+                "cortisol": 0.7,
+                "dopamine": 0.7,
+                "oxytocin": 0.1,
+                "adrenaline": 0.0,
+                "melatonin": 0.0,
+            },
+            "label": "wired",
+        }
         p = phenotype.compute_phenotype(mood=mood)
         assert p["tone"] == "wired"
         assert p["sentence_length"] == "short"
         assert p["intensity"] >= 0.7
 
     def test_vulnerable_twilight(self):
-        mood = {"hormones": {"cortisol": 0.1, "dopamine": 0.2, "oxytocin": 0.6, "adrenaline": 0.0, "melatonin": 0.1}, "label": "bonded"}
+        mood = {
+            "hormones": {
+                "cortisol": 0.1,
+                "dopamine": 0.2,
+                "oxytocin": 0.6,
+                "adrenaline": 0.0,
+                "melatonin": 0.1,
+            },
+            "label": "bonded",
+        }
         p = phenotype.compute_phenotype(mood=mood, circadian_mode="twilight")
         assert p["tone"] == "vulnerable"
         assert p["sentence_length"] == "long"
@@ -48,7 +68,16 @@ class TestComputePhenotype:
         assert p["humor"] == 0.0
 
     def test_contemplative_post_rem(self):
-        mood = {"hormones": {"cortisol": 0.1, "dopamine": 0.2, "oxytocin": 0.2, "adrenaline": 0.0, "melatonin": 0.1}, "label": "neutral"}
+        mood = {
+            "hormones": {
+                "cortisol": 0.1,
+                "dopamine": 0.2,
+                "oxytocin": 0.2,
+                "adrenaline": 0.0,
+                "melatonin": 0.1,
+            },
+            "label": "neutral",
+        }
         p = phenotype.compute_phenotype(mood=mood, circadian_mode="dawn")
         assert p["tone"] == "contemplative"
 
@@ -59,7 +88,16 @@ class TestComputePhenotype:
 
     def test_broadcasts_shift(self):
         phenotype.compute_phenotype()  # neutral
-        mood = {"hormones": {"cortisol": 0.7, "dopamine": 0.7, "oxytocin": 0.1, "adrenaline": 0.0, "melatonin": 0.0}, "label": "wired"}
+        mood = {
+            "hormones": {
+                "cortisol": 0.7,
+                "dopamine": 0.7,
+                "oxytocin": 0.1,
+                "adrenaline": 0.0,
+                "melatonin": 0.0,
+            },
+            "label": "wired",
+        }
         phenotype.compute_phenotype(mood=mood)
         entries = thalamus.read_by_source("phenotype")
         assert any(e["type"] == "shift" for e in entries)

@@ -39,6 +39,7 @@ logger = logging.getLogger("pulse.evaluator.model")
 @dataclass
 class ModelConfig:
     """Configuration for the evaluation model."""
+
     base_url: str = "http://127.0.0.1:11434/v1"  # ollama default
     api_key: str = "ollama"  # ollama doesn't need a real key
     model: str = "llama3.2:3b"  # small, fast, good enough for gate decisions
@@ -99,7 +100,9 @@ class ModelEvaluator:
         self._consecutive_failures = 0
         self._max_consecutive_failures = 3  # fall back to rules after this many
         self._last_failure_time: float = 0.0
-        self._model_retry_interval: float = 300.0  # retry model every 5 min after degradation
+        self._model_retry_interval: float = (
+            300.0  # retry model every 5 min after degradation
+        )
         self._suppress_until: float = 0.0  # suppress evaluation until this timestamp
 
     async def _get_session(self) -> aiohttp.ClientSession:
@@ -161,7 +164,9 @@ class ModelEvaluator:
             suppress_min = min(self._extract_suppress_minutes(response), max_suppress)
             if suppress_min > 0 and not decision.should_trigger:
                 self._suppress_until = now + (suppress_min * 60)
-                logger.debug(f"Model requested suppress={suppress_min}min (cap={max_suppress})")
+                logger.debug(
+                    f"Model requested suppress={suppress_min}min (cap={max_suppress})"
+                )
 
             return decision
 
@@ -190,7 +195,9 @@ class ModelEvaluator:
         except Exception:
             return 0
 
-    async def _call_model(self, session: aiohttp.ClientSession, user_prompt: str) -> str:
+    async def _call_model(
+        self, session: aiohttp.ClientSession, user_prompt: str
+    ) -> str:
         """Make the API call to the model."""
         url = f"{self.model_config.base_url}/chat/completions"
         headers = {
@@ -234,6 +241,7 @@ class ModelEvaluator:
 
         # Time context
         from datetime import datetime
+
         dt = datetime.now()
         parts.append(f"## Time Context")
         parts.append(f"Current time: {dt.strftime('%A, %B %d, %Y — %I:%M %p')}")
@@ -241,7 +249,9 @@ class ModelEvaluator:
 
         # Drive states
         parts.append("## Drive States")
-        for drive in sorted(drive_state.drives, key=lambda d: d.weighted_pressure, reverse=True):
+        for drive in sorted(
+            drive_state.drives, key=lambda d: d.weighted_pressure, reverse=True
+        ):
             bar = "█" * int(drive.pressure * 10) + "░" * (10 - int(drive.pressure * 10))
             last = ""
             if drive.last_addressed:
@@ -270,9 +280,13 @@ class ModelEvaluator:
 
         convo = sensor_data.get("conversation", {})
         if convo.get("active"):
-            parts.append(f"⚠️ Human conversation ACTIVE (last activity {convo.get('seconds_since', '?')}s ago)")
+            parts.append(
+                f"⚠️ Human conversation ACTIVE (last activity {convo.get('seconds_since', '?')}s ago)"
+            )
         elif convo.get("in_cooldown"):
-            parts.append(f"Human conversation cooldown ({convo.get('seconds_since', '?')}s since last activity)")
+            parts.append(
+                f"Human conversation cooldown ({convo.get('seconds_since', '?')}s since last activity)"
+            )
         else:
             parts.append("Human conversation: inactive")
 
@@ -308,7 +322,9 @@ class ModelEvaluator:
 
         return "\n".join(parts)
 
-    def _parse_response(self, response: str, drive_state: DriveState) -> TriggerDecision:
+    def _parse_response(
+        self, response: str, drive_state: DriveState
+    ) -> TriggerDecision:
         """Parse the model's JSON response into a TriggerDecision."""
         # Strip markdown fences if present
         cleaned = response.strip()
@@ -387,15 +403,17 @@ class ModelEvaluator:
 
     def record_trigger(self, decision: TriggerDecision, success: bool):
         """Record a trigger for history context in future evaluations."""
-        self._trigger_history.append({
-            "timestamp": time.time(),
-            "reason": decision.reason,
-            "pressure": decision.total_pressure,
-            "success": success,
-        })
+        self._trigger_history.append(
+            {
+                "timestamp": time.time(),
+                "reason": decision.reason,
+                "pressure": decision.total_pressure,
+                "success": success,
+            }
+        )
         # Trim history
         if len(self._trigger_history) > self._max_history:
-            self._trigger_history = self._trigger_history[-self._max_history:]
+            self._trigger_history = self._trigger_history[-self._max_history :]
 
     async def close(self):
         if self._session and not self._session.closed:

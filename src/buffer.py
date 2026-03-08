@@ -82,18 +82,20 @@ def capture(
     _save(buf)
 
     # Broadcast to THALAMUS
-    thalamus.append({
-        "source": "buffer",
-        "type": "state",
-        "salience": 0.6,
-        "data": {
-            "session_id": buf["session_id"],
-            "topic": buf["topic"],
-            "decisions_count": len(decisions),
-            "action_items_count": len(action_items),
-            "emotional_valence": emotional_state.get("valence", 0.0),
-        },
-    })
+    thalamus.append(
+        {
+            "source": "buffer",
+            "type": "state",
+            "salience": 0.6,
+            "data": {
+                "session_id": buf["session_id"],
+                "topic": buf["topic"],
+                "decisions_count": len(decisions),
+                "action_items_count": len(action_items),
+                "emotional_valence": emotional_state.get("valence", 0.0),
+            },
+        }
+    )
     return buf
 
 
@@ -115,7 +117,7 @@ def get_buffer() -> dict:
 
 def get_compact_summary(max_tokens: int = 500) -> str:
     """Returns a compressed text summary for context injection.
-    
+
     Approximates tokens as words (rough 1:1 for English).
     """
     buf = _load()
@@ -140,13 +142,15 @@ def get_compact_summary(max_tokens: int = 500) -> str:
         parts.append("Participants: " + ", ".join(buf["participants"]))
     anchor = buf.get("emotional_anchor", {})
     if anchor.get("vibe"):
-        parts.append(f"Anchor: vibe={anchor['vibe']} energy={anchor.get('energy', 0.5):.1f} engagement={anchor.get('engagement', 0.5):.1f}")
+        parts.append(
+            f"Anchor: vibe={anchor['vibe']} energy={anchor.get('energy', 0.5):.1f} engagement={anchor.get('engagement', 0.5):.1f}"
+        )
 
     summary = "\n".join(parts)
     # Truncate to approximate token limit (avg ~4 chars/token)
     max_chars = max_tokens * 4
     if len(summary) > max_chars:
-        summary = summary[:max_chars - 3] + "..."
+        summary = summary[: max_chars - 3] + "..."
     return summary
 
 
@@ -163,18 +167,20 @@ def rotate() -> Optional[str]:
 
     _save(_empty_buffer())
 
-    thalamus.append({
-        "source": "buffer",
-        "type": "rotate",
-        "salience": 0.3,
-        "data": {"archived_to": str(archive_path)},
-    })
+    thalamus.append(
+        {
+            "source": "buffer",
+            "type": "rotate",
+            "salience": 0.3,
+            "data": {"archived_to": str(archive_path)},
+        }
+    )
     return str(archive_path)
 
 
 def auto_capture(messages: list) -> dict:
     """Given recent message dicts, automatically extract working memory.
-    
+
     Each message should have at least: {"role": str, "content": str}
     Optionally: {"sender": str}
     """
@@ -186,11 +192,55 @@ def auto_capture(messages: list) -> dict:
     valence = 0.0
     intensity = 0.0
 
-    decision_markers = ["decided", "decision", "let's go with", "agreed", "we'll do", "going with", "chosen", "picked"]
-    action_markers = ["todo", "to do", "will do", "need to", "should do", "action item", "next step", "let me", "i'll"]
-    question_markers = ["?", "what about", "how do we", "should we", "thoughts on", "unresolved"]
-    positive_markers = ["great", "awesome", "love", "excited", "happy", "perfect", "excellent", "nice"]
-    negative_markers = ["frustrated", "annoyed", "worried", "concerned", "angry", "sad", "disappointed", "stuck"]
+    decision_markers = [
+        "decided",
+        "decision",
+        "let's go with",
+        "agreed",
+        "we'll do",
+        "going with",
+        "chosen",
+        "picked",
+    ]
+    action_markers = [
+        "todo",
+        "to do",
+        "will do",
+        "need to",
+        "should do",
+        "action item",
+        "next step",
+        "let me",
+        "i'll",
+    ]
+    question_markers = [
+        "?",
+        "what about",
+        "how do we",
+        "should we",
+        "thoughts on",
+        "unresolved",
+    ]
+    positive_markers = [
+        "great",
+        "awesome",
+        "love",
+        "excited",
+        "happy",
+        "perfect",
+        "excellent",
+        "nice",
+    ]
+    negative_markers = [
+        "frustrated",
+        "annoyed",
+        "worried",
+        "concerned",
+        "angry",
+        "sad",
+        "disappointed",
+        "stuck",
+    ]
 
     for msg in messages:
         content = msg.get("content", "").lower()
@@ -225,8 +275,8 @@ def auto_capture(messages: list) -> dict:
         # Sentiment
         pos = sum(1 for m in positive_markers if m in content)
         neg = sum(1 for m in negative_markers if m in content)
-        valence += (pos - neg)
-        intensity += (pos + neg)
+        valence += pos - neg
+        intensity += pos + neg
 
     # Normalize
     n = max(len(messages), 1)
@@ -242,13 +292,19 @@ def auto_capture(messages: list) -> dict:
     action_items = list(dict.fromkeys(action_items))[:10]
     open_threads = list(dict.fromkeys(open_threads))[:10]
 
-    emotion_context = "positive" if valence > 0.2 else "negative" if valence < -0.2 else "neutral"
+    emotion_context = (
+        "positive" if valence > 0.2 else "negative" if valence < -0.2 else "neutral"
+    )
 
     return capture(
         conversation_summary=summary,
         decisions=decisions,
         action_items=action_items,
-        emotional_state={"valence": valence, "intensity": intensity, "context": emotion_context},
+        emotional_state={
+            "valence": valence,
+            "intensity": intensity,
+            "context": emotion_context,
+        },
         open_threads=open_threads,
         participants=list(participants),
     )

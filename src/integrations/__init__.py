@@ -22,11 +22,11 @@ class Integration(ABC):
     @abstractmethod
     def build_trigger_message(self, decision, config) -> str:
         """Build the message sent to OpenClaw when a trigger fires.
-        
+
         Args:
             decision: TriggerDecision with reason, top_drive, pressure, etc.
             config: PulseConfig for access to prefix and other settings.
-            
+
         Returns:
             String message to send via webhook.
         """

@@ -8,8 +8,8 @@ and other inter-module data.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-
 # ─── Sensor Data ─────────────────────────────────────────────
+
 
 @dataclass
 class FileChange:
@@ -45,6 +45,7 @@ class ConversationReading:
 @dataclass
 class SensorSnapshot:
     """Combined reading from all sensors."""
+
     filesystem: FilesystemReading = field(default_factory=FilesystemReading)
     system: SystemReading = field(default_factory=SystemReading)
     conversation: ConversationReading = field(default_factory=ConversationReading)
@@ -52,9 +53,11 @@ class SensorSnapshot:
 
 # ─── Mutation Commands ───────────────────────────────────────
 
+
 @dataclass
 class MutationCommand:
     """A self-modification request from the agent."""
+
     type: str
     reason: str = "no reason given"
     drive: Optional[str] = None
@@ -67,6 +70,7 @@ class MutationCommand:
 @dataclass
 class MutationResult:
     """Result of processing a mutation."""
+
     status: str  # "applied", "blocked", "error"
     type: str
     error: Optional[str] = None

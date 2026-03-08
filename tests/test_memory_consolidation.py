@@ -20,8 +20,8 @@ from pulse.src.memory_consolidation import (
     PROMOTION_THRESHOLD,
 )
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def make_event(
     event_type="trigger_complete",
@@ -64,6 +64,7 @@ def read_engrams(path: Path) -> List[dict]:
 
 # ── read_chronicle_recent ─────────────────────────────────────────────────────
 
+
 class TestReadChronicleRecent:
 
     def test_returns_empty_when_file_missing(self, tmp_path):
@@ -93,6 +94,7 @@ class TestReadChronicleRecent:
 
 # ── score_event ───────────────────────────────────────────────────────────────
 
+
 class TestScoreEvent:
 
     def test_fresh_high_salience_scores_high(self):
@@ -106,7 +108,7 @@ class TestScoreEvent:
         assert score_event(stale) < score_event(fresh)
 
     def test_very_old_event_uses_min_recency(self):
-        old = make_event(salience=1.0, event_type="default", age_seconds=7*86400)
+        old = make_event(salience=1.0, event_type="default", age_seconds=7 * 86400)
         score = score_event(old)
         # min_recency=0.3, type_weight=1.0, salience=1.0 → 0.3
         assert score == pytest.approx(0.3, abs=0.05)
@@ -124,14 +126,23 @@ class TestScoreEvent:
 
 # ── _extract_content ──────────────────────────────────────────────────────────
 
+
 class TestExtractContent:
 
     def test_extracts_summary_field(self):
-        event = {"data": {"summary": "This is the summary"}, "source": "test", "type": "x"}
+        event = {
+            "data": {"summary": "This is the summary"},
+            "source": "test",
+            "type": "x",
+        }
         assert _extract_content(event) == "This is the summary"
 
     def test_falls_back_to_message_field(self):
-        event = {"data": {"message": "This is the message"}, "source": "test", "type": "x"}
+        event = {
+            "data": {"message": "This is the message"},
+            "source": "test",
+            "type": "x",
+        }
         assert _extract_content(event) == "This is the message"
 
     def test_falls_back_to_source_type_when_no_text_fields(self):
@@ -142,6 +153,7 @@ class TestExtractContent:
 
 
 # ── _extract_tags ─────────────────────────────────────────────────────────────
+
 
 class TestExtractTags:
 
@@ -166,6 +178,7 @@ class TestExtractTags:
 
 # ── consolidate ───────────────────────────────────────────────────────────────
 
+
 class TestConsolidate:
 
     def test_empty_chronicle_returns_empty_report(self, tmp_path):
@@ -180,7 +193,9 @@ class TestConsolidate:
         chronicle = tmp_path / "chronicle.jsonl"
         engram = tmp_path / "engrams.jsonl"
         events = [
-            make_event(event_type="goal_achieved", salience=1.0, summary="Achieved major goal"),
+            make_event(
+                event_type="goal_achieved", salience=1.0, summary="Achieved major goal"
+            ),
             make_event(event_type="milestone", salience=0.9, summary="Shipped feature"),
         ]
         write_chronicle(events, chronicle)
@@ -192,7 +207,11 @@ class TestConsolidate:
     def test_low_importance_events_not_promoted(self, tmp_path):
         chronicle = tmp_path / "chronicle.jsonl"
         engram = tmp_path / "engrams.jsonl"
-        events = [make_event(event_type="mood_update", salience=0.1, summary="Minor mood shift")]
+        events = [
+            make_event(
+                event_type="mood_update", salience=0.1, summary="Minor mood shift"
+            )
+        ]
         write_chronicle(events, chronicle)
         report = consolidate(
             chronicle_file=chronicle,
@@ -204,7 +223,9 @@ class TestConsolidate:
     def test_duplicate_events_not_re_promoted(self, tmp_path):
         chronicle = tmp_path / "chronicle.jsonl"
         engram = tmp_path / "engrams.jsonl"
-        event = make_event(event_type="goal_achieved", salience=1.0, summary="Same important event")
+        event = make_event(
+            event_type="goal_achieved", salience=1.0, summary="Same important event"
+        )
         write_chronicle([event], chronicle)
 
         # First run — should promote
@@ -220,8 +241,12 @@ class TestConsolidate:
         chronicle = tmp_path / "chronicle.jsonl"
         engram = tmp_path / "engrams.jsonl"
         events = [
-            make_event(event_type="milestone", salience=0.9, summary="Pulse v0.3.0 shipped"),
-            make_event(event_type="goal_achieved", salience=0.95, summary="Goal complete"),
+            make_event(
+                event_type="milestone", salience=0.9, summary="Pulse v0.3.0 shipped"
+            ),
+            make_event(
+                event_type="goal_achieved", salience=0.95, summary="Goal complete"
+            ),
         ]
         write_chronicle(events, chronicle)
         report = consolidate(chronicle_file=chronicle, engram_file=engram)
@@ -230,7 +255,9 @@ class TestConsolidate:
     def test_engram_importance_scaled_correctly(self, tmp_path):
         chronicle = tmp_path / "chronicle.jsonl"
         engram = tmp_path / "engrams.jsonl"
-        event = make_event(event_type="goal_achieved", salience=1.0, summary="Important milestone")
+        event = make_event(
+            event_type="goal_achieved", salience=1.0, summary="Important milestone"
+        )
         write_chronicle([event], chronicle)
         consolidate(chronicle_file=chronicle, engram_file=engram)
         engrams = read_engrams(engram)
@@ -240,6 +267,7 @@ class TestConsolidate:
 
 
 # ── decay_old_engrams ─────────────────────────────────────────────────────────
+
 
 class TestDecayOldEngrams:
 

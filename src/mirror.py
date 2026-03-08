@@ -32,6 +32,7 @@ IRIS_MODEL_SECTIONS = [
 
 # ── State persistence ───────────────────────────────────────────────────
 
+
 def _load_state() -> dict:
     _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
     if _DEFAULT_STATE_FILE.exists():
@@ -52,6 +53,7 @@ def _save_state(state: dict):
 
 
 # ── Parsing helpers ─────────────────────────────────────────────────────
+
 
 def _parse_model_file(path: Path) -> dict:
     """Parse a markdown model file into sections."""
@@ -86,6 +88,7 @@ def _file_hash(path: Path) -> Optional[str]:
 
 
 # ── Core functions ──────────────────────────────────────────────────────
+
 
 def get_josh_model() -> dict:
     """Load and parse josh_model.md."""
@@ -133,14 +136,20 @@ def check_iris_model_updates() -> list[str]:
         pass
 
     current_sections = get_iris_model()
-    changes = [f"Section '{s}' updated" for s in current_sections if current_sections[s].strip()]
+    changes = [
+        f"Section '{s}' updated"
+        for s in current_sections
+        if current_sections[s].strip()
+    ]
 
     state["iris_model_hash"] = current_hash
     if changes:
-        state["change_log"].append({
-            "ts": int(time.time() * 1000),
-            "changes": changes,
-        })
+        state["change_log"].append(
+            {
+                "ts": int(time.time() * 1000),
+                "changes": changes,
+            }
+        )
         # Keep last 50 change entries
         state["change_log"] = state["change_log"][-50:]
 
@@ -154,16 +163,19 @@ def integrate_feedback(changes: list):
         return
 
     # Broadcast to THALAMUS
-    thalamus.append({
-        "source": "mirror",
-        "type": "feedback",
-        "salience": 0.8,
-        "data": {"changes": changes, "from": "josh_iris_model"},
-    })
+    thalamus.append(
+        {
+            "source": "mirror",
+            "type": "feedback",
+            "salience": 0.8,
+            "data": {"changes": changes, "from": "josh_iris_model"},
+        }
+    )
 
     # Update PROPRIOCEPTION with external view
     try:
         from pulse.src import proprioception
+
         model = proprioception.get_self_model()
         model["external_feedback_ts"] = int(time.time() * 1000)
         model["external_feedback_count"] = model.get("external_feedback_count", 0) + 1
@@ -178,6 +190,7 @@ def get_alignment_report() -> dict:
     self_view = {}
     try:
         from pulse.src import proprioception
+
         self_view = proprioception.get_self_model()
     except Exception:
         pass

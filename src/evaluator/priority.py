@@ -22,6 +22,7 @@ logger = logging.getLogger("pulse.evaluator")
 @dataclass
 class TriggerDecision:
     """The evaluator's decision on whether to trigger an agent turn."""
+
     should_trigger: bool
     reason: str
     total_pressure: float
@@ -29,7 +30,9 @@ class TriggerDecision:
     sensor_context: str = ""
     timestamp: float = 0.0
     recommend_generate: bool = False  # True when drives high but no actionable work
-    top_drive_pressure_snapshot: float = 0.0  # immutable snapshot of top_drive.pressure at decision time
+    top_drive_pressure_snapshot: float = (
+        0.0  # immutable snapshot of top_drive.pressure at decision time
+    )
 
     def __post_init__(self):
         if not self.timestamp:
@@ -47,7 +50,7 @@ class PriorityEvaluator:
     def evaluate(self, drive_state: DriveState, sensor_data: dict) -> TriggerDecision:
         """
         Evaluate whether to trigger an agent turn.
-        
+
         Decision factors:
         1. Any single drive above threshold?
         2. Combined weighted pressure above threshold?

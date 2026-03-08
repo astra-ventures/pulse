@@ -47,10 +47,11 @@ logger = logging.getLogger("pulse.plugin_registry")
 
 _DEFAULT_PLUGIN_DIR = Path.home() / ".pulse" / "plugins"
 _PLUGIN_FILE_PATTERN = "pulse_plugin_*.py"
-_ENTRY_POINT_GROUP   = "pulse.plugins"
+_ENTRY_POINT_GROUP = "pulse.plugins"
 
 
 # ── Base class ────────────────────────────────────────────────────────────────
+
 
 class PulsePlugin:
     """Base class for all Pulse plugins.
@@ -66,10 +67,10 @@ class PulsePlugin:
     """
 
     # ── Class-level metadata (override in subclass) ────────────────────────
-    name:        str = "UNNAMED_PLUGIN"
-    version:     str = "0.1.0"
+    name: str = "UNNAMED_PLUGIN"
+    version: str = "0.1.0"
     description: str = ""
-    author:      str = ""
+    author: str = ""
 
     def __init__(self):
         self._enabled = True
@@ -148,6 +149,7 @@ class PulsePlugin:
 
 
 # ── Registry ──────────────────────────────────────────────────────────────────
+
 
 class PluginRegistry:
     """Central registry for all loaded Pulse plugins.
@@ -281,6 +283,7 @@ class PluginRegistry:
 
 # ── Discovery ─────────────────────────────────────────────────────────────────
 
+
 def _find_plugin_classes(module: Any) -> List[type]:
     """Find all PulsePlugin subclasses in a module (excluding the base class)."""
     classes = []
@@ -365,11 +368,16 @@ def discover_plugins(
     # 2. Entry-point discovery (optional: requires importlib.metadata)
     try:
         from importlib.metadata import entry_points
+
         eps = entry_points(group=_ENTRY_POINT_GROUP)
         for ep in eps:
             try:
                 cls = ep.load()
-                if inspect.isclass(cls) and issubclass(cls, PulsePlugin) and cls is not PulsePlugin:
+                if (
+                    inspect.isclass(cls)
+                    and issubclass(cls, PulsePlugin)
+                    and cls is not PulsePlugin
+                ):
                     inst = cls()
                     if reg.register(inst):
                         registered += 1

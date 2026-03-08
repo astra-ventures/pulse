@@ -33,7 +33,15 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 try:
-    from fastapi import Depends, FastAPI, Header, HTTPException, Query, WebSocket, WebSocketDisconnect
+    from fastapi import (
+        Depends,
+        FastAPI,
+        Header,
+        HTTPException,
+        Query,
+        WebSocket,
+        WebSocketDisconnect,
+    )
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import HTMLResponse
 except ImportError as _e:
@@ -44,9 +52,9 @@ except ImportError as _e:
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-STATE_DIR    = Path(os.environ.get("PULSE_STATE_DIR", Path.home() / ".pulse" / "state"))
-OBS_TOKEN    = os.environ.get("PULSE_OBS_TOKEN") or os.environ.get("PULSE_HOOK_TOKEN", "")
-OBS_PORT     = int(os.environ.get("PULSE_OBS_PORT", "9722"))
+STATE_DIR = Path(os.environ.get("PULSE_STATE_DIR", Path.home() / ".pulse" / "state"))
+OBS_TOKEN = os.environ.get("PULSE_OBS_TOKEN") or os.environ.get("PULSE_HOOK_TOKEN", "")
+OBS_PORT = int(os.environ.get("PULSE_OBS_PORT", "9722"))
 STREAM_INTERVAL = float(os.environ.get("PULSE_OBS_STREAM_INTERVAL", "5.0"))
 
 logger = logging.getLogger("pulse.observation_api")
@@ -69,6 +77,7 @@ app.add_middleware(
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
+
 def require_auth(authorization: str = Header(default="")):
     if not OBS_TOKEN:
         return  # No token configured — open access (dev mode)
@@ -76,7 +85,9 @@ def require_auth(authorization: str = Header(default="")):
     if token != OBS_TOKEN:
         raise HTTPException(status_code=401, detail="Invalid observation token")
 
+
 # ── State reader helpers ──────────────────────────────────────────────────────
+
 
 def _read_json(filename: str, default: Any = None) -> Any:
     """Read a state JSON file, return default on any error."""
@@ -92,7 +103,7 @@ def _read_jsonl_tail(filename: str, n: int = 20) -> List[dict]:
     path = STATE_DIR / filename
     try:
         lines = path.read_text().strip().splitlines()
-        tail  = lines[-n:]
+        tail = lines[-n:]
         result = []
         for line in reversed(tail):
             try:
@@ -115,6 +126,7 @@ def _file_age_seconds(filename: str) -> Optional[float]:
 
 # ── Health ────────────────────────────────────────────────────────────────────
 
+
 @app.get("/health")
 def get_health(_: None = Depends(require_auth)):
     """Pulse daemon health — uptime indicator, module freshness, warnings."""
@@ -129,39 +141,41 @@ def get_health(_: None = Depends(require_auth)):
     daemon_alive = drive_age is not None and drive_age < 300  # seen in last 5 min
 
     return {
-        "status":        "ok" if daemon_alive else "stale",
-        "daemon_alive":  daemon_alive,
-        "drive_file_age_seconds":     drive_age,
+        "status": "ok" if daemon_alive else "stale",
+        "daemon_alive": daemon_alive,
+        "drive_file_age_seconds": drive_age,
         "chronicle_file_age_seconds": chronicle_age,
         "recent_errors": errors,
-        "state_dir":     str(STATE_DIR),
-        "timestamp":     time.time(),
+        "state_dir": str(STATE_DIR),
+        "timestamp": time.time(),
     }
 
 
 # ── Full snapshot ─────────────────────────────────────────────────────────────
 
+
 @app.get("/state")
 def get_state(_: None = Depends(require_auth)):
     """Full current state snapshot — drives, emotional, endocrine, circadian, soma."""
     return {
-        "drives":    _get_drives_data(),
+        "drives": _get_drives_data(),
         "emotional": _get_emotional_data(),
         "endocrine": _get_endocrine_data(),
         "circadian": _get_circadian_data(),
-        "soma":      _get_soma_data(),
+        "soma": _get_soma_data(),
         "timestamp": time.time(),
     }
 
 
 # ── Individual state subsystems ───────────────────────────────────────────────
 
+
 def _get_drives_data() -> dict:
     raw = _read_json("drive-performance.json", {})
     drives = raw.get("drives", raw)  # handle both wrapped and flat formats
     return {
-        "values":    drives,
-        "pressure":  _compute_pressure(drives),
+        "values": drives,
+        "pressure": _compute_pressure(drives),
         "timestamp": time.time(),
     }
 
@@ -177,12 +191,12 @@ def _compute_pressure(drives: dict) -> float:
 def _get_emotional_data() -> dict:
     raw = _read_json("limbic-state.json", {})
     return {
-        "valence":           raw.get("current_valence", 0.0),
-        "intensity":         raw.get("current_intensity", 0.5),
-        "active_emotion":    raw.get("current_emotion"),
-        "recent_pattern":    raw.get("active_pattern"),
-        "emotional_memory":  raw.get("recent_memories", [])[:5],
-        "timestamp":         time.time(),
+        "valence": raw.get("current_valence", 0.0),
+        "intensity": raw.get("current_intensity", 0.5),
+        "active_emotion": raw.get("current_emotion"),
+        "recent_pattern": raw.get("active_pattern"),
+        "emotional_memory": raw.get("recent_memories", [])[:5],
+        "timestamp": time.time(),
     }
 
 
@@ -190,25 +204,25 @@ def _get_endocrine_data() -> dict:
     raw = _read_json("endocrine-state.json", {})
     hormones = raw.get("hormones", raw)
     return {
-        "cortisol":   round(float(hormones.get("cortisol",   0.2)), 4),
-        "dopamine":   round(float(hormones.get("dopamine",   0.5)), 4),
-        "serotonin":  round(float(hormones.get("serotonin",  0.6)), 4),
-        "oxytocin":   round(float(hormones.get("oxytocin",   0.3)), 4),
+        "cortisol": round(float(hormones.get("cortisol", 0.2)), 4),
+        "dopamine": round(float(hormones.get("dopamine", 0.5)), 4),
+        "serotonin": round(float(hormones.get("serotonin", 0.6)), 4),
+        "oxytocin": round(float(hormones.get("oxytocin", 0.3)), 4),
         "adrenaline": round(float(hormones.get("adrenaline", 0.1)), 4),
-        "melatonin":  round(float(hormones.get("melatonin",  0.1)), 4),
-        "timestamp":  time.time(),
+        "melatonin": round(float(hormones.get("melatonin", 0.1)), 4),
+        "timestamp": time.time(),
     }
 
 
 def _get_circadian_data() -> dict:
     raw = _read_json("circadian-state.json", {})
     return {
-        "energy_level":     raw.get("energy_level", 0.5),
-        "sleep_phase":      raw.get("sleep_phase", "unknown"),
+        "energy_level": raw.get("energy_level", 0.5),
+        "sleep_phase": raw.get("sleep_phase", "unknown"),
         "peak_energy_hour": raw.get("peak_energy_hour"),
-        "is_resting":       raw.get("is_resting", False),
-        "sleep_quality":    raw.get("sleep_quality_avg", 0.5),
-        "timestamp":        time.time(),
+        "is_resting": raw.get("is_resting", False),
+        "sleep_quality": raw.get("sleep_quality_avg", 0.5),
+        "timestamp": time.time(),
     }
 
 
@@ -218,10 +232,10 @@ def _get_soma_data() -> dict:
         # SOMA might store differently
         raw = _read_json("nephron-state.json", {})
     return {
-        "energy":     raw.get("energy", 0.7),
-        "strain":     raw.get("strain", 0.1),
-        "readiness":  raw.get("readiness", 0.8),
-        "timestamp":  time.time(),
+        "energy": raw.get("energy", 0.7),
+        "strain": raw.get("strain", 0.1),
+        "readiness": raw.get("readiness", 0.8),
+        "timestamp": time.time(),
     }
 
 
@@ -252,6 +266,7 @@ def get_soma(_: None = Depends(require_auth)):
 
 # ── Chronicle ─────────────────────────────────────────────────────────────────
 
+
 @app.get("/chronicle/recent")
 def get_chronicle_recent(
     n: int = Query(default=20, ge=1, le=200),
@@ -263,6 +278,7 @@ def get_chronicle_recent(
 
 
 # ── Engram (memory search) ────────────────────────────────────────────────────
+
 
 @app.get("/engram/search")
 def search_engrams(
@@ -277,15 +293,18 @@ def search_engrams(
         return {"results": [], "query": q, "count": 0}
 
     q_lower = q.lower()
-    results = [
-        e for e in engrams
-        if q_lower in json.dumps(e).lower()
-    ][:limit]
+    results = [e for e in engrams if q_lower in json.dumps(e).lower()][:limit]
 
-    return {"results": results, "query": q, "count": len(results), "timestamp": time.time()}
+    return {
+        "results": results,
+        "query": q,
+        "count": len(results),
+        "timestamp": time.time(),
+    }
 
 
 # ── WebSocket stream ──────────────────────────────────────────────────────────
+
 
 @app.websocket("/stream")
 async def websocket_stream(ws: WebSocket):
@@ -300,7 +319,7 @@ async def websocket_stream(ws: WebSocket):
     try:
         while True:
             state = {
-                "drives":    _get_drives_data(),
+                "drives": _get_drives_data(),
                 "emotional": _get_emotional_data(),
                 "endocrine": _get_endocrine_data(),
                 "circadian": _get_circadian_data(),
@@ -483,4 +502,7 @@ def get_dashboard():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("pulse.src.observation_api:app", host="0.0.0.0", port=OBS_PORT, reload=False)
+
+    uvicorn.run(
+        "pulse.src.observation_api:app", host="0.0.0.0", port=OBS_PORT, reload=False
+    )

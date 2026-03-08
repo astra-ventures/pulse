@@ -18,20 +18,101 @@ _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 # ── Skill inference ────────────────────────────────────────────────────────────
 
 _SKILL_KEYWORDS: List[tuple] = [
-    ("coding",            ["cod", "build", "implement", "module", "class", "function",
-                           "fix", "test", "debug", "refactor", "script", "commit", "push"]),
-    ("genomic_analysis",  ["genome", "genomic", "snp", "gwas", "dna", "chromosome",
-                           "allele", "rsid", "variant", "biostack"]),
-    ("research",          ["research", "analysis", "study", "search", "learn",
-                           "scan", "find", "query", "investigate", "gwas"]),
-    ("trading_strategy",  ["trading", "polymarket", "kalshi", "market", "trade",
-                           "bet", "position", "edge", "kelly", "weather_bet"]),
-    ("creative_writing",  ["write", "journal", "blog", "publish", "poem",
-                           "post", "content", "article", "story"]),
-    ("system_architecture", ["architect", "structur", "plan",
-                              "roadmap", "pipeline", "schema"]),
-    ("business_strategy", ["strategy", "business", "trait", "product", "launch",
-                           "revenue", "market", "waitlist", "pricing"]),
+    (
+        "coding",
+        [
+            "cod",
+            "build",
+            "implement",
+            "module",
+            "class",
+            "function",
+            "fix",
+            "test",
+            "debug",
+            "refactor",
+            "script",
+            "commit",
+            "push",
+        ],
+    ),
+    (
+        "genomic_analysis",
+        [
+            "genome",
+            "genomic",
+            "snp",
+            "gwas",
+            "dna",
+            "chromosome",
+            "allele",
+            "rsid",
+            "variant",
+            "biostack",
+        ],
+    ),
+    (
+        "research",
+        [
+            "research",
+            "analysis",
+            "study",
+            "search",
+            "learn",
+            "scan",
+            "find",
+            "query",
+            "investigate",
+            "gwas",
+        ],
+    ),
+    (
+        "trading_strategy",
+        [
+            "trading",
+            "polymarket",
+            "kalshi",
+            "market",
+            "trade",
+            "bet",
+            "position",
+            "edge",
+            "kelly",
+            "weather_bet",
+        ],
+    ),
+    (
+        "creative_writing",
+        [
+            "write",
+            "journal",
+            "blog",
+            "publish",
+            "poem",
+            "post",
+            "content",
+            "article",
+            "story",
+        ],
+    ),
+    (
+        "system_architecture",
+        ["architect", "structur", "plan", "roadmap", "pipeline", "schema"],
+    ),
+    (
+        "business_strategy",
+        [
+            "strategy",
+            "business",
+            "trait",
+            "product",
+            "launch",
+            "revenue",
+            "market",
+            "waitlist",
+            "pricing",
+        ],
+    ),
 ]
 
 
@@ -60,14 +141,18 @@ class NervousSystem:
     - shutdown() — save everything
     """
 
-    def __init__(self, config=None, workspace_root: str = "~/.openclaw/workspace",
-                 state_dir: Optional[Path] = None):
+    def __init__(
+        self,
+        config=None,
+        workspace_root: str = "~/.openclaw/workspace",
+        state_dir: Optional[Path] = None,
+    ):
         self.config = config
         self.workspace_root = workspace_root
         self.state_dir = Path(state_dir) if state_dir else _DEFAULT_STATE_DIR
         self._loop_count = 0
         self._stillness_since: Optional[float] = None
-        
+
         # Module instances (None if failed to init)
         self.thalamus = None
         self.proprioception = None
@@ -101,7 +186,7 @@ class NervousSystem:
         self.genome = None
         self.aura = None
         self.chronicle = None
-        
+
         # Module-level imports (functional modules)
         self._mod_thalamus = None
         self._mod_circadian = None
@@ -151,11 +236,17 @@ class NervousSystem:
             name = Path(mod._DEFAULT_STATE_FILE).name
             mod._DEFAULT_STATE_FILE = sd / name
         # Handle special-cased file constants
-        for attr in ("_DEFAULT_BROADCAST_FILE", "_DEFAULT_HEALTH_FILE",
-                      "_DEFAULT_BUFFER_FILE", "_DEFAULT_ARCHIVE_DIR",
-                      "_DEFAULT_CHRONICLE_FILE", "_DEFAULT_LEXICON_FILE",
-                      "_DEFAULT_LEARNING_FILE", "_DEFAULT_SNAPSHOT_DIR",
-                      "_DEFAULT_BIOSENSOR_FILE"):
+        for attr in (
+            "_DEFAULT_BROADCAST_FILE",
+            "_DEFAULT_HEALTH_FILE",
+            "_DEFAULT_BUFFER_FILE",
+            "_DEFAULT_ARCHIVE_DIR",
+            "_DEFAULT_CHRONICLE_FILE",
+            "_DEFAULT_LEXICON_FILE",
+            "_DEFAULT_LEARNING_FILE",
+            "_DEFAULT_SNAPSHOT_DIR",
+            "_DEFAULT_BIOSENSOR_FILE",
+        ):
             if hasattr(mod, attr):
                 old = getattr(mod, attr)
                 if isinstance(old, Path):
@@ -166,6 +257,7 @@ class NervousSystem:
         # THALAMUS — broadcast bus (module-level functions)
         try:
             from pulse.src import thalamus
+
             self._mod_thalamus = thalamus
             self.thalamus = thalamus
             self._patch_module_state_dir(thalamus)
@@ -176,6 +268,7 @@ class NervousSystem:
         # PROPRIOCEPTION — self-model (module-level functions)
         try:
             from pulse.src import proprioception
+
             self._mod_proprioception = proprioception
             self.proprioception = proprioception
             self._patch_module_state_dir(proprioception)
@@ -186,6 +279,7 @@ class NervousSystem:
         # CIRCADIAN — internal clock (module-level functions)
         try:
             from pulse.src import circadian
+
             self._mod_circadian = circadian
             self.circadian = circadian
             self._patch_module_state_dir(circadian)
@@ -196,6 +290,7 @@ class NervousSystem:
         # ENDOCRINE — mood (module-level functions)
         try:
             from pulse.src import endocrine
+
             self._mod_endocrine = endocrine
             self.endocrine = endocrine
             self._patch_module_state_dir(endocrine)
@@ -206,6 +301,7 @@ class NervousSystem:
         # ADIPOSE — budget (module-level functions)
         try:
             from pulse.src import adipose
+
             self._mod_adipose = adipose
             self.adipose = adipose
             self._patch_module_state_dir(adipose)
@@ -216,6 +312,7 @@ class NervousSystem:
         # MYELIN — compression (class-based singleton)
         try:
             from pulse.src import myelin
+
             self._mod_myelin = myelin
             self._patch_module_state_dir(myelin)
             self.myelin = myelin.get_instance()
@@ -226,6 +323,7 @@ class NervousSystem:
         # IMMUNE — integrity (module-level functions)
         try:
             from pulse.src import immune
+
             self._mod_immune = immune
             self.immune = immune
             self._patch_module_state_dir(immune)
@@ -236,6 +334,7 @@ class NervousSystem:
         # CEREBELLUM — habits (class-based)
         try:
             from pulse.src.cerebellum import Cerebellum
+
             self.cerebellum = Cerebellum()
             logger.info("✓ CEREBELLUM loaded")
         except Exception as e:
@@ -244,6 +343,7 @@ class NervousSystem:
         # BUFFER — working memory (module-level functions)
         try:
             from pulse.src import buffer
+
             self._mod_buffer = buffer
             self.buffer = buffer
             self._patch_module_state_dir(buffer)
@@ -254,6 +354,7 @@ class NervousSystem:
         # SPINE — health monitor (module-level functions)
         try:
             from pulse.src import spine
+
             self.spine = spine
             self._patch_module_state_dir(spine)
             logger.info("✓ SPINE loaded")
@@ -263,6 +364,7 @@ class NervousSystem:
         # RETINA — attention filter (class-based singleton)
         try:
             from pulse.src import retina
+
             self._mod_retina = retina
             self._patch_module_state_dir(retina)
             self.retina = retina.get_instance()
@@ -273,6 +375,7 @@ class NervousSystem:
         # AMYGDALA — threat detection (class-based)
         try:
             from pulse.src.amygdala import Amygdala
+
             self.amygdala = Amygdala()
             logger.info("✓ AMYGDALA loaded")
         except Exception as e:
@@ -281,6 +384,7 @@ class NervousSystem:
         # VAGUS — silence detection (module-level functions)
         try:
             from pulse.src import vagus
+
             self._mod_vagus = vagus
             self.vagus = vagus
             self._patch_module_state_dir(vagus)
@@ -291,6 +395,7 @@ class NervousSystem:
         # LIMBIC — emotional afterimages (module-level functions)
         try:
             from pulse.src import limbic
+
             self._mod_limbic = limbic
             self.limbic = limbic
             self._patch_module_state_dir(limbic)
@@ -301,6 +406,7 @@ class NervousSystem:
         # ENTERIC — gut feeling (module-level functions)
         try:
             from pulse.src import enteric
+
             self.enteric = enteric
             self._patch_module_state_dir(enteric)
             logger.info("✓ ENTERIC loaded")
@@ -310,6 +416,7 @@ class NervousSystem:
         # PLASTICITY — drive evolution (class-based)
         try:
             from pulse.src.plasticity import Plasticity
+
             self.plasticity = Plasticity()
             logger.info("✓ PLASTICITY loaded")
         except Exception as e:
@@ -318,6 +425,7 @@ class NervousSystem:
         # REM — dreaming engine (module-level functions)
         try:
             from pulse.src import rem
+
             self.rem = rem
             self._patch_module_state_dir(rem)
             logger.info("✓ REM loaded")
@@ -327,6 +435,7 @@ class NervousSystem:
         # ENGRAM — spatial + episodic memory indexing (module-level functions)
         try:
             from pulse.src import engram
+
             self._mod_engram = engram
             self.engram = engram
             self._patch_module_state_dir(engram)
@@ -337,6 +446,7 @@ class NervousSystem:
         # MIRROR v2 — bidirectional modeling (module-level functions)
         try:
             from pulse.src import mirror
+
             self._mod_mirror = mirror
             self.mirror = mirror
             self._patch_module_state_dir(mirror)
@@ -347,6 +457,7 @@ class NervousSystem:
         # CALLOSUM — logic-emotion bridge (module-level functions)
         try:
             from pulse.src import callosum
+
             self._mod_callosum = callosum
             self.callosum = callosum
             self._patch_module_state_dir(callosum)
@@ -359,6 +470,7 @@ class NervousSystem:
         # PHENOTYPE — communication style adaptation
         try:
             from pulse.src import phenotype
+
             self._mod_phenotype = phenotype
             self.phenotype = phenotype
             self._patch_module_state_dir(phenotype)
@@ -369,6 +481,7 @@ class NervousSystem:
         # TELOMERE — identity integrity tracker
         try:
             from pulse.src import telomere
+
             self._mod_telomere = telomere
             self.telomere = telomere
             self._patch_module_state_dir(telomere)
@@ -379,6 +492,7 @@ class NervousSystem:
         # HYPOTHALAMUS — meta-drive layer
         try:
             from pulse.src import hypothalamus
+
             self._mod_hypothalamus = hypothalamus
             self.hypothalamus = hypothalamus
             self._patch_module_state_dir(hypothalamus)
@@ -389,6 +503,7 @@ class NervousSystem:
         # SOMA — physical state simulator
         try:
             from pulse.src import soma
+
             self._mod_soma = soma
             self.soma = soma
             self._patch_module_state_dir(soma)
@@ -399,6 +514,7 @@ class NervousSystem:
         # DENDRITE — social graph
         try:
             from pulse.src import dendrite
+
             self._mod_dendrite = dendrite
             self.dendrite = dendrite
             self._patch_module_state_dir(dendrite)
@@ -409,6 +525,7 @@ class NervousSystem:
         # VESTIBULAR — balance monitor
         try:
             from pulse.src import vestibular
+
             self._mod_vestibular = vestibular
             self.vestibular = vestibular
             self._patch_module_state_dir(vestibular)
@@ -419,6 +536,7 @@ class NervousSystem:
         # THYMUS — growth tracker
         try:
             from pulse.src import thymus
+
             self._mod_thymus = thymus
             self.thymus = thymus
             self._patch_module_state_dir(thymus)
@@ -429,6 +547,7 @@ class NervousSystem:
         # OXIMETER — external perception
         try:
             from pulse.src import oximeter
+
             self._mod_oximeter = oximeter
             self.oximeter = oximeter
             self._patch_module_state_dir(oximeter)
@@ -439,6 +558,7 @@ class NervousSystem:
         # GENOME — exportable DNA config
         try:
             from pulse.src import genome
+
             self._mod_genome = genome
             self.genome = genome
             self._patch_module_state_dir(genome)
@@ -449,6 +569,7 @@ class NervousSystem:
         # AURA — ambient state broadcast
         try:
             from pulse.src import aura
+
             self._mod_aura = aura
             self.aura = aura
             self._patch_module_state_dir(aura)
@@ -459,6 +580,7 @@ class NervousSystem:
         # CHRONICLE — automated historian
         try:
             from pulse.src import chronicle
+
             self._mod_chronicle = chronicle
             self.chronicle = chronicle
             self._patch_module_state_dir(chronicle)
@@ -469,6 +591,7 @@ class NervousSystem:
         # NEPHRON — memory pruning / excretory system
         try:
             from pulse.src import nephron
+
             self._mod_nephron = nephron
             self._patch_module_state_dir(nephron)
             logger.info("✓ NEPHRON loaded")
@@ -478,6 +601,7 @@ class NervousSystem:
         # CORTEX_EXT — active learning / gap detection
         try:
             from pulse.src import cortexext
+
             self._mod_cortex_ext = cortexext
             self._patch_module_state_dir(cortexext)
             logger.info("✓ CORTEX_EXT loaded")
@@ -487,6 +611,7 @@ class NervousSystem:
         # GERMINAL — reproductive system / self-spawning module generator
         try:
             from pulse.src import germinal
+
             self._mod_germinal = germinal
             self._patch_module_state_dir(germinal)
             logger.info("✓ GERMINAL loaded")
@@ -496,6 +621,7 @@ class NervousSystem:
         # PARIETAL — world model / environment discovery
         try:
             from pulse.src.parietal import Parietal
+
             self.parietal = Parietal(state_dir=self.state_dir)
             self._mod_parietal = self.parietal
             logger.info("✓ PARIETAL loaded")
@@ -505,6 +631,7 @@ class NervousSystem:
         # SUPEREGO — runtime identity enforcement
         try:
             from pulse.src import superego as _superego_mod
+
             self._mod_superego = _superego_mod
             self._patch_module_state_dir(_superego_mod)
             logger.info("✓ SUPEREGO loaded")
@@ -514,7 +641,7 @@ class NervousSystem:
     def warm_up(self) -> dict:
         """Force every module to write initial state files so health dashboard shows all green."""
         results = {"warmed": [], "failed": []}
-        
+
         # ENDOCRINE — ensure state file exists
         if self._mod_endocrine:
             try:
@@ -568,10 +695,13 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 learn_file = self.state_dir / "retina-learning.json"
                 if not learn_file.exists():
                     learn_file.parent.mkdir(parents=True, exist_ok=True)
-                    learn_file.write_text(json.dumps({"outcomes": [], "adjustments": {}}, indent=2))
+                    learn_file.write_text(
+                        json.dumps({"outcomes": [], "adjustments": {}}, indent=2)
+                    )
                 results["warmed"].append("retina")
             except Exception as e:
                 results["failed"].append(f"retina: {e}")
@@ -581,10 +711,13 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "amygdala-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"threats": [], "last_scan": None}, indent=2))
+                    state_file.write_text(
+                        json.dumps({"threats": [], "last_scan": None}, indent=2)
+                    )
                 results["warmed"].append("amygdala")
             except Exception as e:
                 results["failed"].append(f"amygdala: {e}")
@@ -594,10 +727,13 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "cerebellum-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"habits": [], "graduated": []}, indent=2))
+                    state_file.write_text(
+                        json.dumps({"habits": [], "graduated": []}, indent=2)
+                    )
                 results["warmed"].append("cerebellum")
             except Exception as e:
                 results["failed"].append(f"cerebellum: {e}")
@@ -607,10 +743,13 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "enteric-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"patterns": [], "accuracy": {}}, indent=2))
+                    state_file.write_text(
+                        json.dumps({"patterns": [], "accuracy": {}}, indent=2)
+                    )
                 results["warmed"].append("enteric")
             except Exception as e:
                 results["failed"].append(f"enteric: {e}")
@@ -620,10 +759,13 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "proprioception-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"capabilities": {}, "limits": {}}, indent=2))
+                    state_file.write_text(
+                        json.dumps({"capabilities": {}, "limits": {}}, indent=2)
+                    )
                 results["warmed"].append("proprioception")
             except Exception as e:
                 results["failed"].append(f"proprioception: {e}")
@@ -633,10 +775,20 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "rem-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"session_count": 0, "last_session": None, "guard_active": False}, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {
+                                "session_count": 0,
+                                "last_session": None,
+                                "guard_active": False,
+                            },
+                            indent=2,
+                        )
+                    )
                 results["warmed"].append("rem")
             except Exception as e:
                 results["failed"].append(f"rem: {e}")
@@ -654,10 +806,16 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "hypothalamus-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"generated_drives": [], "need_signals": [], "retired": []}, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {"generated_drives": [], "need_signals": [], "retired": []},
+                            indent=2,
+                        )
+                    )
                 results["warmed"].append("hypothalamus")
             except Exception as e:
                 results["failed"].append(f"hypothalamus: {e}")
@@ -667,10 +825,25 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "dendrite-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"entities": {"josh": {"trust": 1.0, "role": "primary", "interactions": 0}}, "graph": {}}, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {
+                                "entities": {
+                                    "josh": {
+                                        "trust": 1.0,
+                                        "role": "primary",
+                                        "interactions": 0,
+                                    }
+                                },
+                                "graph": {},
+                            },
+                            indent=2,
+                        )
+                    )
                 results["warmed"].append("dendrite")
             except Exception as e:
                 results["failed"].append(f"dendrite: {e}")
@@ -680,10 +853,23 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "vestibular-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"ratios": {"building_shipping": 0.5, "working_reflecting": 0.5, "autonomy_collaboration": 0.5}, "alerts": []}, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {
+                                "ratios": {
+                                    "building_shipping": 0.5,
+                                    "working_reflecting": 0.5,
+                                    "autonomy_collaboration": 0.5,
+                                },
+                                "alerts": [],
+                            },
+                            indent=2,
+                        )
+                    )
                 results["warmed"].append("vestibular")
             except Exception as e:
                 results["failed"].append(f"vestibular: {e}")
@@ -693,10 +879,15 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "thymus-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"skills": {}, "milestones": [], "plateaus": []}, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {"skills": {}, "milestones": [], "plateaus": []}, indent=2
+                        )
+                    )
                 results["warmed"].append("thymus")
             except Exception as e:
                 results["failed"].append(f"thymus: {e}")
@@ -706,10 +897,13 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "oximeter-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"metrics": {}, "perception_gap": 0.0}, indent=2))
+                    state_file.write_text(
+                        json.dumps({"metrics": {}, "perception_gap": 0.0}, indent=2)
+                    )
                 results["warmed"].append("oximeter")
             except Exception as e:
                 results["failed"].append(f"oximeter: {e}")
@@ -719,10 +913,16 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "genome.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({"version": "1.0", "modules": {}, "personality": {}}, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {"version": "1.0", "modules": {}, "personality": {}},
+                            indent=2,
+                        )
+                    )
                 results["warmed"].append("genome")
             except Exception as e:
                 results["failed"].append(f"genome: {e}")
@@ -732,19 +932,32 @@ class NervousSystem:
             try:
                 import json
                 from pathlib import Path
+
                 state_file = self.state_dir / "parietal-state.json"
                 if not state_file.exists():
                     state_file.parent.mkdir(parents=True, exist_ok=True)
-                    state_file.write_text(json.dumps({
-                        "world_model": {"projects": [], "deployments": [], "goal_conditions": [], "signal_weights": {}},
-                        "last_discovery": None,
-                        "discovery_count": 0,
-                    }, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {
+                                "world_model": {
+                                    "projects": [],
+                                    "deployments": [],
+                                    "goal_conditions": [],
+                                    "signal_weights": {},
+                                },
+                                "last_discovery": None,
+                                "discovery_count": 0,
+                            },
+                            indent=2,
+                        )
+                    )
                 results["warmed"].append("parietal")
             except Exception as e:
                 results["failed"].append(f"parietal: {e}")
 
-        logger.info(f"🔥 Warm-up: {len(results['warmed'])} warmed, {len(results['failed'])} failed")
+        logger.info(
+            f"🔥 Warm-up: {len(results['warmed'])} warmed, {len(results['failed'])} failed"
+        )
         return results
 
     def pre_respond(self) -> dict:
@@ -758,25 +971,37 @@ class NervousSystem:
                     try:
                         internal["mood"] = self._mod_endocrine.get_mood()
                         internal["hormones"] = self._mod_endocrine.get_hormones()
-                    except: pass
+                    except:
+                        pass
                 if self._mod_circadian:
                     try:
                         mode = self._mod_circadian.get_current_mode()
-                        internal["circadian_mode"] = mode.value if hasattr(mode, 'value') else str(mode)
-                    except: pass
+                        internal["circadian_mode"] = (
+                            mode.value if hasattr(mode, "value") else str(mode)
+                        )
+                    except:
+                        pass
                 if self.amygdala:
                     try:
-                        internal["threat_active"] = hasattr(self.amygdala, 'last_threat') and self.amygdala.last_threat is not None
-                    except: pass
+                        internal["threat_active"] = (
+                            hasattr(self.amygdala, "last_threat")
+                            and self.amygdala.last_threat is not None
+                        )
+                    except:
+                        pass
                 if self._mod_limbic:
                     try:
-                        internal["afterimages"] = self._mod_limbic.get_current_afterimages()
-                    except: pass
+                        internal["afterimages"] = (
+                            self._mod_limbic.get_current_afterimages()
+                        )
+                    except:
+                        pass
                 if self.soma:
                     try:
                         internal["soma"] = self.soma.get_state()
-                    except: pass
-                
+                    except:
+                        pass
+
                 phenotype_ctx = self.phenotype.compute(internal)
                 context["phenotype"] = phenotype_ctx
             except Exception as e:
@@ -786,22 +1011,47 @@ class NervousSystem:
     def startup(self) -> dict:
         """Run all init-phase operations. Returns status dict."""
         status = {"modules_loaded": 0, "modules_failed": 0, "details": {}}
-        
+
         modules = [
-            "thalamus", "proprioception", "circadian", "endocrine",
-            "adipose", "myelin", "immune", "cerebellum", "buffer",
-            "spine", "retina", "amygdala", "vagus", "limbic",
-            "enteric", "plasticity", "rem", "engram", "mirror",
+            "thalamus",
+            "proprioception",
+            "circadian",
+            "endocrine",
+            "adipose",
+            "myelin",
+            "immune",
+            "cerebellum",
+            "buffer",
+            "spine",
+            "retina",
+            "amygdala",
+            "vagus",
+            "limbic",
+            "enteric",
+            "plasticity",
+            "rem",
+            "engram",
+            "mirror",
             "callosum",
             # V3 modules
-            "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-            "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+            "phenotype",
+            "telomere",
+            "hypothalamus",
+            "soma",
+            "dendrite",
+            "vestibular",
+            "thymus",
+            "oximeter",
+            "genome",
+            "aura",
+            "chronicle",
             # V4 modules
-            "nephron", "cortex_ext",
+            "nephron",
+            "cortex_ext",
             # V5 modules
             "parietal",
         ]
-        
+
         for name in modules:
             mod = getattr(self, name, None)
             if mod is not None:
@@ -814,12 +1064,14 @@ class NervousSystem:
         # Broadcast startup
         if self._mod_thalamus:
             try:
-                self._mod_thalamus.append({
-                    "source": "nervous_system",
-                    "type": "startup",
-                    "salience": 0.5,
-                    "data": status,
-                })
+                self._mod_thalamus.append(
+                    {
+                        "source": "nervous_system",
+                        "type": "startup",
+                        "salience": 0.5,
+                        "data": status,
+                    }
+                )
             except Exception as e:
                 logger.warning(f"Thalamus startup broadcast failed: {e}")
 
@@ -827,7 +1079,9 @@ class NervousSystem:
         if self._mod_circadian:
             try:
                 mode = self._mod_circadian.get_current_mode()
-                status["circadian_mode"] = mode.value if hasattr(mode, 'value') else str(mode)
+                status["circadian_mode"] = (
+                    mode.value if hasattr(mode, "value") else str(mode)
+                )
             except Exception as e:
                 logger.warning(f"Circadian mode detection failed: {e}")
 
@@ -876,34 +1130,41 @@ class NervousSystem:
 
     def pre_respond(self) -> dict:
         """Called before generating a response. Returns phenotype context.
-        
+
         Runs: PHENOTYPE computation.
         """
         context = {"phenotype": None}
-        
+
         if self._mod_phenotype:
             try:
                 mood = None
                 circadian_mode = None
                 threat = None
                 afterimages = None
-                
+
                 if self._mod_endocrine:
                     mood = self._mod_endocrine.get_mood()
                 if self._mod_circadian:
                     mode = self._mod_circadian.get_current_mode()
-                    circadian_mode = mode.value if hasattr(mode, 'value') else str(mode)
+                    circadian_mode = mode.value if hasattr(mode, "value") else str(mode)
                 if self.amygdala:
                     try:
                         # Get last threat from thalamus
-                        entries = self._mod_thalamus.read_by_source("amygdala", n=1) if self._mod_thalamus else []
-                        if entries and entries[-1].get("data", {}).get("threat_level", 0) > 0:
+                        entries = (
+                            self._mod_thalamus.read_by_source("amygdala", n=1)
+                            if self._mod_thalamus
+                            else []
+                        )
+                        if (
+                            entries
+                            and entries[-1].get("data", {}).get("threat_level", 0) > 0
+                        ):
                             threat = entries[-1]["data"]
                     except Exception:
                         pass
                 if self._mod_limbic:
                     afterimages = self._mod_limbic.get_current_afterimages()
-                
+
                 context["phenotype"] = self._mod_phenotype.compute_phenotype(
                     mood=mood,
                     circadian_mode=circadian_mode,
@@ -912,12 +1173,12 @@ class NervousSystem:
                 )
             except Exception as e:
                 logger.warning(f"pre_respond PHENOTYPE failed: {e}")
-        
+
         return context
 
     def pre_sense(self, sensor_data: dict) -> dict:
         """Called before/during SENSE phase. Returns enrichment context.
-        
+
         Runs: CIRCADIAN mode, SPINE health check, ADIPOSE budget check,
               RETINA scoring, AMYGDALA threat scan.
         """
@@ -934,7 +1195,9 @@ class NervousSystem:
         if self._mod_circadian:
             try:
                 mode = self._mod_circadian.get_current_mode()
-                context["circadian_mode"] = mode.value if hasattr(mode, 'value') else str(mode)
+                context["circadian_mode"] = (
+                    mode.value if hasattr(mode, "value") else str(mode)
+                )
                 context["circadian_settings"] = self._mod_circadian.get_mode_settings()
             except Exception as e:
                 logger.warning(f"pre_sense CIRCADIAN failed: {e}")
@@ -975,7 +1238,10 @@ class NervousSystem:
                 # Score conversation signal
                 convo = sensor_data.get("conversation", {})
                 if convo.get("active"):
-                    signal = {"sender": convo.get("sender", ""), "text": "conversation active"}
+                    signal = {
+                        "sender": convo.get("sender", ""),
+                        "text": "conversation active",
+                    }
                     scored = self.retina.score(signal)
                     if scored.should_process:
                         context["retina_scores"].append(scored.to_dict())
@@ -983,7 +1249,10 @@ class NervousSystem:
                 # Score generic input signal
                 input_text = sensor_data.get("input", "")
                 if input_text:
-                    signal = {"text": input_text, "sender": sensor_data.get("sender", "")}
+                    signal = {
+                        "text": input_text,
+                        "sender": sensor_data.get("sender", ""),
+                    }
                     scored = self.retina.score(signal)
                     context["retina_priority"] = scored.priority
             except Exception as e:
@@ -1007,6 +1276,7 @@ class NervousSystem:
         # BIOSENSOR — poll Apple Watch data into SOMA + ENDOCRINE
         try:
             from pulse.src.biosensor_cache import BiosensorCache
+
             _bio = BiosensorCache()
             if _bio.is_active():
                 soma_changes, endo_changes = {}, {}
@@ -1020,13 +1290,16 @@ class NervousSystem:
                         "soma_changes": soma_changes,
                         "endo_changes": endo_changes,
                     }
-                    logger.info(f"BIOSENSOR update applied: soma={soma_changes} endo={endo_changes}")
+                    logger.info(
+                        f"BIOSENSOR update applied: soma={soma_changes} endo={endo_changes}"
+                    )
         except Exception as e:
             logger.warning(f"pre_sense BIOSENSOR failed: {e}")
 
         # PLUGINS — sense() contributions from registered community plugins
         try:
             from pulse.src.plugin_registry import PluginRegistry, discover_plugins
+
             reg = PluginRegistry.get()
             # Lazy discovery: run once when registry is empty and plugin dir may exist
             if reg.count == 0:
@@ -1043,7 +1316,7 @@ class NervousSystem:
 
     def pre_evaluate(self, drive_state, sensor_data: dict) -> dict:
         """Called before EVALUATE. Returns enrichment for the evaluator.
-        
+
         Runs: VAGUS silence check, ENDOCRINE tick, LIMBIC afterimages,
               ENTERIC gut check.
         """
@@ -1068,14 +1341,16 @@ class NervousSystem:
             try:
                 # Tick with fraction of an hour based on loop interval
                 loop_interval = 30  # default seconds
-                if self.config and hasattr(self.config, 'daemon'):
-                    loop_interval = getattr(self.config.daemon, 'loop_interval_seconds', 30)
+                if self.config and hasattr(self.config, "daemon"):
+                    loop_interval = getattr(
+                        self.config.daemon, "loop_interval_seconds", 30
+                    )
                 hours = loop_interval / 3600.0
                 self._mod_endocrine.tick(hours)
                 mood = self._mod_endocrine.get_mood()
                 context["mood"] = mood
                 context["mood_influence"] = self._mod_endocrine.get_mood_influence()
-                
+
                 # Apply circadian mood modifiers
                 if self._mod_circadian:
                     try:
@@ -1083,8 +1358,9 @@ class NervousSystem:
                         modifiers = settings.get("mood_modifiers", {})
                         for hormone, delta in modifiers.items():
                             self._mod_endocrine.update_hormone(
-                                hormone, delta * hours,
-                                reason=f"circadian_{settings.get('mode', 'unknown')}"
+                                hormone,
+                                delta * hours,
+                                reason=f"circadian_{settings.get('mode', 'unknown')}",
                             )
                     except Exception as e:
                         logger.warning(f"Circadian mood modifier failed: {e}")
@@ -1113,8 +1389,10 @@ class NervousSystem:
                 # Build context from drive state and sensor data
                 gut_context = {}
                 if drive_state:
-                    gut_context["total_pressure"] = getattr(drive_state, 'total_pressure', 0)
-                    if hasattr(drive_state, 'top_drive') and drive_state.top_drive:
+                    gut_context["total_pressure"] = getattr(
+                        drive_state, "total_pressure", 0
+                    )
+                    if hasattr(drive_state, "top_drive") and drive_state.top_drive:
                         gut_context["top_drive"] = drive_state.top_drive.name
                 intuition = self.enteric.gut_check(gut_context)
                 context["gut_feeling"] = {
@@ -1132,7 +1410,9 @@ class NervousSystem:
                 recent_events = context.get("afterimages", [])
                 if recent_events:
                     event_text = " ".join(
-                        str(ai.get("context", "")) for ai in recent_events if isinstance(ai, dict)
+                        str(ai.get("context", ""))
+                        for ai in recent_events
+                        if isinstance(ai, dict)
                     )
                     if event_text.strip():
                         compressed = self.myelin.compress(event_text)
@@ -1144,7 +1424,7 @@ class NervousSystem:
 
     def post_trigger(self, decision, success: bool) -> dict:
         """Called after a trigger decision. Updates relevant modules.
-        
+
         Runs: BUFFER auto-capture, PLASTICITY recording, ENDOCRINE event,
               THALAMUS broadcast, CEREBELLUM tracking.
         """
@@ -1160,9 +1440,13 @@ class NervousSystem:
             try:
                 self._mod_buffer.capture(
                     conversation_summary=f"Trigger: {getattr(decision, 'reason', 'unknown')}",
-                    decisions=[getattr(decision, 'reason', 'trigger')],
+                    decisions=[getattr(decision, "reason", "trigger")],
                     action_items=[],
-                    emotional_state={"valence": 0.0, "intensity": 0.0, "context": "trigger"},
+                    emotional_state={
+                        "valence": 0.0,
+                        "intensity": 0.0,
+                        "context": "trigger",
+                    },
                     open_threads=[],
                 )
                 result["buffer_updated"] = True
@@ -1172,15 +1456,17 @@ class NervousSystem:
         # PLASTICITY — record drive performance
         if self.plasticity and decision:
             try:
-                top_drive = getattr(decision, 'top_drive', None)
+                top_drive = getattr(decision, "top_drive", None)
                 if top_drive:
-                    drive_name = top_drive.name if hasattr(top_drive, 'name') else str(top_drive)
+                    drive_name = (
+                        top_drive.name if hasattr(top_drive, "name") else str(top_drive)
+                    )
                     self.plasticity.record_evaluation(
                         drive_name=drive_name,
                         success=success,
                         quality_score=0.5,  # neutral default, updated by feedback
-                        loop_average=5.0,   # neutral default
-                        context=getattr(decision, 'reason', ''),
+                        loop_average=5.0,  # neutral default
+                        context=getattr(decision, "reason", ""),
                     )
                     result["plasticity_recorded"] = True
             except Exception as e:
@@ -1200,16 +1486,18 @@ class NervousSystem:
         # THALAMUS — broadcast trigger
         if self._mod_thalamus:
             try:
-                self._mod_thalamus.append({
-                    "source": "nervous_system",
-                    "type": "trigger",
-                    "salience": 0.7,
-                    "data": {
-                        "success": success,
-                        "reason": getattr(decision, 'reason', 'unknown'),
-                        "pressure": getattr(decision, 'total_pressure', 0),
-                    },
-                })
+                self._mod_thalamus.append(
+                    {
+                        "source": "nervous_system",
+                        "type": "trigger",
+                        "salience": 0.7,
+                        "data": {
+                            "success": success,
+                            "reason": getattr(decision, "reason", "unknown"),
+                            "pressure": getattr(decision, "total_pressure", 0),
+                        },
+                    }
+                )
                 result["thalamus_broadcast"] = True
             except Exception as e:
                 logger.warning(f"post_trigger THALAMUS failed: {e}")
@@ -1225,7 +1513,7 @@ class NervousSystem:
         # CHRONICLE — record trigger event
         if self._mod_chronicle:
             try:
-                _reason = getattr(decision, 'reason', 'unknown')
+                _reason = getattr(decision, "reason", "unknown")
                 self._mod_chronicle.record_event(
                     source="nervous_system",
                     event_type="trigger",
@@ -1243,7 +1531,7 @@ class NervousSystem:
         # ENGRAM — encode significant trigger events
         if self._mod_engram:
             try:
-                reason = getattr(decision, 'reason', 'trigger')
+                reason = getattr(decision, "reason", "trigger")
                 intensity = 0.6 if success else 0.4
                 self._mod_engram.encode(
                     event=f"Trigger: {reason} ({'success' if success else 'failed'})",
@@ -1261,7 +1549,7 @@ class NervousSystem:
         # THYMUS — practice the skill exercised by this trigger
         if self._mod_thymus:
             try:
-                _reason = getattr(decision, 'reason', '')
+                _reason = getattr(decision, "reason", "")
                 _skill = _infer_skill_from_reason(_reason)
                 if _skill:
                     _quality = 0.7 if success else 0.4
@@ -1271,11 +1559,13 @@ class NervousSystem:
                 logger.warning(f"post_trigger THYMUS skill inference failed: {e}")
 
         # DENDRITE — update social graph for sender
-        context = getattr(decision, '__dict__', {}) if decision else {}
+        context = getattr(decision, "__dict__", {}) if decision else {}
         sender = context.get("sender") if isinstance(context, dict) else None
         if self._mod_dendrite and sender:
             try:
-                sentiment = context.get("sentiment", 0.0) if isinstance(context, dict) else 0.0
+                sentiment = (
+                    context.get("sentiment", 0.0) if isinstance(context, dict) else 0.0
+                )
                 self._mod_dendrite.record_interaction(
                     person=sender,
                     valence=sentiment,
@@ -1285,7 +1575,7 @@ class NervousSystem:
                 logger.warning(f"post_trigger DENDRITE failed: {e}")
 
         # LIMBIC — record emotional afterimage for trigger event
-        trigger_type = getattr(decision, 'reason', None)
+        trigger_type = getattr(decision, "reason", None)
         if self._mod_limbic and trigger_type:
             try:
                 valence = 1.0 if success else -0.5
@@ -1301,7 +1591,7 @@ class NervousSystem:
         if self.retina:
             try:
                 self.retina.record_outcome(
-                    category=getattr(decision, 'trigger_category', 'conversation'),
+                    category=getattr(decision, "trigger_category", "conversation"),
                     was_correct=success,
                 )
             except Exception as e:
@@ -1336,7 +1626,10 @@ class NervousSystem:
             result = self._mod_superego.scan_response(text, source=source)
 
             # Route severe/moderate drift to AMYGDALA
-            if self.amygdala and result.get("assessment") in ("drift_severe", "drift_moderate"):
+            if self.amygdala and result.get("assessment") in (
+                "drift_severe",
+                "drift_moderate",
+            ):
                 threat = self._mod_superego.amygdala_threat(result["assessment"])
                 if threat:
                     try:
@@ -1357,10 +1650,14 @@ class NervousSystem:
                         data={
                             "assessment": result["assessment"],
                             "compliance_score": result["compliance_score"],
-                            "drift_labels": [f["label"] for f in result.get("drift_flags", [])],
+                            "drift_labels": [
+                                f["label"] for f in result.get("drift_flags", [])
+                            ],
                             "summary": result["summary"],
                         },
-                        salience=0.5 if result["assessment"] == "drift_moderate" else 0.8,
+                        salience=(
+                            0.5 if result["assessment"] == "drift_moderate" else 0.8
+                        ),
                     )
                 except Exception:
                     pass
@@ -1381,7 +1678,7 @@ class NervousSystem:
 
     def post_loop(self) -> dict:
         """Called at the end of each loop iteration.
-        
+
         Runs: IMMUNE periodic scan (every 10th loop), MYELIN lexicon update.
         """
         self._loop_count += 1
@@ -1448,7 +1745,9 @@ class NervousSystem:
                 total = sum(filter_results.get("pruned", {}).values())
                 result["nephron_pruned"] = total
                 if total > 0:
-                    logger.info(f"NEPHRON pruned {total} items: {filter_results['pruned']}")
+                    logger.info(
+                        f"NEPHRON pruned {total} items: {filter_results['pruned']}"
+                    )
             except Exception as e:
                 logger.warning(f"post_loop NEPHRON failed: {e}")
 
@@ -1467,12 +1766,16 @@ class NervousSystem:
                 if candidates:
                     top = candidates[0]
                     result["germinal_candidate"] = top["drive"]
-                    logger.info(f"GERMINAL birth candidate: '{top['drive']}' (age {top['age_days']:.1f}d, weight {top['weight']:.2f})")
+                    logger.info(
+                        f"GERMINAL birth candidate: '{top['drive']}' (age {top['age_days']:.1f}d, weight {top['weight']:.2f})"
+                    )
                     # attempt_birth sets up spec and broadcasts to THALAMUS
                     # Actual module building requires main session to receive and spawn coding agent
                     birth_result = self._mod_germinal.attempt_birth(top["drive"])
                     if birth_result.get("ok"):
-                        logger.info(f"GERMINAL birth initiated: {birth_result['archetype']['name']}")
+                        logger.info(
+                            f"GERMINAL birth initiated: {birth_result['archetype']['name']}"
+                        )
             except Exception as e:
                 logger.warning(f"post_loop GERMINAL failed: {e}")
 
@@ -1531,19 +1834,30 @@ class NervousSystem:
 
         # HYPOTHALAMUS signal collection — every 10 loops
         if self._loop_count % 10 == 0:
-            for mod_name in ["vestibular", "endocrine", "vagus", "thymus", "telomere", "adipose"]:
-                mod = getattr(self, f"_mod_{mod_name}", None) or getattr(self, mod_name, None)
+            for mod_name in [
+                "vestibular",
+                "endocrine",
+                "vagus",
+                "thymus",
+                "telomere",
+                "adipose",
+            ]:
+                mod = getattr(self, f"_mod_{mod_name}", None) or getattr(
+                    self, mod_name, None
+                )
                 if mod and hasattr(mod, "emit_need_signals"):
                     try:
                         mod.emit_need_signals()
                     except Exception as e:
-                        logger.warning(f"post_loop HYPOTHALAMUS/{mod_name} signal failed: {e}")
+                        logger.warning(
+                            f"post_loop HYPOTHALAMUS/{mod_name} signal failed: {e}"
+                        )
 
         return result
 
     def check_night_mode(self, drives: Optional[dict] = None) -> dict:
         """Check if conditions are right for REM/dreaming.
-        
+
         Returns dict with eligibility info.
         """
         result = {
@@ -1556,8 +1870,9 @@ class NervousSystem:
         if self._mod_circadian:
             try:
                 from pulse.src.circadian import CircadianMode
+
                 mode = self._mod_circadian.get_current_mode()
-                result["is_deep_night"] = (mode == CircadianMode.DEEP_NIGHT)
+                result["is_deep_night"] = mode == CircadianMode.DEEP_NIGHT
             except Exception as e:
                 logger.warning(f"check_night_mode CIRCADIAN failed: {e}")
                 return result
@@ -1589,7 +1904,11 @@ class NervousSystem:
                 try:
                     self._mod_engram.encode(
                         event="REM session — dream fragments processing",
-                        emotion={"valence": 0.3, "intensity": 0.5, "label": "contemplative"},
+                        emotion={
+                            "valence": 0.3,
+                            "intensity": 0.5,
+                            "label": "contemplative",
+                        },
                         location="dream",
                     )
                     result["engram_dream_encoded"] = True
@@ -1598,7 +1917,9 @@ class NervousSystem:
 
         return result
 
-    def run_rem_session(self, drives: Optional[dict] = None, force: bool = False) -> Optional[Any]:
+    def run_rem_session(
+        self, drives: Optional[dict] = None, force: bool = False
+    ) -> Optional[Any]:
         """Run a REM/dreaming session if eligible.
 
         PONS blocks external actions during REM; ENGRAM consolidates after.
@@ -1610,6 +1931,7 @@ class NervousSystem:
         pons = None
         try:
             from pulse.src.rem import Pons
+
             pons = Pons
             pons.enter()
         except Exception as e:
@@ -1617,6 +1939,7 @@ class NervousSystem:
 
         try:
             from pulse.src.rem import PonsConfig
+
             config = PonsConfig()
             session = self.rem.run_rem_session_internal(
                 config=config,
@@ -1632,6 +1955,7 @@ class NervousSystem:
                     if store:
                         # Consolidate recent engrams into narrative
                         from pulse.src.engram import Engram as EngramObj
+
                         recent = [EngramObj.from_dict(e) for e in store[-10:]]
                         self._mod_engram.consolidate(recent)
                 except Exception as e:
@@ -1656,12 +1980,14 @@ class NervousSystem:
         # Broadcast shutdown
         if self._mod_thalamus:
             try:
-                self._mod_thalamus.append({
-                    "source": "nervous_system",
-                    "type": "shutdown",
-                    "salience": 0.5,
-                    "data": {"loop_count": self._loop_count},
-                })
+                self._mod_thalamus.append(
+                    {
+                        "source": "nervous_system",
+                        "type": "shutdown",
+                        "salience": 0.5,
+                        "data": {"loop_count": self._loop_count},
+                    }
+                )
                 result["saved"].append("thalamus")
             except Exception as e:
                 result["failed"].append(f"thalamus: {e}")
@@ -1678,9 +2004,20 @@ class NervousSystem:
         result["saved"].append("endocrine")
 
         # V3 modules — all auto-save, just note them
-        for name in ["phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-                      "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
-                      "parietal"]:
+        for name in [
+            "phenotype",
+            "telomere",
+            "hypothalamus",
+            "soma",
+            "dendrite",
+            "vestibular",
+            "thymus",
+            "oximeter",
+            "genome",
+            "aura",
+            "chronicle",
+            "parietal",
+        ]:
             if getattr(self, name, None) is not None:
                 result["saved"].append(name)
 
@@ -1693,16 +2030,42 @@ class NervousSystem:
     def get_status(self) -> dict:
         """Return current status of all modules."""
         modules = [
-            "thalamus", "proprioception", "circadian", "endocrine",
-            "adipose", "myelin", "immune", "cerebellum", "buffer",
-            "spine", "retina", "amygdala", "vagus", "limbic",
-            "enteric", "plasticity", "rem", "engram", "mirror",
+            "thalamus",
+            "proprioception",
+            "circadian",
+            "endocrine",
+            "adipose",
+            "myelin",
+            "immune",
+            "cerebellum",
+            "buffer",
+            "spine",
+            "retina",
+            "amygdala",
+            "vagus",
+            "limbic",
+            "enteric",
+            "plasticity",
+            "rem",
+            "engram",
+            "mirror",
             "callosum",
             # V3 modules
-            "phenotype", "telomere", "hypothalamus", "soma", "dendrite",
-            "vestibular", "thymus", "oximeter", "genome", "aura", "chronicle",
+            "phenotype",
+            "telomere",
+            "hypothalamus",
+            "soma",
+            "dendrite",
+            "vestibular",
+            "thymus",
+            "oximeter",
+            "genome",
+            "aura",
+            "chronicle",
             # V4/V5 modules
-            "nephron", "cortex_ext", "parietal",
+            "nephron",
+            "cortex_ext",
+            "parietal",
         ]
         status = {}
         for name in modules:

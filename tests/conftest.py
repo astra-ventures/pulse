@@ -1,4 +1,5 @@
 """Test configuration — set up import path for pulse package."""
+
 import sys
 from pathlib import Path
 
@@ -10,6 +11,7 @@ if str(repo_root) not in sys.path:
 
 # Make `pulse.src` importable by treating repo root as a package
 import types
+
 if "pulse" not in sys.modules:
     pulse_pkg = types.ModuleType("pulse")
     pulse_pkg.__path__ = [str(repo_root)]

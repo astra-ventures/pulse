@@ -1,4 +1,5 @@
 """Tests for RETINA — Attention Filter."""
+
 import json
 import os
 import tempfile
@@ -13,9 +14,12 @@ _tmpdir = tempfile.mkdtemp()
 _state_dir = Path(_tmpdir) / "state"
 _state_dir.mkdir()
 
-with patch("pulse.src.thalamus._DEFAULT_STATE_DIR", _state_dir), \
-     patch("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", _state_dir / "broadcast.jsonl"):
+with (
+    patch("pulse.src.thalamus._DEFAULT_STATE_DIR", _state_dir),
+    patch("pulse.src.thalamus._DEFAULT_BROADCAST_FILE", _state_dir / "broadcast.jsonl"),
+):
     import pulse.src.thalamus as thalamus
+
     # Now patch retina's state
     with patch.dict(os.environ, {}):
         import pulse.src.retina as retina_mod
@@ -29,10 +33,14 @@ def clean_state(tmp_path):
     state_dir.mkdir(exist_ok=True)
     broadcast = state_dir / "broadcast.jsonl"
 
-    with patch.object(retina_mod, "_DEFAULT_STATE_DIR", state_dir), \
-         patch.object(retina_mod, "_DEFAULT_STATE_FILE", state_dir / "retina-state.json"), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", state_dir), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", broadcast):
+    with (
+        patch.object(retina_mod, "_DEFAULT_STATE_DIR", state_dir),
+        patch.object(
+            retina_mod, "_DEFAULT_STATE_FILE", state_dir / "retina-state.json"
+        ),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", state_dir),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", broadcast),
+    ):
         retina_mod._instance = None
         yield
 
@@ -193,8 +201,13 @@ class TestTopicBoost:
     def test_buffer_topic_boosts_matching_signals(self):
         r = Retina()
         r.set_buffer_topic("weather")
-        scored = r.score({"source_type": "mention", "follower_count": 500,
-                          "text": "weather forecast looks wild"})
+        scored = r.score(
+            {
+                "source_type": "mention",
+                "follower_count": 500,
+                "text": "weather forecast looks wild",
+            }
+        )
         assert scored.priority == 0.5  # 0.3 + 0.2 boost
 
 

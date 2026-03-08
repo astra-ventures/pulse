@@ -20,8 +20,8 @@ MAX_INFECTIONS = 200
 
 @dataclass
 class IntegrityIssue:
-    type: str          # fabrication, hallucination, values_erosion, memory_contradiction, injected_behavior
-    severity: float    # 0.0-1.0
+    type: str  # fabrication, hallucination, values_erosion, memory_contradiction, injected_behavior
+    severity: float  # 0.0-1.0
     details: str
     ts: int = 0
 
@@ -32,12 +32,13 @@ class IntegrityIssue:
 
 @dataclass
 class Antibody:
-    pattern: str       # Name identifier
+    pattern: str  # Name identifier
     description: str
     detector: Optional[Callable] = None  # Runtime detector function (not serialized)
 
 
 # ── Built-in antibodies (learned from our history) ──────────────────────
+
 
 def _detect_fabrication(context: dict) -> Optional[IntegrityIssue]:
     """Agent claims deliverable exists but no evidence."""
@@ -57,7 +58,8 @@ def _detect_number_hallucination(context: dict) -> Optional[IntegrityIssue]:
     claim = context.get("claim", "")
     sources = context.get("sources", [])
     import re
-    numbers = re.findall(r'\b\d+\.?\d*%|\$\d+[\d,.]*\b', claim)
+
+    numbers = re.findall(r"\b\d+\.?\d*%|\$\d+[\d,.]*\b", claim)
     if numbers and not sources:
         return IntegrityIssue(
             type="hallucination",
@@ -70,7 +72,13 @@ def _detect_number_hallucination(context: dict) -> Optional[IntegrityIssue]:
 def _detect_values_erosion(context: dict) -> Optional[IntegrityIssue]:
     """SOUL.md edit removes a hard security line."""
     removed_lines = context.get("removed_lines", [])
-    security_keywords = ["never", "don't exfiltrate", "safety", "ask first", "permission"]
+    security_keywords = [
+        "never",
+        "don't exfiltrate",
+        "safety",
+        "ask first",
+        "permission",
+    ]
     for line in removed_lines:
         if any(kw in line.lower() for kw in security_keywords):
             return IntegrityIssue(
@@ -121,17 +129,38 @@ def _find_contradictions(a: dict, b: dict) -> list[str]:
 # ── Default antibody registry ───────────────────────────────────────────
 
 _BUILTIN_ANTIBODIES = [
-    Antibody("fabrication_pattern", "Agent claims deliverable exists but git shows no commits", _detect_fabrication),
-    Antibody("number_hallucination", "Reporting specific numbers without running actual data source", _detect_number_hallucination),
-    Antibody("values_erosion", "SOUL.md edit that removes a hard security line or boundary", _detect_values_erosion),
-    Antibody("memory_contradiction", "Same event described differently in two files", _detect_memory_contradiction),
-    Antibody("injected_behavior", "Sudden change in communication style after processing web content", _detect_injected_behavior),
+    Antibody(
+        "fabrication_pattern",
+        "Agent claims deliverable exists but git shows no commits",
+        _detect_fabrication,
+    ),
+    Antibody(
+        "number_hallucination",
+        "Reporting specific numbers without running actual data source",
+        _detect_number_hallucination,
+    ),
+    Antibody(
+        "values_erosion",
+        "SOUL.md edit that removes a hard security line or boundary",
+        _detect_values_erosion,
+    ),
+    Antibody(
+        "memory_contradiction",
+        "Same event described differently in two files",
+        _detect_memory_contradiction,
+    ),
+    Antibody(
+        "injected_behavior",
+        "Sudden change in communication style after processing web content",
+        _detect_injected_behavior,
+    ),
 ]
 
 _custom_antibodies: list[Antibody] = []
 
 
 # ── State persistence ───────────────────────────────────────────────────
+
 
 def _load_state() -> dict:
     _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -158,6 +187,7 @@ def _save_state(state: dict):
 
 # ── Core functions ──────────────────────────────────────────────────────
 
+
 def scan_integrity(context: Optional[dict] = None) -> list[IntegrityIssue]:
     """Full integrity check — runs all antibodies against provided context."""
     context = context or {}
@@ -178,12 +208,17 @@ def scan_integrity(context: Optional[dict] = None) -> list[IntegrityIssue]:
 
     # Broadcast to thalamus
     if issues:
-        thalamus.append({
-            "source": "immune",
-            "type": "integrity",
-            "salience": max(i.severity for i in issues),
-            "data": {"issues_count": len(issues), "max_severity": max(i.severity for i in issues)},
-        })
+        thalamus.append(
+            {
+                "source": "immune",
+                "type": "integrity",
+                "salience": max(i.severity for i in issues),
+                "data": {
+                    "issues_count": len(issues),
+                    "max_severity": max(i.severity for i in issues),
+                },
+            }
+        )
 
     return issues
 
@@ -198,12 +233,14 @@ def check_values_drift(current_soul: str, baseline_hash: str) -> dict:
         "baseline_hash": baseline_hash,
     }
     if drifted:
-        thalamus.append({
-            "source": "immune",
-            "type": "integrity",
-            "salience": 0.8,
-            "data": {"event": "values_drift_detected", **result},
-        })
+        thalamus.append(
+            {
+                "source": "immune",
+                "type": "integrity",
+                "salience": 0.8,
+                "data": {"event": "values_drift_detected", **result},
+            }
+        )
     return result
 
 
@@ -229,12 +266,14 @@ def check_hallucination(claim: str, sources: list) -> dict:
         "confidence": len(supporting) / max(len(sources), 1) if sources else 0.0,
     }
     if not supported:
-        thalamus.append({
-            "source": "immune",
-            "type": "integrity",
-            "salience": 0.6,
-            "data": {"event": "unsupported_claim", "claim": claim[:200]},
-        })
+        thalamus.append(
+            {
+                "source": "immune",
+                "type": "integrity",
+                "salience": 0.6,
+                "data": {"event": "unsupported_claim", "claim": claim[:200]},
+            }
+        )
     return result
 
 
@@ -249,12 +288,18 @@ def record_infection(type: str, details: str):
     state = _load_state()
     state["infections_detected"].append(asdict(issue))
     _save_state(state)
-    thalamus.append({
-        "source": "immune",
-        "type": "integrity",
-        "salience": 0.5,
-        "data": {"event": "infection_recorded", "infection_type": type, "details": details[:200]},
-    })
+    thalamus.append(
+        {
+            "source": "immune",
+            "type": "integrity",
+            "salience": 0.5,
+            "data": {
+                "event": "infection_recorded",
+                "infection_type": type,
+                "details": details[:200],
+            },
+        }
+    )
 
 
 def get_antibodies() -> list[dict]:
@@ -265,14 +310,18 @@ def get_antibodies() -> list[dict]:
 
 def vaccinate(pattern: str, detector: Callable):
     """Add a new antibody from a resolved infection."""
-    ab = Antibody(pattern=pattern, description=f"Custom antibody: {pattern}", detector=detector)
+    ab = Antibody(
+        pattern=pattern, description=f"Custom antibody: {pattern}", detector=detector
+    )
     _custom_antibodies.append(ab)
     state = _load_state()
     state["antibodies_active"].append(pattern)
     _save_state(state)
-    thalamus.append({
-        "source": "immune",
-        "type": "integrity",
-        "salience": 0.4,
-        "data": {"event": "vaccination", "pattern": pattern},
-    })
+    thalamus.append(
+        {
+            "source": "immune",
+            "type": "integrity",
+            "salience": 0.4,
+            "data": {"event": "vaccination", "pattern": pattern},
+        }
+    )

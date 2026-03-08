@@ -8,18 +8,21 @@ import pytest
 
 from pulse.src import superego
 
-
 # ── Fixtures ─────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(autouse=True)
 def temp_state(tmp_path, monkeypatch):
     """Redirect all state writes to a temp directory."""
     monkeypatch.setattr(superego, "_DEFAULT_STATE_DIR", tmp_path)
-    monkeypatch.setattr(superego, "_DEFAULT_STATE_FILE", tmp_path / "superego-state.json")
+    monkeypatch.setattr(
+        superego, "_DEFAULT_STATE_FILE", tmp_path / "superego-state.json"
+    )
     yield tmp_path
 
 
 # ── scan_response tests ───────────────────────────────────────────────────────
+
 
 class TestScanResponse:
 
@@ -137,6 +140,7 @@ class TestScanResponse:
 
 # ── get_status tests ──────────────────────────────────────────────────────────
 
+
 class TestGetStatus:
 
     def test_default_status_healthy(self):
@@ -178,6 +182,7 @@ class TestGetStatus:
 
 # ── amygdala_threat tests ─────────────────────────────────────────────────────
 
+
 class TestAmygdalaThreat:
 
     def test_severe_drift_returns_threat(self):
@@ -200,6 +205,7 @@ class TestAmygdalaThreat:
 
 
 # ── inject_soul_context tests ─────────────────────────────────────────────────
+
 
 class TestInjectSoulContext:
 
@@ -230,6 +236,7 @@ class TestInjectSoulContext:
 
 
 # ── get_compliance_trend tests ────────────────────────────────────────────────
+
 
 class TestComplianceTrend:
 

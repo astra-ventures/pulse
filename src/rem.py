@@ -25,14 +25,16 @@ logger = logging.getLogger("pulse.sanctum")
 
 # ─── Configuration ───────────────────────────────────────────
 
+
 @dataclass
 class PonsConfig:
     """Pons-specific configuration."""
-    stillness_threshold: float = 2.0       # All drives must be below this
-    sustained_minutes: int = 30            # How long drives must stay quiet
-    max_duration_seconds: int = 300        # 5 min max per session
-    memory_replay_count: int = 5           # How many memories to replay
-    hypothetical_branches: int = 3         # "What if" scenarios per memory
+
+    stillness_threshold: float = 2.0  # All drives must be below this
+    sustained_minutes: int = 30  # How long drives must stay quiet
+    max_duration_seconds: int = 300  # 5 min max per session
+    memory_replay_count: int = 5  # How many memories to replay
+    hypothetical_branches: int = 3  # "What if" scenarios per memory
     dream_log_dir: str = "memory/self/dreams"
     insights_file: str = "memory/self/sanctum-insights.md"
     state_file: str = "~/.pulse/state/sanctum-state.json"
@@ -41,14 +43,16 @@ class PonsConfig:
 
 # ─── Data Types ──────────────────────────────────────────────
 
+
 @dataclass
 class ReplayFragment:
     """A memory selected for dream replay."""
-    source: str          # file path or identifier
-    content: str         # the memory text
-    valence: float       # emotional valence (-1 to 1)
-    intensity: float     # emotional intensity (0 to 1)
-    timestamp: float     # when the memory was created
+
+    source: str  # file path or identifier
+    content: str  # the memory text
+    valence: float  # emotional valence (-1 to 1)
+    intensity: float  # emotional intensity (0 to 1)
+    timestamp: float  # when the memory was created
     tags: List[str] = field(default_factory=list)
 
     @property
@@ -60,6 +64,7 @@ class ReplayFragment:
 @dataclass
 class PonsSession:
     """A single dreaming session with all its phases."""
+
     started_at: float
     ended_at: Optional[float] = None
     replay_fragments: List[ReplayFragment] = field(default_factory=list)
@@ -93,6 +98,7 @@ class PonsSession:
 
 # ─── State Tracking ──────────────────────────────────────────
 
+
 class PonsState:
     """Persistent state for the Pons dreaming engine."""
 
@@ -122,7 +128,9 @@ class PonsState:
         self._data["last_run"] = session.started_at
         self._data["total_runs"] = self._data.get("total_runs", 0) + 1
         if session.creative_output:
-            self._data["creative_outputs_count"] = self._data.get("creative_outputs_count", 0) + 1
+            self._data["creative_outputs_count"] = (
+                self._data.get("creative_outputs_count", 0) + 1
+            )
         # Track themes (keep last 50)
         themes = self._data.get("themes_explored", [])
         for t in session.themes:
@@ -146,6 +154,7 @@ class PonsState:
 
 
 # ─── Eligibility Check ──────────────────────────────────────
+
 
 def rem_eligible(
     drives: Dict[str, Any],
@@ -172,9 +181,14 @@ def rem_eligible(
 
     # Check all drives are below threshold
     for name, drive in drives.items():
-        pressure = drive.pressure if hasattr(drive, 'pressure') else drive.get('pressure', 0)
+        pressure = (
+            drive.pressure if hasattr(drive, "pressure") else drive.get("pressure", 0)
+        )
         if pressure >= stillness_threshold:
-            return False, f"drive '{name}' pressure {pressure:.2f} >= threshold {stillness_threshold}"
+            return (
+                False,
+                f"drive '{name}' pressure {pressure:.2f} >= threshold {stillness_threshold}",
+            )
 
     # Check sustained duration
     if sustained_since is None:
@@ -182,12 +196,16 @@ def rem_eligible(
 
     elapsed_minutes = (time.time() - sustained_since) / 60.0
     if elapsed_minutes < sustained_minutes:
-        return False, f"stillness only {elapsed_minutes:.1f}min (need {sustained_minutes}min)"
+        return (
+            False,
+            f"stillness only {elapsed_minutes:.1f}min (need {sustained_minutes}min)",
+        )
 
     return True, "all drives quiet for sustained period"
 
 
 # ─── Memory Replay (Phase 1) ────────────────────────────────
+
 
 def load_replay_fragments(
     workspace_root: str,
@@ -209,14 +227,18 @@ def load_replay_fragments(
             entries = data if isinstance(data, list) else data.get("entries", [])
             for entry in entries:
                 if isinstance(entry, dict):
-                    fragments.append(ReplayFragment(
-                        source=str(emo_path),
-                        content=entry.get("description", entry.get("event", str(entry))),
-                        valence=float(entry.get("valence", 0)),
-                        intensity=float(entry.get("intensity", 0.5)),
-                        timestamp=float(entry.get("timestamp", 0)),
-                        tags=entry.get("tags", []),
-                    ))
+                    fragments.append(
+                        ReplayFragment(
+                            source=str(emo_path),
+                            content=entry.get(
+                                "description", entry.get("event", str(entry))
+                            ),
+                            valence=float(entry.get("valence", 0)),
+                            intensity=float(entry.get("intensity", 0.5)),
+                            timestamp=float(entry.get("timestamp", 0)),
+                            tags=entry.get("tags", []),
+                        )
+                    )
         except (json.JSONDecodeError, OSError, ValueError) as e:
             logger.warning(f"Failed to read emotional landscape: {e}")
 
@@ -226,6 +248,7 @@ def load_replay_fragments(
         today = datetime.now()
         for i in range(days_back):
             from datetime import timedelta
+
             date = today - timedelta(days=i)
             log_path = memory_dir / f"{date.strftime('%Y-%m-%d')}.md"
             if log_path.exists():
@@ -234,14 +257,16 @@ def load_replay_fragments(
                     # Each daily log gets a moderate default intensity
                     # (no emotional metadata available from raw logs)
                     if len(content.strip()) > 50:
-                        fragments.append(ReplayFragment(
-                            source=str(log_path),
-                            content=content[:2000],  # truncate for processing
-                            valence=0.0,
-                            intensity=0.3,  # low default — emotional entries will rank higher
-                            timestamp=log_path.stat().st_mtime,
-                            tags=["daily_log"],
-                        ))
+                        fragments.append(
+                            ReplayFragment(
+                                source=str(log_path),
+                                content=content[:2000],  # truncate for processing
+                                valence=0.0,
+                                intensity=0.3,  # low default — emotional entries will rank higher
+                                timestamp=log_path.stat().st_mtime,
+                                tags=["daily_log"],
+                            )
+                        )
                 except OSError as e:
                     logger.warning(f"Failed to read daily log {log_path}: {e}")
 
@@ -251,6 +276,7 @@ def load_replay_fragments(
 
 
 # ─── Dream Log (Phase 5) ────────────────────────────────────
+
 
 def write_dream_log(
     session: PonsSession,
@@ -273,7 +299,7 @@ def write_dream_log(
     ]
     for frag in session.replay_fragments:
         lines.append(f"- **[{frag.emotional_weight:.2f}]** {frag.content[:200]}...")
-    
+
     if session.hypotheticals:
         lines.append("")
         lines.append("## Hypothetical Branches")
@@ -335,13 +361,15 @@ def write_sanctum_insights(
 
 # ─── External Action Guard ──────────────────────────────────
 
+
 class Pons:
     """
     Safety guard that prevents external actions during a Pons session.
-    
+
     When active, any attempt to send messages, make API calls, or perform
     external actions should check this guard first.
     """
+
     _active: bool = False
 
     @classmethod
@@ -362,12 +390,15 @@ class Pons:
     def check(cls, action_name: str = "unknown") -> bool:
         """Returns True if action is allowed. Raises if Pons is active."""
         if cls._active:
-            logger.warning(f"BLOCKED external action '{action_name}' during Pons session")
+            logger.warning(
+                f"BLOCKED external action '{action_name}' during Pons session"
+            )
             return False
         return True
 
 
 # ─── Main Pons Runner ────────────────────────────────────
+
 
 def run_rem_session_internal(
     config: PonsConfig,
@@ -434,12 +465,16 @@ def run_rem_session_internal(
                 f"[Branch from: {top_memory.content[:100]}...] What if scenario {i+1}"
                 for i in range(config.hypothetical_branches)
             ]
-            logger.info(f"Phase 2: Generated {len(session.hypotheticals)} hypothetical branches")
+            logger.info(
+                f"Phase 2: Generated {len(session.hypotheticals)} hypothetical branches"
+            )
 
         # Phase 3 — Pattern Synthesis (placeholder)
         if len(session.replay_fragments) >= 2:
             sources = [f.source for f in session.replay_fragments[:3]]
-            session.patterns = [f"[Cross-pattern across: {', '.join(Path(s).stem for s in sources)}]"]
+            session.patterns = [
+                f"[Cross-pattern across: {', '.join(Path(s).stem for s in sources)}]"
+            ]
             logger.info(f"Phase 3: {len(session.patterns)} pattern templates")
 
         # Phase 4 — Creative Output (placeholder)
@@ -455,6 +490,7 @@ def run_rem_session_internal(
         # Phase 6 — Memory Consolidation (CHRONICLE → ENGRAM)
         try:
             from pulse.src.memory_consolidation import consolidate
+
             consolidation = consolidate()
             session.consolidation_report = consolidation.to_dict()
             if consolidation.promoted > 0:
@@ -465,9 +501,9 @@ def run_rem_session_internal(
                     f"Themes: {consolidation.top_themes}"
                 )
                 # Merge consolidation themes into session themes
-                session.themes = list(dict.fromkeys(
-                    session.themes + consolidation.top_themes
-                ))[:10]
+                session.themes = list(
+                    dict.fromkeys(session.themes + consolidation.top_themes)
+                )[:10]
             else:
                 logger.debug(
                     f"Phase 6: No new ENGRAMs (read {consolidation.events_read} events, "
@@ -480,7 +516,9 @@ def run_rem_session_internal(
         # Enforce max duration
         elapsed = time.time() - session.started_at
         if elapsed > config.max_duration_seconds:
-            logger.warning(f"Pons session exceeded max duration ({elapsed:.0f}s > {config.max_duration_seconds}s)")
+            logger.warning(
+                f"Pons session exceeded max duration ({elapsed:.0f}s > {config.max_duration_seconds}s)"
+            )
 
         session.ended_at = time.time()
 

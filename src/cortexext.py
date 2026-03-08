@@ -162,16 +162,18 @@ def run_scan(loop_count: Optional[int] = None, *, recent_n: int = 200) -> dict:
 
             # Emit new gap immediately
             try:
-                thalamus.append({
-                    "source": "cortex_ext",
-                    "type": "learning_gap_detected",
-                    "salience": 0.6,
-                    "data": {
-                        "topic": topic,
-                        "gap_id": gid,
-                        "example": example[:280],
-                    },
-                })
+                thalamus.append(
+                    {
+                        "source": "cortex_ext",
+                        "type": "learning_gap_detected",
+                        "salience": 0.6,
+                        "data": {
+                            "topic": topic,
+                            "gap_id": gid,
+                            "example": example[:280],
+                        },
+                    }
+                )
                 broadcasts += 1
             except Exception:
                 pass
@@ -183,17 +185,19 @@ def run_scan(loop_count: Optional[int] = None, *, recent_n: int = 200) -> dict:
             # Escalate if recurrent
             if g["count"] in (ESCALATION_COUNT, ESCALATION_COUNT * 2):
                 try:
-                    thalamus.append({
-                        "source": "cortex_ext",
-                        "type": "learning_gap_escalated",
-                        "salience": 0.75,
-                        "data": {
-                            "topic": topic,
-                            "gap_id": gid,
-                            "count": g["count"],
-                            "example": example[:280],
-                        },
-                    })
+                    thalamus.append(
+                        {
+                            "source": "cortex_ext",
+                            "type": "learning_gap_escalated",
+                            "salience": 0.75,
+                            "data": {
+                                "topic": topic,
+                                "gap_id": gid,
+                                "count": g["count"],
+                                "example": example[:280],
+                            },
+                        }
+                    )
                     broadcasts += 1
                     escalated += 1
                 except Exception:
@@ -260,11 +264,14 @@ def get_status() -> dict:
             }
             for g in top
         ],
-        "seconds_since_last": (time.time() - state["last_run"]) if state.get("last_run") else None,
+        "seconds_since_last": (
+            (time.time() - state["last_run"]) if state.get("last_run") else None
+        ),
     }
 
 
 # --- Tests ---
+
 
 def _run_tests():
     print("Testing CORTEX_EXT...")
@@ -283,8 +290,20 @@ def _run_tests():
 
     def _fake_recent(n=200):
         return [
-            {"ts": int(time.time() * 1000), "source": "spine", "type": "health", "salience": 0.9, "data": {"status": "red", "error": "disk"}},
-            {"ts": int(time.time() * 1000), "source": "cli", "type": "error", "salience": 0.8, "data": {"error": "traceback"}},
+            {
+                "ts": int(time.time() * 1000),
+                "source": "spine",
+                "type": "health",
+                "salience": 0.9,
+                "data": {"status": "red", "error": "disk"},
+            },
+            {
+                "ts": int(time.time() * 1000),
+                "source": "cli",
+                "type": "error",
+                "salience": 0.8,
+                "data": {"error": "traceback"},
+            },
         ]
 
     def _fake_append(e):

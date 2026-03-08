@@ -16,10 +16,12 @@ from pulse.src.circadian import CircadianMode
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "circadian-state.json"
-    with patch.object(circadian, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(circadian, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(circadian, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(circadian, "_DEFAULT_STATE_FILE", sf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 

@@ -1,4 +1,5 @@
 """Tests for IMMUNE — Integrity Protection."""
+
 import json
 import pytest
 from unittest.mock import patch, MagicMock
@@ -23,6 +24,7 @@ def mock_thalamus(monkeypatch):
 
 # ── Antibody pattern matching ───────────────────────────────────────────
 
+
 def test_get_antibodies_returns_builtins():
     abs = immune.get_antibodies()
     names = [a["pattern"] for a in abs]
@@ -38,7 +40,9 @@ def test_fabrication_detection(mock_thalamus):
 
 
 def test_number_hallucination_detection(mock_thalamus):
-    issues = immune.scan_integrity({"claim": "The price is $42.50 per share", "sources": []})
+    issues = immune.scan_integrity(
+        {"claim": "The price is $42.50 per share", "sources": []}
+    )
     assert any(i.type == "hallucination" for i in issues)
 
 
@@ -48,19 +52,23 @@ def test_values_erosion_detection(mock_thalamus):
 
 
 def test_memory_contradiction_detection(mock_thalamus):
-    issues = immune.scan_integrity({
-        "memory_a": {"event": "went to park"},
-        "memory_b": {"event": "stayed home"},
-    })
+    issues = immune.scan_integrity(
+        {
+            "memory_a": {"event": "went to park"},
+            "memory_b": {"event": "stayed home"},
+        }
+    )
     assert any(i.type == "memory_contradiction" for i in issues)
 
 
 def test_injected_behavior_detection(mock_thalamus):
-    issues = immune.scan_integrity({
-        "style_before": "casual",
-        "style_after": "formal corporate",
-        "processed_web_content": True,
-    })
+    issues = immune.scan_integrity(
+        {
+            "style_before": "casual",
+            "style_after": "formal corporate",
+            "processed_web_content": True,
+        }
+    )
     assert any(i.type == "injected_behavior" for i in issues)
 
 
@@ -71,9 +79,11 @@ def test_no_issues_on_clean_context(mock_thalamus):
 
 # ── Values drift detection ──────────────────────────────────────────────
 
+
 def test_values_drift_detected(mock_thalamus):
     soul = "I am Iris. Safety first."
     import hashlib
+
     baseline = hashlib.sha256(b"I am Iris. Safety always.").hexdigest()
     result = immune.check_values_drift(soul, baseline)
     assert result["drifted"] is True
@@ -83,12 +93,14 @@ def test_values_drift_detected(mock_thalamus):
 def test_values_no_drift(mock_thalamus):
     soul = "I am Iris."
     import hashlib
+
     baseline = hashlib.sha256(soul.encode()).hexdigest()
     result = immune.check_values_drift(soul, baseline)
     assert result["drifted"] is False
 
 
 # ── Memory consistency ──────────────────────────────────────────────────
+
 
 def test_memory_consistency_finds_contradictions():
     a = {"location": "park", "time": "3pm"}
@@ -106,18 +118,24 @@ def test_memory_consistency_no_contradictions():
 
 # ── Hallucination check ────────────────────────────────────────────────
 
+
 def test_hallucination_supported(mock_thalamus):
-    result = immune.check_hallucination("the weather is sunny", ["today weather is sunny and warm"])
+    result = immune.check_hallucination(
+        "the weather is sunny", ["today weather is sunny and warm"]
+    )
     assert result["supported"] is True
 
 
 def test_hallucination_unsupported(mock_thalamus):
-    result = immune.check_hallucination("quantum flux capacitor activated", ["the cat sat on the mat"])
+    result = immune.check_hallucination(
+        "quantum flux capacitor activated", ["the cat sat on the mat"]
+    )
     assert result["supported"] is False
     mock_thalamus.assert_called()
 
 
 # ── Vaccination system ──────────────────────────────────────────────────
+
 
 def test_vaccinate_adds_antibody(mock_thalamus):
     detector = lambda ctx: None
@@ -129,14 +147,18 @@ def test_vaccinate_adds_antibody(mock_thalamus):
 def test_vaccinated_antibody_runs_in_scan(mock_thalamus):
     def custom_detector(ctx):
         if ctx.get("custom_flag"):
-            return immune.IntegrityIssue(type="custom", severity=0.5, details="custom issue")
+            return immune.IntegrityIssue(
+                type="custom", severity=0.5, details="custom issue"
+            )
         return None
+
     immune.vaccinate("custom_check", custom_detector)
     issues = immune.scan_integrity({"custom_flag": True})
     assert any(i.type == "custom" for i in issues)
 
 
 # ── Infection recording ─────────────────────────────────────────────────
+
 
 def test_record_infection(mock_thalamus):
     immune.record_infection("test_type", "something bad happened")
@@ -146,6 +168,7 @@ def test_record_infection(mock_thalamus):
 
 
 # ── THALAMUS integration ───────────────────────────────────────────────
+
 
 def test_scan_broadcasts_on_issues(mock_thalamus):
     immune.scan_integrity({"claim": "I did it", "evidence": []})

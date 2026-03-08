@@ -16,17 +16,20 @@ _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "vestibular-state.json"
 
 # Healthy ranges for each ratio (min, max)
 HEALTHY_RANGES = {
-    "building_shipping": (0.3, 0.7),       # 30-70% building vs shipping
-    "working_reflecting": (0.4, 0.8),       # 40-80% working vs reflecting
-    "autonomy_collaboration": (0.3, 0.7),   # 30-70% autonomy vs collaboration
+    "building_shipping": (0.3, 0.7),  # 30-70% building vs shipping
+    "working_reflecting": (0.4, 0.8),  # 40-80% working vs reflecting
+    "autonomy_collaboration": (0.3, 0.7),  # 30-70% autonomy vs collaboration
 }
 
 
 _DEFAULT_STATE = {
     "counters": {
-        "building": 0, "shipping": 0,
-        "working": 0, "reflecting": 0,
-        "autonomy": 0, "collaboration": 0,
+        "building": 0,
+        "shipping": 0,
+        "working": 0,
+        "reflecting": 0,
+        "autonomy": 0,
+        "collaboration": 0,
     },
     "imbalances": [],
     "last_check": 0,
@@ -68,16 +71,16 @@ def check_balance() -> dict:
     """Check all balance ratios. Returns status with any imbalances."""
     state = _load_state()
     c = state["counters"]
-    
+
     ratios = {}
     imbalances = []
-    
+
     pairs = [
         ("building_shipping", "building", "shipping"),
         ("working_reflecting", "working", "reflecting"),
         ("autonomy_collaboration", "autonomy", "collaboration"),
     ]
-    
+
     for name, a, b in pairs:
         total = c[a] + c[b]
         if total == 0:
@@ -85,25 +88,30 @@ def check_balance() -> dict:
             continue
         ratio = c[a] / total
         ratios[name] = round(ratio, 3)
-        
+
         lo, hi = HEALTHY_RANGES[name]
         if ratio < lo or ratio > hi:
             direction = f"too much {b}" if ratio < lo else f"too much {a}"
             imbalances.append({"ratio": name, "value": ratio, "direction": direction})
-    
+
     state["imbalances"] = imbalances
     state["last_check"] = time.time()
     _save_state(state)
-    
+
     # Signal imbalances to THALAMUS for HYPOTHALAMUS
     for imb in imbalances:
-        thalamus.append({
-            "source": "vestibular",
-            "type": "need_signal",
-            "salience": 0.5,
-            "data": {"need": f"rebalance_{imb['ratio']}", "direction": imb["direction"]},
-        })
-    
+        thalamus.append(
+            {
+                "source": "vestibular",
+                "type": "need_signal",
+                "salience": 0.5,
+                "data": {
+                    "need": f"rebalance_{imb['ratio']}",
+                    "direction": imb["direction"],
+                },
+            }
+        )
+
     return {"ratios": ratios, "imbalances": imbalances, "healthy": len(imbalances) == 0}
 
 
@@ -122,6 +130,7 @@ def emit_need_signals() -> dict:
     building = c.get("building", 0)
     if shipping > 0 and building / shipping > 3.0:
         from pulse.src import hypothalamus
+
         hypothalamus.record_need_signal("ship_something", "vestibular")
         signals["ship_something"] = building / shipping
 
@@ -130,6 +139,7 @@ def emit_need_signals() -> dict:
     working = c.get("working", 0)
     if reflecting > 0 and working / reflecting > 5.0:
         from pulse.src import hypothalamus
+
         hypothalamus.record_need_signal("reflect", "vestibular")
         signals["reflect"] = working / reflecting
 

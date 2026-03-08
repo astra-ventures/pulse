@@ -24,15 +24,16 @@ logger = logging.getLogger("pulse.evolution.audit")
 @dataclass
 class MutationRecord:
     """A single self-modification event."""
+
     timestamp: float
-    mutation_type: str          # "weight", "threshold", "drive_add", "drive_remove", "rate", "cooldown", "drive_create"
-    target: str                 # what was changed (e.g., "drives.goals.weight")
-    before: Any                 # value before
-    after: Any                  # value after
-    reason: str                 # agent's explanation
-    clamped: bool = False       # whether guardrails modified the request
-    clamped_from: Any = None    # original request before clamping
-    source: str = "agent"       # "agent" or "evaluator" or "manual"
+    mutation_type: str  # "weight", "threshold", "drive_add", "drive_remove", "rate", "cooldown", "drive_create"
+    target: str  # what was changed (e.g., "drives.goals.weight")
+    before: Any  # value before
+    after: Any  # value after
+    reason: str  # agent's explanation
+    clamped: bool = False  # whether guardrails modified the request
+    clamped_from: Any = None  # original request before clamping
+    source: str = "agent"  # "agent" or "evaluator" or "manual"
 
 
 class AuditLog:
@@ -65,7 +66,7 @@ class AuditLog:
         chain_str = json.dumps(entry, sort_keys=True, default=str)
         entry["hash"] = hashlib.sha256(chain_str.encode()).hexdigest()[:16]
         self._last_hash = entry["hash"]
-        
+
         try:
             # Rotate if > 5MB
             self._rotate_if_needed()
@@ -88,6 +89,7 @@ class AuditLog:
             return []
 
         from collections import deque
+
         try:
             ring = deque(maxlen=n)
             with open(self.log_file) as f:

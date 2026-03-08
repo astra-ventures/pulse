@@ -38,7 +38,12 @@ class IrisIntegration(Integration):
 
     def _load_working_memory(self, config) -> str:
         """Load working memory snapshot for context in isolated sessions."""
-        wm_path = Path(config.workspace.root).expanduser() / "memory" / "self" / "working-memory.json"
+        wm_path = (
+            Path(config.workspace.root).expanduser()
+            / "memory"
+            / "self"
+            / "working-memory.json"
+        )
         try:
             if wm_path.exists():
                 data = json.loads(wm_path.read_text())
@@ -80,11 +85,11 @@ class IrisIntegration(Integration):
                     if content.strip():
                         label = "Today" if delta == 0 else "Yesterday"
                         # Take last portion — most recent entries are at the bottom
-                        trimmed = content[-(_MAX_MEMORY // 2):]
+                        trimmed = content[-(_MAX_MEMORY // 2) :]
                         # Find first newline to avoid cutting mid-line
                         nl = trimmed.find("\n")
                         if nl > 0:
-                            trimmed = trimmed[nl + 1:]
+                            trimmed = trimmed[nl + 1 :]
                         lines.append(f"**{label}'s memory ({path.name}):**")
                         lines.append(trimmed)
             except Exception as e:
@@ -107,6 +112,7 @@ class IrisIntegration(Integration):
         """Check if GERMINAL has a pending module birth that needs a coding agent."""
         try:
             from pulse.src import germinal
+
             state = germinal._load_state()
             spec = state.get("in_progress")
             if not spec:
@@ -227,8 +233,7 @@ class IrisIntegration(Integration):
         # Iris-specific: invoke the full CORTEX.md cognitive loop
         parts.append("")
         parts.append(
-            "Run your CORTEX.md loop: "
-            "SENSE → THINK → ACT → MEASURE → EVOLVE."
+            "Run your CORTEX.md loop: " "SENSE → THINK → ACT → MEASURE → EVOLVE."
         )
         parts.append(
             "IMPORTANT: 'Blocked on external deps' is NOT an excuse to do nothing. "
@@ -241,7 +246,7 @@ class IrisIntegration(Integration):
             "After completing work, send feedback to Pulse so drives decay properly:"
         )
         parts.append(
-            '  curl -s -X POST http://127.0.0.1:9720/feedback '
+            "  curl -s -X POST http://127.0.0.1:9720/feedback "
             '-H "Content-Type: application/json" '
             '-d \'{"drives_addressed": ["<drive>"], "outcome": "success", '
             '"summary": "<what you did>"}\''

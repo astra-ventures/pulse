@@ -55,7 +55,9 @@ def replenish(amount: float = 0.5, reason: str = "rem") -> dict:
     state = _load_state()
     state["energy"] = _clamp(state["energy"] + amount)
     state["last_update"] = time.time()
-    state["history"].append({"ts": time.time(), "event": f"replenish:{reason}", "amount": amount})
+    state["history"].append(
+        {"ts": time.time(), "event": f"replenish:{reason}", "amount": amount}
+    )
     state["history"] = state["history"][-50:]
     _save_state(state)
     return get_status()
@@ -82,7 +84,7 @@ def update_temperature(hormones: dict) -> str:
     dopamine = hormones.get("dopamine", 0)
     oxytocin = hormones.get("oxytocin", 0)
     adrenaline = hormones.get("adrenaline", 0)
-    
+
     if adrenaline >= 0.5 or (cortisol >= 0.5 and dopamine >= 0.5):
         state["temperature"] = "hot"
     elif oxytocin >= 0.5:
@@ -93,7 +95,7 @@ def update_temperature(hormones: dict) -> str:
         state["temperature"] = "cold"
     else:
         state["temperature"] = "warm"
-    
+
     state["last_update"] = time.time()
     _save_state(state)
     return state["temperature"]
@@ -110,6 +112,7 @@ def update_from_biosensors(cache=None) -> dict:
     try:
         if cache is None:
             from pulse.src.biosensor_cache import BiosensorCache
+
             cache = BiosensorCache()
 
         data = cache.read()
@@ -149,11 +152,13 @@ def update_from_biosensors(cache=None) -> dict:
 
         if changes:
             state["last_update"] = time.time()
-            state.setdefault("history", []).append({
-                "ts": time.time(),
-                "event": "biosensor_update",
-                "changes": changes,
-            })
+            state.setdefault("history", []).append(
+                {
+                    "ts": time.time(),
+                    "event": "biosensor_update",
+                    "changes": changes,
+                }
+            )
             state["history"] = state["history"][-50:]
             _save_state(state)
 

@@ -19,8 +19,8 @@ from pulse.src.rem import (
     run_rem_session_internal,
 )
 
-
 # ─── Fixtures ────────────────────────────────────────────────
+
 
 @pytest.fixture
 def quiet_drives():
@@ -50,18 +50,39 @@ def workspace(tmp_path):
     emo_dir.mkdir(parents=True)
     emo_data = {
         "entries": [
-            {"description": "Deep conversation about identity", "valence": 0.8, "intensity": 0.9, "timestamp": time.time() - 3600, "tags": ["identity", "connection"]},
-            {"description": "Frustrating debugging session", "valence": -0.6, "intensity": 0.7, "timestamp": time.time() - 7200, "tags": ["coding", "frustration"]},
-            {"description": "Quiet morning reflection", "valence": 0.3, "intensity": 0.2, "timestamp": time.time() - 86400, "tags": ["reflection"]},
+            {
+                "description": "Deep conversation about identity",
+                "valence": 0.8,
+                "intensity": 0.9,
+                "timestamp": time.time() - 3600,
+                "tags": ["identity", "connection"],
+            },
+            {
+                "description": "Frustrating debugging session",
+                "valence": -0.6,
+                "intensity": 0.7,
+                "timestamp": time.time() - 7200,
+                "tags": ["coding", "frustration"],
+            },
+            {
+                "description": "Quiet morning reflection",
+                "valence": 0.3,
+                "intensity": 0.2,
+                "timestamp": time.time() - 86400,
+                "tags": ["reflection"],
+            },
         ]
     }
     (emo_dir / "emotional-landscape.json").write_text(json.dumps(emo_data))
 
     # A daily log
     from datetime import datetime
+
     today = datetime.now().strftime("%Y-%m-%d")
     memory_dir = tmp_path / "memory"
-    (memory_dir / f"{today}.md").write_text("# Today\nDid some interesting work on the trading system. Also had a breakthrough with pattern recognition in memory architecture.")
+    (memory_dir / f"{today}.md").write_text(
+        "# Today\nDid some interesting work on the trading system. Also had a breakthrough with pattern recognition in memory architecture."
+    )
 
     return tmp_path
 
@@ -77,6 +98,7 @@ def sanctum_config(tmp_path):
 
 
 # ─── Eligibility Tests ──────────────────────────────────────
+
 
 class TestPonsEligibility:
     def test_eligible_when_all_quiet_and_sustained(self, quiet_drives):
@@ -109,7 +131,9 @@ class TestPonsEligibility:
 
     def test_custom_threshold(self, quiet_drives):
         # With threshold of 0.2, the 1.0 curiosity drive should block
-        eligible, reason = rem_eligible(quiet_drives, stillness_threshold=0.2, sustained_since=time.time() - 3600)
+        eligible, reason = rem_eligible(
+            quiet_drives, stillness_threshold=0.2, sustained_since=time.time() - 3600
+        )
         assert eligible is False
 
     def test_dict_drives(self):
@@ -120,6 +144,7 @@ class TestPonsEligibility:
 
 
 # ─── Guard Tests ─────────────────────────────────────────────
+
 
 class TestPons:
     def setup_method(self):
@@ -144,6 +169,7 @@ class TestPons:
 
 # ─── Memory Replay Tests ────────────────────────────────────
 
+
 class TestMemoryReplay:
     def test_loads_fragments_sorted_by_intensity(self, workspace):
         fragments = load_replay_fragments(str(workspace), count=5)
@@ -162,6 +188,7 @@ class TestMemoryReplay:
 
 
 # ─── State Persistence Tests ────────────────────────────────
+
 
 class TestPonsState:
     def test_save_and_load(self, tmp_path):
@@ -200,13 +227,16 @@ class TestPonsState:
 
 # ─── Dream Log Tests ────────────────────────────────────────
 
+
 class TestDreamLog:
     def test_writes_dream_log(self, tmp_path):
         session = PonsSession(
             started_at=time.time() - 120,
             ended_at=time.time(),
             replay_fragments=[
-                ReplayFragment("test.json", "A vivid memory", 0.8, 0.9, time.time(), ["test"]),
+                ReplayFragment(
+                    "test.json", "A vivid memory", 0.8, 0.9, time.time(), ["test"]
+                ),
             ],
             hypotheticals=["What if the memory was different?"],
             patterns=["Pattern: test connects to something"],
@@ -226,6 +256,7 @@ class TestDreamLog:
             session = PonsSession(started_at=time.time(), ended_at=time.time())
             write_dream_log(session, str(tmp_path))
         from datetime import datetime
+
         date_str = datetime.now().strftime("%Y-%m-%d")
         path = tmp_path / "memory" / "self" / "dreams" / f"{date_str}.md"
         content = path.read_text()
@@ -234,10 +265,14 @@ class TestDreamLog:
 
 # ─── Insights Tests ──────────────────────────────────────────
 
+
 class TestInsights:
     def test_writes_insights(self, tmp_path):
         write_sanctum_insights(
-            ["Consider adjusting the trading threshold", "Memory patterns suggest weekly cycles"],
+            [
+                "Consider adjusting the trading threshold",
+                "Memory patterns suggest weekly cycles",
+            ],
             str(tmp_path),
         )
         path = tmp_path / "memory" / "self" / "sanctum-insights.md"
@@ -253,6 +288,7 @@ class TestInsights:
 
 
 # ─── Full Session Tests ─────────────────────────────────────
+
 
 class TestFullSession:
     def test_runs_full_session(self, workspace, sanctum_config):
@@ -287,6 +323,8 @@ class TestFullSession:
         assert session is None
 
     def test_state_persisted_after_session(self, workspace, sanctum_config):
-        run_rem_session_internal(config=sanctum_config, workspace_root=str(workspace), force=True)
+        run_rem_session_internal(
+            config=sanctum_config, workspace_root=str(workspace), force=True
+        )
         state = PonsState(sanctum_config.state_file)
         assert state.total_runs == 1

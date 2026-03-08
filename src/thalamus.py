@@ -23,22 +23,22 @@ def _ensure_dir():
 
 def append(entry: dict) -> dict:
     """Append an entry to the broadcast stream. Adds timestamp if missing.
-    
+
     Entry format: {"ts": epoch_ms, "source": str, "type": str, "salience": 0.0-1.0, "data": {}}
     """
     _ensure_dir()
     if "ts" not in entry:
         entry["ts"] = int(time.time() * 1000)
-    
+
     line = json.dumps(entry, separators=(",", ":")) + "\n"
-    
+
     with open(_DEFAULT_BROADCAST_FILE, "a") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
             f.write(line)
         finally:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-    
+
     # Check rotation
     _maybe_rotate()
     return entry
@@ -96,18 +96,18 @@ def _maybe_rotate():
     count = _count_lines()
     if count <= MAX_ENTRIES:
         return
-    
+
     entries = _read_all()
     archive_entries = entries[:-KEEP_ENTRIES]
     keep_entries = entries[-KEEP_ENTRIES:]
-    
+
     # Archive
     date_str = datetime.now().strftime("%Y-%m-%d")
     archive_path = _DEFAULT_STATE_DIR / f"broadcast-archive-{date_str}.jsonl"
     with open(archive_path, "a") as f:
         for e in archive_entries:
             f.write(json.dumps(e, separators=(",", ":")) + "\n")
-    
+
     # Rewrite main file
     with open(_DEFAULT_BROADCAST_FILE, "w") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)

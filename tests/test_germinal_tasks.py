@@ -12,8 +12,8 @@ from pulse.src.germinal_tasks import (
     DEFAULT_REFLECTION_TASK,
 )
 
-
 # ─── Fixtures ────────────────────────────────────────────────────────────────
+
 
 def _base_context():
     return {
@@ -21,7 +21,12 @@ def _base_context():
         "recent_memory": "Recently worked on evaluator model integration",
         "drives": {"goals": 0.8, "curiosity": 0.5, "growth": 0.3},
         "thalamus_recent": [
-            {"source": "limbic", "type": "emotion", "salience": 0.6, "data": {"mood": "focused"}},
+            {
+                "source": "limbic",
+                "type": "emotion",
+                "salience": 0.6,
+                "data": {"mood": "focused"},
+            },
         ],
     }
 
@@ -55,9 +60,12 @@ def _make_task(title="Test task", requires_external=False, effort="low", drive="
 
 # ─── Tests: generate_tasks ───────────────────────────────────────────────────
 
+
 class TestGenerateTasks:
     def test_disabled_returns_empty(self):
-        result = asyncio.run(generate_tasks(_base_context(), _base_config(enabled=False)))
+        result = asyncio.run(
+            generate_tasks(_base_context(), _base_config(enabled=False))
+        )
         assert result == []
 
     def test_llm_failure_returns_fallback(self):
@@ -76,7 +84,9 @@ class TestGenerateTasks:
         tasks = [_make_task("Refactor config module"), _make_task("Write unit tests")]
 
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch(
+                "pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock
+            ) as mock_llm:
                 mock_llm.return_value = tasks
                 return await generate_tasks(_base_context(), _base_config())
 
@@ -93,7 +103,9 @@ class TestGenerateTasks:
         ]
 
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch(
+                "pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock
+            ) as mock_llm:
                 mock_llm.return_value = tasks
                 return await generate_tasks(_base_context(), _base_config())
 
@@ -109,7 +121,9 @@ class TestGenerateTasks:
         ]
 
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch(
+                "pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock
+            ) as mock_llm:
                 mock_llm.return_value = tasks
                 return await generate_tasks(_base_context(), _base_config())
 
@@ -124,7 +138,9 @@ class TestGenerateTasks:
         config["max_tasks"] = 2
 
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch(
+                "pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock
+            ) as mock_llm:
                 mock_llm.return_value = tasks
                 return await generate_tasks(_base_context(), config)
 
@@ -133,8 +149,11 @@ class TestGenerateTasks:
 
     def test_empty_llm_response_returns_fallback(self):
         """When LLM returns no usable tasks, should return fallback."""
+
         async def _run():
-            with patch("pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock) as mock_llm:
+            with patch(
+                "pulse.src.germinal_tasks._call_llm", new_callable=AsyncMock
+            ) as mock_llm:
                 mock_llm.return_value = []
                 return await generate_tasks(_base_context(), _base_config())
 
@@ -144,6 +163,7 @@ class TestGenerateTasks:
 
 
 # ─── Tests: _build_prompt ────────────────────────────────────────────────────
+
 
 class TestBuildPrompt:
     def test_includes_goals(self):
@@ -179,6 +199,7 @@ class TestBuildPrompt:
 
 
 # ─── Tests: _parse_and_filter ────────────────────────────────────────────────
+
 
 class TestParseAndFilter:
     def test_filters_external_deps(self):
@@ -234,9 +255,17 @@ class TestParseAndFilter:
 
 # ─── Tests: DEFAULT_REFLECTION_TASK ──────────────────────────────────────────
 
+
 class TestDefaultReflectionTask:
     def test_has_required_fields(self):
-        required = {"title", "description", "rationale", "drive", "effort", "requires_external"}
+        required = {
+            "title",
+            "description",
+            "rationale",
+            "drive",
+            "effort",
+            "requires_external",
+        }
         assert required.issubset(DEFAULT_REFLECTION_TASK.keys())
 
     def test_not_external(self):

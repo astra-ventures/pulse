@@ -20,7 +20,10 @@ class TestExceptionRulePrompt:
                 # Must contain the individual-drive guard
                 assert "highest individual drive exceeds 1.5" in line
                 # Must mention ambient floor accumulation caveat
-                assert "ambient floor" in line.lower() or "not just ambient" in line.lower()
+                assert (
+                    "ambient floor" in line.lower()
+                    or "not just ambient" in line.lower()
+                )
                 break
         else:
             pytest.fail("EXCEPTION rule not found in EVALUATOR_SYSTEM_PROMPT")

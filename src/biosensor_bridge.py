@@ -35,10 +35,13 @@ import argparse
 _DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
 _DEFAULT_BIOSENSOR_FILE = _DEFAULT_STATE_DIR / "biosensor-state.json"
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 log = logging.getLogger("biosensor_bridge")
 
 # ─── Biometric → Pulse State Mapping ─────────────────────────────────────────
+
 
 def _load_biosensor_state() -> dict:
     if _DEFAULT_BIOSENSOR_FILE.exists():
@@ -46,7 +49,13 @@ def _load_biosensor_state() -> dict:
     return {
         "heart_rate": {"value": None, "ts": None, "zone": None},
         "hrv": {"value": None, "ts": None, "stress_level": None},
-        "activity": {"move": 0, "exercise": 0, "stand": 0, "goal_move": 600, "ts": None},
+        "activity": {
+            "move": 0,
+            "exercise": 0,
+            "stand": 0,
+            "goal_move": 600,
+            "ts": None,
+        },
         "sleep": {"stage": None, "minutes": 0, "ts": None},
         "workout": {"active": False, "activity": None, "started": None},
         "last_update": None,
@@ -181,6 +190,7 @@ def update_soma_from_biometrics(state: dict):
 
 # ─── HTTP Handler ──────────────────────────────────────────────────────────────
 
+
 class BiosensorHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         log.info(f"{self.address_string()} - {format % args}")
@@ -206,7 +216,9 @@ class BiosensorHandler(BaseHTTPRequestHandler):
             state = _load_biosensor_state()
             self._respond(200, state)
         elif self.path == "/health":
-            self._respond(200, {"status": "ok", "bridge": "biosensor_bridge", "ts": time.time()})
+            self._respond(
+                200, {"status": "ok", "bridge": "biosensor_bridge", "ts": time.time()}
+            )
         else:
             self._respond(404, {"error": "not found"})
 
@@ -239,7 +251,9 @@ class BiosensorHandler(BaseHTTPRequestHandler):
                 "goal_move": float(body.get("goal_move", 600)),
                 "ts": time.time(),
             }
-            log.info(f"Activity: move={body.get('move')}, exercise={body.get('exercise')}, stand={body.get('stand')}")
+            log.info(
+                f"Activity: move={body.get('move')}, exercise={body.get('exercise')}, stand={body.get('stand')}"
+            )
 
         elif path == "/biosensor/sleep":
             state["sleep"] = {
@@ -252,7 +266,11 @@ class BiosensorHandler(BaseHTTPRequestHandler):
         elif path == "/biosensor/workout":
             wtype = body.get("type", "").lower()
             if wtype == "start":
-                state["workout"] = {"active": True, "activity": body.get("activity"), "started": time.time()}
+                state["workout"] = {
+                    "active": True,
+                    "activity": body.get("activity"),
+                    "started": time.time(),
+                }
                 log.info(f"Workout started: {body.get('activity')}")
             elif wtype == "end":
                 state["workout"] = {"active": False, "activity": None, "started": None}
@@ -271,6 +289,7 @@ class BiosensorHandler(BaseHTTPRequestHandler):
 
 # ─── Main ──────────────────────────────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(description="Biosensor Bridge — Phase E1")
     parser.add_argument("--port", type=int, default=9721)
@@ -280,7 +299,9 @@ def main():
     _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
     log.info(f"Biosensor bridge starting on {args.host}:{args.port}")
     log.info(f"State dir: {_DEFAULT_STATE_DIR}")
-    log.info("Endpoints: /biosensor/{heartrate,hrv,activity,sleep,workout} | /biosensor/status | /health")
+    log.info(
+        "Endpoints: /biosensor/{heartrate,hrv,activity,sleep,workout} | /biosensor/status | /health"
+    )
 
     server = HTTPServer((args.host, args.port), BiosensorHandler)
     try:

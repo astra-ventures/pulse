@@ -1,4 +1,5 @@
 """Tests for ENTERIC — Gut Feeling / Intuition."""
+
 import json
 import pytest
 from unittest.mock import MagicMock
@@ -21,6 +22,7 @@ def mock_thalamus(monkeypatch):
 
 # ── gut_check returns valid structure ───────────────────────────────────
 
+
 def test_gut_check_returns_intuition(mock_thalamus):
     result = enteric.gut_check({"task": "write code"})
     assert result.direction in ("toward", "away", "neutral")
@@ -35,6 +37,7 @@ def test_gut_check_neutral_when_no_patterns(mock_thalamus):
 
 
 # ── Training updates accuracy ──────────────────────────────────────────
+
 
 def test_training_positive_outcome(mock_thalamus):
     enteric.train("positive", {"task": "deploy"}, "toward")
@@ -59,6 +62,7 @@ def test_training_adds_pattern(mock_thalamus):
 
 # ── Pattern matching with similar contexts ─────────────────────────────
 
+
 def test_gut_uses_trained_patterns(mock_thalamus):
     # Train with a pattern
     enteric.train("positive", {"task": "deploy", "env": "staging"}, "toward")
@@ -77,6 +81,7 @@ def test_gut_away_from_negative_patterns(mock_thalamus):
 
 
 # ── Mood bias from ENDOCRINE ──────────────────────────────────────────
+
 
 def test_mood_bias_high_cortisol(tmp_path, mock_thalamus):
     # Write fake endocrine state with high cortisol
@@ -100,6 +105,7 @@ def test_mood_bias_high_dopamine(tmp_path, mock_thalamus):
 
 # ── Override tracking ──────────────────────────────────────────────────
 
+
 def test_log_override(mock_thalamus):
     enteric.log_override({"task": "risky"}, "away", "proceed", outcome="positive")
     state = json.loads(enteric._DEFAULT_STATE_FILE.read_text())
@@ -110,6 +116,7 @@ def test_log_override(mock_thalamus):
 
 # ── Confidence calculation ─────────────────────────────────────────────
 
+
 def test_confidence_increases_with_agreement(mock_thalamus):
     # Multiple similar patterns agreeing
     for _ in range(3):
@@ -119,6 +126,7 @@ def test_confidence_increases_with_agreement(mock_thalamus):
 
 
 # ── THALAMUS integration ──────────────────────────────────────────────
+
 
 def test_strong_intuition_broadcasts(mock_thalamus):
     # Create strong patterns
@@ -132,6 +140,7 @@ def test_strong_intuition_broadcasts(mock_thalamus):
 
 
 # ── Pattern library management ────────────────────────────────────────
+
 
 def test_pattern_library_pruning(mock_thalamus):
     for i in range(250):

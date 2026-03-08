@@ -54,7 +54,12 @@ def _save_state(state: dict):
     _DEFAULT_STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
-def update_metrics(followers: int = None, likes: int = None, replies: int = None, sentiment: float = None) -> dict:
+def update_metrics(
+    followers: int = None,
+    likes: int = None,
+    replies: int = None,
+    sentiment: float = None,
+) -> dict:
     """Update external metrics."""
     state = _load_state()
     m = state["metrics"]
@@ -89,35 +94,37 @@ def detect_gap() -> dict:
     state = _load_state()
     m = state["metrics"]
     sp = state["self_perception"]
-    
+
     # Normalize external metrics to 0-1 scale
     ext_impact = min(1.0, m["followers"] / 10000) if m["followers"] else 0.0
     ext_reception = m["sentiment"]
-    
+
     impact_gap = abs(sp["impact"] - ext_impact)
     reception_gap = abs(sp["reception"] - ext_reception)
     overall_gap = (impact_gap + reception_gap) / 2
-    
+
     state["perception_gap"] = overall_gap
     state["history"].append({"ts": time.time(), "gap": overall_gap})
     state["history"] = state["history"][-100:]
     _save_state(state)
-    
+
     result = {
         "impact_gap": round(impact_gap, 3),
         "reception_gap": round(reception_gap, 3),
         "overall_gap": round(overall_gap, 3),
         "self_overestimates": sp["impact"] > ext_impact,
     }
-    
+
     if overall_gap > 0.3:
-        thalamus.append({
-            "source": "oximeter",
-            "type": "perception_gap",
-            "salience": 0.5,
-            "data": result,
-        })
-    
+        thalamus.append(
+            {
+                "source": "oximeter",
+                "type": "perception_gap",
+                "salience": 0.5,
+                "data": result,
+            }
+        )
+
     return result
 
 

@@ -20,7 +20,14 @@ _DEFAULT_GENOME = {
     "created_at": 0,
     "modules": {
         "endocrine": {
-            "decay_rates": {"cortisol": -0.05, "dopamine": -0.08, "serotonin": -0.02, "oxytocin": -0.04, "adrenaline": -0.28, "melatonin": -0.01},
+            "decay_rates": {
+                "cortisol": -0.05,
+                "dopamine": -0.08,
+                "serotonin": -0.02,
+                "oxytocin": -0.04,
+                "adrenaline": -0.28,
+                "melatonin": -0.01,
+            },
             "high_threshold": 0.5,
             "low_threshold": 0.3,
         },
@@ -96,13 +103,15 @@ def import_genome(genome: dict) -> dict:
     """Import a genome config. Returns the imported genome."""
     genome["imported_at"] = time.time()
     _save_state(genome)
-    
-    thalamus.append({
-        "source": "genome",
-        "type": "import",
-        "salience": 0.6,
-        "data": {"version": genome.get("version", "unknown")},
-    })
+
+    thalamus.append(
+        {
+            "source": "genome",
+            "type": "import",
+            "salience": 0.6,
+            "data": {"version": genome.get("version", "unknown")},
+        }
+    )
     return genome
 
 
@@ -120,13 +129,15 @@ def mutate(module_name: str, key: str, value) -> dict:
     genome["modules"][module_name][key] = value
     genome["last_mutation"] = {"module": module_name, "key": key, "ts": time.time()}
     _save_state(genome)
-    
-    thalamus.append({
-        "source": "genome",
-        "type": "mutation",
-        "salience": 0.4,
-        "data": {"module": module_name, "key": key},
-    })
+
+    thalamus.append(
+        {
+            "source": "genome",
+            "type": "mutation",
+            "salience": 0.4,
+            "data": {"module": module_name, "key": key},
+        }
+    )
     return genome["modules"][module_name]
 
 

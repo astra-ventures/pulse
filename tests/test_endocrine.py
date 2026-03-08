@@ -14,10 +14,12 @@ from pulse.src import endocrine, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "endocrine-state.json"
-    with patch.object(endocrine, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(endocrine, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(endocrine, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(endocrine, "_DEFAULT_STATE_FILE", sf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 
@@ -64,7 +66,7 @@ class TestDecay:
         # Set high values first
         endocrine.update_hormone("cortisol", 0.5, "setup")
         endocrine.update_hormone("dopamine", 0.5, "setup")
-        
+
         result = endocrine.tick(1.0)
         # cortisol decays -0.05/hr, dopamine -0.08/hr
         assert result["cortisol"] < 0.7

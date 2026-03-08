@@ -29,7 +29,7 @@ class StatePersistence:
         self.config = config
         self.state_dir = Path(config.state.dir).expanduser()
         self.state_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self._data: Dict[str, Any] = {}
         self._dirty = False
         self._last_save = time.time()
@@ -61,13 +61,11 @@ class StatePersistence:
         """Save state to disk atomically (write to temp, then rename)."""
         self._data["_saved_at"] = time.time()
         self._data["_version"] = __version__
-        
+
         try:
             content = json.dumps(self._data, indent=2, default=str)
             # Atomic write: temp file → fsync → rename
-            fd, tmp_path = tempfile.mkstemp(
-                dir=str(self.state_dir), suffix=".tmp"
-            )
+            fd, tmp_path = tempfile.mkstemp(dir=str(self.state_dir), suffix=".tmp")
             try:
                 os.write(fd, content.encode())
                 os.fsync(fd)
@@ -85,7 +83,9 @@ class StatePersistence:
             self._consecutive_write_failures = 0
         except OSError as e:
             self._consecutive_write_failures += 1
-            logger.error(f"Failed to save state ({self._consecutive_write_failures} consecutive): {e}")
+            logger.error(
+                f"Failed to save state ({self._consecutive_write_failures} consecutive): {e}"
+            )
             if self._consecutive_write_failures >= 3:
                 logger.critical(
                     f"DISK WRITE FAILURE x{self._consecutive_write_failures} — "
@@ -94,7 +94,9 @@ class StatePersistence:
 
     def maybe_save(self):
         """Save if dirty and enough time has passed."""
-        if self._dirty and (time.time() - self._last_save > self.config.state.save_interval):
+        if self._dirty and (
+            time.time() - self._last_save > self.config.state.save_interval
+        ):
             self.save()
             self._maybe_prune_history()
 
@@ -104,10 +106,10 @@ class StatePersistence:
         now = time.time()
         if now - last_prune < 3600:
             return
-        
+
         retention_seconds = self.config.state.history_retention_days * 86400
         cutoff = now - retention_seconds
-        
+
         if self.history_file.exists():
             try:
                 kept = []
@@ -125,10 +127,12 @@ class StatePersistence:
                 if pruned > 0:
                     with open(self.history_file, "w") as f:
                         f.writelines(kept)
-                    logger.info(f"Pruned {pruned} trigger history entries older than {self.config.state.history_retention_days}d")
+                    logger.info(
+                        f"Pruned {pruned} trigger history entries older than {self.config.state.history_retention_days}d"
+                    )
             except OSError as e:
                 logger.warning(f"History prune failed: {e}")
-        
+
         self._data["_last_prune"] = now
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -149,7 +153,7 @@ class StatePersistence:
             "top_drive": decision.top_drive.name if decision.top_drive else None,
             "success": success,
         }
-        
+
         # Append to JSONL history (rotate if > 5MB)
         try:
             self._rotate_if_needed(self.history_file, max_bytes=5 * 1024 * 1024)
@@ -162,7 +166,7 @@ class StatePersistence:
         self._data["last_trigger"] = entry
         trigger_count = self._data.get("total_triggers", 0)
         self._data["total_triggers"] = trigger_count + 1
-        
+
         if success:
             success_count = self._data.get("successful_triggers", 0)
             self._data["successful_triggers"] = success_count + 1

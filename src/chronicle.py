@@ -22,11 +22,13 @@ def _ensure_dir():
     _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def record_event(source: str, event_type: str, data: dict, salience: float = 0.5) -> Optional[dict]:
+def record_event(
+    source: str, event_type: str, data: dict, salience: float = 0.5
+) -> Optional[dict]:
     """Record a significant event to the chronicle."""
     if salience < SIGNIFICANCE_THRESHOLD:
         return None
-    
+
     _ensure_dir()
     entry = {
         "ts": time.time(),
@@ -37,10 +39,10 @@ def record_event(source: str, event_type: str, data: dict, salience: float = 0.5
         "salience": salience,
         "data": data,
     }
-    
+
     with open(_DEFAULT_CHRONICLE_FILE, "a") as f:
         f.write(json.dumps(entry, separators=(",", ":")) + "\n")
-    
+
     return entry
 
 
@@ -50,7 +52,7 @@ def capture_from_thalamus(n: int = 20) -> int:
         entries = thalamus.read_recent(n)
     except Exception:
         return 0
-    
+
     recorded = 0
     for entry in entries:
         salience = entry.get("salience", 0)
@@ -70,7 +72,7 @@ def query_by_date(date_str: str) -> list:
     """Query chronicle entries by date (YYYY-MM-DD)."""
     if not _DEFAULT_CHRONICLE_FILE.exists():
         return []
-    
+
     results = []
     with open(_DEFAULT_CHRONICLE_FILE, "r") as f:
         for line in f:
@@ -90,7 +92,7 @@ def query_recent(n: int = 20) -> list:
     """Return the last N chronicle entries."""
     if not _DEFAULT_CHRONICLE_FILE.exists():
         return []
-    
+
     entries = []
     with open(_DEFAULT_CHRONICLE_FILE, "r") as f:
         for line in f:
@@ -107,7 +109,7 @@ def get_status() -> dict:
     """Return chronicle status."""
     if not _DEFAULT_CHRONICLE_FILE.exists():
         return {"total_entries": 0}
-    
+
     count = 0
     with open(_DEFAULT_CHRONICLE_FILE, "r") as f:
         count = sum(1 for line in f if line.strip())

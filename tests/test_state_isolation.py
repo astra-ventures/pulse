@@ -78,6 +78,7 @@ class TestStateIsolation:
 
     def test_post_trigger_works_with_custom_dir(self, tmp_path):
         from unittest.mock import MagicMock
+
         custom = tmp_path / "trigger" / "state"
         ns = NervousSystem(state_dir=custom)
 

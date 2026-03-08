@@ -15,10 +15,12 @@ from pulse.src import vagus, thalamus
 def tmp_state(tmp_path):
     bf = tmp_path / "thalamus.jsonl"
     sf = tmp_path / "silence-state.json"
-    with patch.object(vagus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(vagus, "_DEFAULT_STATE_FILE", sf), \
-         patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path), \
-         patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf):
+    with (
+        patch.object(vagus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(vagus, "_DEFAULT_STATE_FILE", sf),
+        patch.object(thalamus, "_DEFAULT_STATE_DIR", tmp_path),
+        patch.object(thalamus, "_DEFAULT_BROADCAST_FILE", bf),
+    ):
         yield tmp_path
 
 
@@ -64,12 +66,9 @@ class TestBroadcastWrites:
     def test_broadcasts_at_threshold(self, tmp_state):
         # Set josh timestamp 5 hours ago
         now_ms = int(time.time() * 1000)
-        state = {
-            "timestamps": {"josh": now_ms - 5 * 3_600_000},
-            "broadcast_flags": {}
-        }
+        state = {"timestamps": {"josh": now_ms - 5 * 3_600_000}, "broadcast_flags": {}}
         vagus._save_state(state)
-        
+
         # Check during waking hours
         silences = vagus.check_silence(now=datetime(2026, 2, 20, 14, 0))
         entries = thalamus.read_by_source("vagus")
@@ -79,12 +78,9 @@ class TestBroadcastWrites:
 
     def test_no_double_broadcast(self, tmp_state):
         now_ms = int(time.time() * 1000)
-        state = {
-            "timestamps": {"josh": now_ms - 5 * 3_600_000},
-            "broadcast_flags": {}
-        }
+        state = {"timestamps": {"josh": now_ms - 5 * 3_600_000}, "broadcast_flags": {}}
         vagus._save_state(state)
-        
+
         vagus.check_silence(now=datetime(2026, 2, 20, 14, 0))
         vagus.check_silence(now=datetime(2026, 2, 20, 14, 0))
         entries = thalamus.read_by_source("vagus")
@@ -102,14 +98,20 @@ class TestUpdateTimestamp:
 class TestPressureDelta:
     def test_pressure_from_josh_silence(self, tmp_state):
         now_ms = int(time.time() * 1000)
-        state = {
-            "timestamps": {"josh": now_ms - 5 * 3_600_000},
-            "broadcast_flags": {}
-        }
+        state = {"timestamps": {"josh": now_ms - 5 * 3_600_000}, "broadcast_flags": {}}
         vagus._save_state(state)
-        
-        with patch.object(vagus, "check_silence", return_value=[
-            {"source": "josh", "duration_hours": 5.0, "duration_ms": 18000000, "significance": 0.5}
-        ]):
+
+        with patch.object(
+            vagus,
+            "check_silence",
+            return_value=[
+                {
+                    "source": "josh",
+                    "duration_hours": 5.0,
+                    "duration_ms": 18000000,
+                    "significance": 0.5,
+                }
+            ],
+        ):
             pressure = vagus.get_pressure_delta()
             assert "connection" in pressure

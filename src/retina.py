@@ -28,8 +28,14 @@ ATTENTION_LOG_MAX = 50
 class ScoredSignal:
     """A signal scored by RETINA."""
 
-    def __init__(self, signal: dict, priority: float, category: str,
-                 should_process: bool, reasoning: str):
+    def __init__(
+        self,
+        signal: dict,
+        priority: float,
+        category: str,
+        should_process: bool,
+        reasoning: str,
+    ):
         self.signal = signal
         self.priority = priority
         self.category = category
@@ -47,6 +53,7 @@ class ScoredSignal:
 
 
 # --- Built-in matchers ---
+
 
 def _match_owner_direct(signal: dict) -> bool:
     sender = signal.get("sender") or signal.get("from") or ""
@@ -68,17 +75,17 @@ def _match_high_value_alert(signal: dict) -> bool:
 
 
 def _match_cron_anomaly(signal: dict) -> bool:
-    return (signal.get("source_type") == "cron"
-            and signal.get("anomaly", False) is True)
+    return signal.get("source_type") == "cron" and signal.get("anomaly", False) is True
 
 
 def _match_cron_routine(signal: dict) -> bool:
-    return (signal.get("source_type") == "cron"
-            and not signal.get("anomaly", False))
+    return signal.get("source_type") == "cron" and not signal.get("anomaly", False)
 
 
 def _match_heartbeat_quiet(signal: dict) -> bool:
-    return signal.get("source_type") == "heartbeat" and not signal.get("has_action", False)
+    return signal.get("source_type") == "heartbeat" and not signal.get(
+        "has_action", False
+    )
 
 
 def _match_system_health(signal: dict) -> bool:
@@ -87,13 +94,17 @@ def _match_system_health(signal: dict) -> bool:
 
 
 def _match_notable_mention(signal: dict) -> bool:
-    return (signal.get("source_type") == "mention"
-            and int(signal.get("follower_count", 0)) > 10000)
+    return (
+        signal.get("source_type") == "mention"
+        and int(signal.get("follower_count", 0)) > 10000
+    )
 
 
 def _match_routine_mention(signal: dict) -> bool:
-    return (signal.get("source_type") == "mention"
-            and int(signal.get("follower_count", 0)) <= 10000)
+    return (
+        signal.get("source_type") == "mention"
+        and int(signal.get("follower_count", 0)) <= 10000
+    )
 
 
 def _match_web_content(signal: dict) -> bool:
@@ -128,7 +139,9 @@ class Retina:
         self._buffer_topic: Optional[str] = None
         self._signals_processed = 0
         self._signals_filtered = 0
-        self._learning: dict = {}  # category → {correct: int, wrong: int, adjustment: float}
+        self._learning: dict = (
+            {}
+        )  # category → {correct: int, wrong: int, adjustment: float}
         self._load_state()
         self._load_learning()
 
@@ -170,12 +183,14 @@ class Retina:
         scored = ScoredSignal(signal, priority, category, should_process, reasoning)
 
         # Log
-        self._attention_log.append({
-            "ts": int(time.time() * 1000),
-            "priority": priority,
-            "category": category,
-            "should_process": should_process,
-        })
+        self._attention_log.append(
+            {
+                "ts": int(time.time() * 1000),
+                "priority": priority,
+                "category": category,
+                "should_process": should_process,
+            }
+        )
 
         if should_process:
             self._queue.append(scored)
@@ -185,17 +200,19 @@ class Retina:
             self._signals_filtered += 1
 
         # Broadcast to thalamus
-        thalamus.append({
-            "source": "retina",
-            "type": "attention",
-            "salience": priority,
-            "data": {
-                "category": category,
-                "priority": priority,
-                "should_process": should_process,
-                "reasoning": reasoning,
-            },
-        })
+        thalamus.append(
+            {
+                "source": "retina",
+                "type": "attention",
+                "salience": priority,
+                "data": {
+                    "category": category,
+                    "priority": priority,
+                    "should_process": should_process,
+                    "reasoning": reasoning,
+                },
+            }
+        )
 
         self._save_state()
         return scored

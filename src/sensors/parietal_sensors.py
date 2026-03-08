@@ -36,7 +36,12 @@ class ParietalFileSensor(BaseSensor):
                 "healthy": healthy,
             }
         except OSError as e:
-            return {"signal_id": self.signal.id, "status": "error", "healthy": False, "error": str(e)}
+            return {
+                "signal_id": self.signal.id,
+                "status": "error",
+                "healthy": False,
+                "error": str(e),
+            }
 
 
 class ParietalFileContentSensor(BaseSensor):
@@ -59,7 +64,12 @@ class ParietalFileContentSensor(BaseSensor):
                 "healthy": len(lines) > 0,
             }
         except OSError as e:
-            return {"signal_id": self.signal.id, "status": "error", "healthy": False, "error": str(e)}
+            return {
+                "signal_id": self.signal.id,
+                "status": "error",
+                "healthy": False,
+                "error": str(e),
+            }
 
 
 class ParietalHttpSensor(BaseSensor):
@@ -72,6 +82,7 @@ class ParietalHttpSensor(BaseSensor):
     async def read(self) -> dict:
         try:
             import aiohttp
+
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                     self.signal.target,
@@ -102,7 +113,9 @@ class ParietalGitSensor(BaseSensor):
         try:
             result = subprocess.run(
                 ["git", "-C", self.signal.target, "status", "--porcelain"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             has_changes = bool(result.stdout.strip())
             return {
@@ -122,7 +135,8 @@ class ParietalGitSensor(BaseSensor):
 def _eval_file_age(condition: str, age_hours: float) -> bool:
     """Evaluate a simple file-age condition like 'age_hours < 24'."""
     import re
-    match = re.match(r'age_hours\s*(<=?|>=?|==|!=)\s*(\d+\.?\d*)', condition)
+
+    match = re.match(r"age_hours\s*(<=?|>=?|==|!=)\s*(\d+\.?\d*)", condition)
     if match:
         op, val_str = match.groups()
         val = float(val_str)

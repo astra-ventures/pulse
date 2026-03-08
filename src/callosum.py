@@ -38,6 +38,7 @@ class BridgeInsight:
 
 # ── State persistence ───────────────────────────────────────────────────
 
+
 def _load_state() -> dict:
     _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
     if _DEFAULT_STATE_FILE.exists():
@@ -61,6 +62,7 @@ def _save_state(state: dict):
 
 # ── Internal helpers ────────────────────────────────────────────────────
 
+
 def _get_logical_state() -> str:
     """Read recent CORTEX/rational activity from THALAMUS."""
     try:
@@ -73,7 +75,11 @@ def _get_logical_state() -> str:
                 data = e.get("data", {})
                 reason = data.get("reason", data.get("type", str(data)[:80]))
                 summaries.append(str(reason)[:100])
-            return "; ".join(summaries) if summaries else "quiet — no recent logical activity"
+            return (
+                "; ".join(summaries)
+                if summaries
+                else "quiet — no recent logical activity"
+            )
         return "quiet — no recent logical activity"
     except Exception:
         return "unable to read logical state"
@@ -85,6 +91,7 @@ def _get_emotional_state() -> tuple[str, dict]:
     parts = []
     try:
         from pulse.src import endocrine
+
         mood = endocrine.get_mood()
         parts.append(f"mood: {mood.get('label', 'unknown')}")
     except Exception:
@@ -92,6 +99,7 @@ def _get_emotional_state() -> tuple[str, dict]:
 
     try:
         from pulse.src import limbic
+
         afterimages = limbic.get_current_afterimages()
         if afterimages:
             emotions = [a.get("emotion", "?") for a in afterimages[:3]]
@@ -106,6 +114,7 @@ def _get_gut_signal() -> str:
     """Read ENTERIC gut feeling."""
     try:
         from pulse.src import enteric
+
         intuition = enteric.gut_check({})
         return intuition.direction
     except Exception:
@@ -158,28 +167,38 @@ def _detect_tension(logical: str, emotional: str, gut: str) -> tuple[bool, str, 
     Returns (split_detected, tension, bridge)."""
     # Simple heuristic: if gut says away but logical is active, there's tension
     if gut == "away" and "quiet" not in logical.lower():
-        return (True,
-                "Logical side is active but gut feeling says pull away",
-                "The resistance may signal a need to pause and reflect before continuing")
+        return (
+            True,
+            "Logical side is active but gut feeling says pull away",
+            "The resistance may signal a need to pause and reflect before continuing",
+        )
 
     # If emotional state is negative but logical is active
     neg_markers = {"stressed", "anxious", "frustrated", "cortisol"}
     emotional_lower = emotional.lower()
-    if any(m in emotional_lower for m in neg_markers) and "quiet" not in logical.lower():
-        return (True,
-                f"Emotional state ({emotional}) conflicts with active logical processing",
-                "Acknowledging the stress while continuing may help integrate both sides")
+    if (
+        any(m in emotional_lower for m in neg_markers)
+        and "quiet" not in logical.lower()
+    ):
+        return (
+            True,
+            f"Emotional state ({emotional}) conflicts with active logical processing",
+            "Acknowledging the stress while continuing may help integrate both sides",
+        )
 
     # If afterimages present with no logical activity
     if "afterimage" in emotional_lower and "quiet" in logical.lower():
-        return (True,
-                "Emotional residue persists while logical side is idle",
-                "The quiet may be needed to process lingering emotions")
+        return (
+            True,
+            "Emotional residue persists while logical side is idle",
+            "The quiet may be needed to process lingering emotions",
+        )
 
     return (False, "", "Logic and emotion are reasonably aligned")
 
 
 # ── Core functions ──────────────────────────────────────────────────────
+
 
 def bridge() -> BridgeInsight:
     """Run a reconciliation cycle."""
@@ -222,17 +241,26 @@ def bridge() -> BridgeInsight:
     _save_state(state)
 
     # Broadcast to THALAMUS
-    thalamus.append({
-        "source": "callosum",
-        "type": "insight",
-        "salience": 0.6 if not split_detected else 0.8,
-        "data": insight.to_dict(),
-    })
+    thalamus.append(
+        {
+            "source": "callosum",
+            "type": "insight",
+            "salience": 0.6 if not split_detected else 0.8,
+            "data": insight.to_dict(),
+        }
+    )
 
     # If split detected, notify DISSONANCE (deduplicated — same tension not written twice in 60 min)
     if split_detected:
         try:
-            dissonance_path = Path.home() / ".openclaw" / "workspace" / "memory" / "self" / "contradictions.md"
+            dissonance_path = (
+                Path.home()
+                / ".openclaw"
+                / "workspace"
+                / "memory"
+                / "self"
+                / "contradictions.md"
+            )
             if dissonance_path.exists():
                 # Dedup: skip if same tension already written in the last 60 minutes
                 _should_write = True
@@ -240,21 +268,28 @@ def bridge() -> BridgeInsight:
                     existing = dissonance_path.read_text()
                     # Check if this exact tension appears in entries from the last hour
                     import re as _re
+
                     recent_entries = _re.findall(
-                        r'### Callosum Split — (\d{4}-\d{2}-\d{2} \d{2}:\d{2})\n\*\*Tension:\*\* ([^\n]+)',
-                        existing
+                        r"### Callosum Split — (\d{4}-\d{2}-\d{2} \d{2}:\d{2})\n\*\*Tension:\*\* ([^\n]+)",
+                        existing,
                     )
-                    cutoff_ts = time.strftime('%Y-%m-%d %H:%M',
-                                              time.localtime(time.time() - 3600))
+                    cutoff_ts = time.strftime(
+                        "%Y-%m-%d %H:%M", time.localtime(time.time() - 3600)
+                    )
                     for entry_ts, entry_tension in recent_entries:
-                        if entry_ts >= cutoff_ts and entry_tension.strip() == tension.strip():
+                        if (
+                            entry_ts >= cutoff_ts
+                            and entry_tension.strip() == tension.strip()
+                        ):
                             _should_write = False
                             break
                 except Exception:
                     pass
                 if _should_write:
                     with open(dissonance_path, "a") as f:
-                        f.write(f"\n\n### Callosum Split — {time.strftime('%Y-%m-%d %H:%M')}\n")
+                        f.write(
+                            f"\n\n### Callosum Split — {time.strftime('%Y-%m-%d %H:%M')}\n"
+                        )
                         f.write(f"**Tension:** {tension}\n")
                         f.write(f"**Bridge:** {bridge_text}\n")
         except Exception:
@@ -303,10 +338,10 @@ def request_emergency_dream() -> bool:
     recent_insights = state.get("insights", [])[-48:]  # ~48 bridge cycles
     if not recent_insights:
         return False
-    
+
     now = time.time() * 1000
     twenty_four_hours_ms = 24 * 3600 * 1000
-    
+
     # Count recent splits
     split_count = 0
     oldest_split_ts = None
@@ -316,22 +351,28 @@ def request_emergency_dream() -> bool:
             ts = insight.get("timestamp", 0)
             if oldest_split_ts is None or ts < oldest_split_ts:
                 oldest_split_ts = ts
-    
-    if split_count >= 3 and oldest_split_ts and (now - oldest_split_ts) >= twenty_four_hours_ms:
+
+    if (
+        split_count >= 3
+        and oldest_split_ts
+        and (now - oldest_split_ts) >= twenty_four_hours_ms
+    ):
         state["emergency_dream_requested"] = True
         state["emergency_dream_ts"] = now
         _save_state(state)
-        
-        thalamus.append({
-            "source": "callosum",
-            "type": "emergency_dream_request",
-            "salience": 0.9,
-            "data": {
-                "split_count": split_count,
-                "duration_hours": (now - oldest_split_ts) / 3600000,
-                "reason": "Logic-emotion split persisting >24 hours",
-            },
-        })
+
+        thalamus.append(
+            {
+                "source": "callosum",
+                "type": "emergency_dream_request",
+                "salience": 0.9,
+                "data": {
+                    "split_count": split_count,
+                    "duration_hours": (now - oldest_split_ts) / 3600000,
+                    "reason": "Logic-emotion split persisting >24 hours",
+                },
+            }
+        )
         return True
     return False
 

@@ -97,31 +97,31 @@ def check_silence(now: Optional[datetime] = None) -> list[dict]:
     now_ms = int(time.time() * 1000)
     if now is None:
         now = datetime.now()
-    
+
     silences = []
     changed = False
-    
+
     for source in SOURCES:
         last_ts = timestamps.get(source)
         if last_ts is None:
             continue
-        
+
         elapsed_ms = now_ms - last_ts
         elapsed_hours = elapsed_ms / 3_600_000
-        
+
         fn = SIGNIFICANCE_FNS.get(source)
         if fn is None:
             continue
-        
+
         # Josh needs time-of-day awareness
         if source == "josh":
             significance = fn(elapsed_hours, now)
         else:
             significance = fn(elapsed_hours)
-        
+
         if significance <= 0:
             continue
-        
+
         silence_entry = {
             "source": source,
             "duration_hours": round(elapsed_hours, 2),
@@ -129,26 +129,28 @@ def check_silence(now: Optional[datetime] = None) -> list[dict]:
             "significance": round(significance, 3),
         }
         silences.append(silence_entry)
-        
+
         # Broadcast when crossing 0.5 threshold (once per silence period)
         if significance >= 0.5 and not broadcast_flags.get(source, False):
             broadcast_flags[source] = True
             changed = True
-            thalamus.append({
-                "source": "vagus",
-                "type": "silence",
-                "salience": significance,
-                "data": {
-                    "silent_source": source,
-                    "duration_hours": round(elapsed_hours, 2),
-                    "significance": round(significance, 3),
+            thalamus.append(
+                {
+                    "source": "vagus",
+                    "type": "silence",
+                    "salience": significance,
+                    "data": {
+                        "silent_source": source,
+                        "duration_hours": round(elapsed_hours, 2),
+                        "significance": round(significance, 3),
+                    },
                 }
-            })
-    
+            )
+
     if changed:
         state["broadcast_flags"] = broadcast_flags
         _save_state(state)
-    
+
     return silences
 
 
@@ -169,6 +171,7 @@ def emit_need_signals() -> dict:
         elapsed_seconds = (now_ms - josh_ts) / 1000
         if elapsed_seconds > 172800:  # 48 hours
             from pulse.src import hypothalamus
+
             hypothalamus.record_need_signal("connection", "vagus")
             signals["connection"] = elapsed_seconds
 

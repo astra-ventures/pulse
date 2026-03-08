@@ -10,7 +10,9 @@ from pulse.src import cortexext
 
 def _patch_state_paths(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(cortexext, "_DEFAULT_STATE_DIR", tmp_path)
-    monkeypatch.setattr(cortexext, "_DEFAULT_STATE_FILE", tmp_path / "cortexext-state.json")
+    monkeypatch.setattr(
+        cortexext, "_DEFAULT_STATE_FILE", tmp_path / "cortexext-state.json"
+    )
 
 
 class TestCortexExtBasics:
@@ -53,7 +55,9 @@ class TestCortexExtScan:
         monkeypatch.setattr(cortexext.thalamus, "read_recent", lambda n=200: entries)
 
         appended = []
-        monkeypatch.setattr(cortexext.thalamus, "append", lambda e: appended.append(e) or e)
+        monkeypatch.setattr(
+            cortexext.thalamus, "append", lambda e: appended.append(e) or e
+        )
 
         summary = cortexext.run_scan(loop_count=cortexext.LOOP_INTERVAL, recent_n=10)
         assert summary["new_gaps"] == 1
@@ -79,11 +83,15 @@ class TestCortexExtScan:
         monkeypatch.setattr(cortexext.thalamus, "read_recent", lambda n=200: entries)
 
         appended = []
-        monkeypatch.setattr(cortexext.thalamus, "append", lambda e: appended.append(e) or e)
+        monkeypatch.setattr(
+            cortexext.thalamus, "append", lambda e: appended.append(e) or e
+        )
 
         # Run multiple scans to hit escalation count
         for i in range(cortexext.ESCALATION_COUNT):
-            cortexext.run_scan(loop_count=cortexext.LOOP_INTERVAL * (i + 1), recent_n=10)
+            cortexext.run_scan(
+                loop_count=cortexext.LOOP_INTERVAL * (i + 1), recent_n=10
+            )
 
         # Should have at least one escalation broadcast
         assert any(e.get("type") == "learning_gap_escalated" for e in appended)
@@ -103,7 +111,9 @@ class TestCortexExtScan:
         monkeypatch.setattr(cortexext.thalamus, "read_recent", lambda n=200: entries)
 
         appended = []
-        monkeypatch.setattr(cortexext.thalamus, "append", lambda e: appended.append(e) or e)
+        monkeypatch.setattr(
+            cortexext.thalamus, "append", lambda e: appended.append(e) or e
+        )
 
         summary = cortexext.run_scan(loop_count=cortexext.LOOP_INTERVAL, recent_n=10)
         assert summary["new_gaps"] == 0

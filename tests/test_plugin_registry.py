@@ -16,8 +16,8 @@ from pulse.src.plugin_registry import (
     _find_plugin_classes,
 )
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 class EchoPlugin(PulsePlugin):
     name = "ECHO"
@@ -57,6 +57,7 @@ def reg():
 
 # ── PulsePlugin base class ────────────────────────────────────────────────────
 
+
 class TestPulsePlugin:
 
     def test_defaults_return_empty(self):
@@ -67,8 +68,8 @@ class TestPulsePlugin:
 
     def test_on_load_and_unload_no_error(self):
         p = PulsePlugin()
-        p.on_load()   # should not raise
-        p.on_unload() # should not raise
+        p.on_load()  # should not raise
+        p.on_unload()  # should not raise
 
     def test_enabled_by_default(self):
         p = PulsePlugin()
@@ -106,6 +107,7 @@ class TestPulsePlugin:
 
 
 # ── PluginRegistry ─────────────────────────────────────────────────────────
+
 
 class TestPluginRegistry:
 
@@ -146,15 +148,18 @@ class TestPluginRegistry:
 
 # ── sense_all ─────────────────────────────────────────────────────────────────
 
+
 class TestSenseAll:
 
     def test_merges_drive_contributions(self, reg):
         class DoublePlugin(PulsePlugin):
             name = "DOUBLE"
-            def sense(self): return {"goals": 0.3, "system": 0.2}
 
-        reg.register(EchoPlugin())   # curiosity: 0.5
-        reg.register(DoublePlugin()) # goals: 0.3, system: 0.2
+            def sense(self):
+                return {"goals": 0.3, "system": 0.2}
+
+        reg.register(EchoPlugin())  # curiosity: 0.5
+        reg.register(DoublePlugin())  # goals: 0.3, system: 0.2
         result = reg.sense_all()
         assert result["curiosity"] == pytest.approx(0.5)
         assert result["goals"] == pytest.approx(0.3)
@@ -178,6 +183,7 @@ class TestSenseAll:
 
 # ── get_all_states ────────────────────────────────────────────────────────────
 
+
 class TestGetAllStates:
 
     def test_returns_state_per_plugin(self, reg):
@@ -196,6 +202,7 @@ class TestGetAllStates:
 
 
 # ── act_all ───────────────────────────────────────────────────────────────────
+
 
 class TestActAll:
 
@@ -216,9 +223,12 @@ class TestActAll:
 
 # ── discover_plugins ──────────────────────────────────────────────────────────
 
+
 class TestDiscoverPlugins:
 
-    def _write_plugin(self, plugin_dir: Path, name: str, class_name: str, sense_val: float = 0.1):
+    def _write_plugin(
+        self, plugin_dir: Path, name: str, class_name: str, sense_val: float = 0.1
+    ):
         code = textwrap.dedent(f"""
             from pulse.src.plugin_registry import PulsePlugin
 

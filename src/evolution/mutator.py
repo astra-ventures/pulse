@@ -113,23 +113,29 @@ class Mutator:
                 results.append(result)
             except GuardrailViolation as e:
                 logger.warning(f"Mutation blocked by guardrails: {e}")
-                results.append({
-                    "status": "blocked",
-                    "type": mutation.get("type"),
-                    "error": str(e),
-                })
+                results.append(
+                    {
+                        "status": "blocked",
+                        "type": mutation.get("type"),
+                        "error": str(e),
+                    }
+                )
             except Exception as e:
                 logger.error(f"Mutation failed: {e}")
-                results.append({
-                    "status": "error",
-                    "type": mutation.get("type"),
-                    "error": str(e),
-                })
+                results.append(
+                    {
+                        "status": "error",
+                        "type": mutation.get("type"),
+                        "error": str(e),
+                    }
+                )
 
         if results:
-            logger.info(f"Processed {len(results)} mutations: "
-                       f"{sum(1 for r in results if r.get('status') == 'applied')} applied, "
-                       f"{sum(1 for r in results if r.get('status') == 'blocked')} blocked")
+            logger.info(
+                f"Processed {len(results)} mutations: "
+                f"{sum(1 for r in results if r.get('status') == 'applied')} applied, "
+                f"{sum(1 for r in results if r.get('status') == 'blocked')} blocked"
+            )
 
         return results
 
@@ -191,24 +197,34 @@ class Mutator:
 
         drive = self.drives.drives[drive_name]
         current = drive.weight
-        validated = self.guardrails.validate_weight_change(drive_name, current, proposed)
+        validated = self.guardrails.validate_weight_change(
+            drive_name, current, proposed
+        )
         clamped = validated != proposed
 
         drive.weight = validated
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="weight",
-            target=f"drives.{drive_name}.weight",
-            before=current,
-            after=validated,
-            reason=reason,
-            clamped=clamped,
-            clamped_from=proposed if clamped else None,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="weight",
+                target=f"drives.{drive_name}.weight",
+                before=current,
+                after=validated,
+                reason=reason,
+                clamped=clamped,
+                clamped_from=proposed if clamped else None,
+            )
+        )
 
-        return {"status": "applied", "type": "adjust_weight", "drive": drive_name,
-                "before": current, "after": validated, "clamped": clamped}
+        return {
+            "status": "applied",
+            "type": "adjust_weight",
+            "drive": drive_name,
+            "before": current,
+            "after": validated,
+            "clamped": clamped,
+        }
 
     def _adjust_threshold(self, mutation: dict, reason: str) -> dict:
         proposed = float(mutation["value"])
@@ -218,19 +234,26 @@ class Mutator:
 
         self.config.drives.trigger_threshold = validated
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="threshold",
-            target="drives.trigger_threshold",
-            before=current,
-            after=validated,
-            reason=reason,
-            clamped=clamped,
-            clamped_from=proposed if clamped else None,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="threshold",
+                target="drives.trigger_threshold",
+                before=current,
+                after=validated,
+                reason=reason,
+                clamped=clamped,
+                clamped_from=proposed if clamped else None,
+            )
+        )
 
-        return {"status": "applied", "type": "adjust_threshold",
-                "before": current, "after": validated, "clamped": clamped}
+        return {
+            "status": "applied",
+            "type": "adjust_threshold",
+            "before": current,
+            "after": validated,
+            "clamped": clamped,
+        }
 
     def _adjust_rate(self, mutation: dict, reason: str) -> dict:
         proposed = float(mutation["value"])
@@ -240,19 +263,26 @@ class Mutator:
 
         self.config.drives.pressure_rate = validated
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="rate",
-            target="drives.pressure_rate",
-            before=current,
-            after=validated,
-            reason=reason,
-            clamped=clamped,
-            clamped_from=proposed if clamped else None,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="rate",
+                target="drives.pressure_rate",
+                before=current,
+                after=validated,
+                reason=reason,
+                clamped=clamped,
+                clamped_from=proposed if clamped else None,
+            )
+        )
 
-        return {"status": "applied", "type": "adjust_rate",
-                "before": current, "after": validated, "clamped": clamped}
+        return {
+            "status": "applied",
+            "type": "adjust_rate",
+            "before": current,
+            "after": validated,
+            "clamped": clamped,
+        }
 
     def _adjust_cooldown(self, mutation: dict, reason: str) -> dict:
         proposed = int(mutation["value"])
@@ -261,19 +291,25 @@ class Mutator:
 
         self.config.openclaw.min_trigger_interval = validated
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="cooldown",
-            target="openclaw.min_trigger_interval",
-            before=current,
-            after=validated,
-            reason=reason,
-            clamped=validated != proposed,
-            clamped_from=proposed if validated != proposed else None,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="cooldown",
+                target="openclaw.min_trigger_interval",
+                before=current,
+                after=validated,
+                reason=reason,
+                clamped=validated != proposed,
+                clamped_from=proposed if validated != proposed else None,
+            )
+        )
 
-        return {"status": "applied", "type": "adjust_cooldown",
-                "before": current, "after": validated}
+        return {
+            "status": "applied",
+            "type": "adjust_cooldown",
+            "before": current,
+            "after": validated,
+        }
 
     def _adjust_turns_per_hour(self, mutation: dict, reason: str) -> dict:
         proposed = int(mutation["value"])
@@ -282,18 +318,24 @@ class Mutator:
 
         self.config.openclaw.max_turns_per_hour = validated
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="turns_per_hour",
-            target="openclaw.max_turns_per_hour",
-            before=current,
-            after=validated,
-            reason=reason,
-            clamped=validated != proposed,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="turns_per_hour",
+                target="openclaw.max_turns_per_hour",
+                before=current,
+                after=validated,
+                reason=reason,
+                clamped=validated != proposed,
+            )
+        )
 
-        return {"status": "applied", "type": "adjust_turns_per_hour",
-                "before": current, "after": validated}
+        return {
+            "status": "applied",
+            "type": "adjust_turns_per_hour",
+            "before": current,
+            "after": validated,
+        }
 
     def _add_drive(self, mutation: dict, reason: str) -> dict:
         name = mutation["name"]
@@ -306,22 +348,30 @@ class Mutator:
         weight = self.guardrails.validate_weight_change(name, 0.5, weight)
 
         from pulse.src.drives.engine import Drive
+
         self.drives.drives[name] = Drive(
             name=name,
             category=name,
             weight=weight,
         )
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="drive_create",
-            target=f"drives.{name}",
-            before=None,
-            after={"name": name, "weight": weight},
-            reason=reason,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="drive_create",
+                target=f"drives.{name}",
+                before=None,
+                after={"name": name, "weight": weight},
+                reason=reason,
+            )
+        )
 
-        return {"status": "applied", "type": "add_drive", "name": name, "weight": weight}
+        return {
+            "status": "applied",
+            "type": "add_drive",
+            "name": name,
+            "weight": weight,
+        }
 
     def _remove_drive(self, mutation: dict, reason: str) -> dict:
         name = mutation["drive"]
@@ -333,14 +383,16 @@ class Mutator:
         old_weight = self.drives.drives[name].weight
         del self.drives.drives[name]
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="drive_remove",
-            target=f"drives.{name}",
-            before={"name": name, "weight": old_weight},
-            after=None,
-            reason=reason,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="drive_remove",
+                target=f"drives.{name}",
+                before={"name": name, "weight": old_weight},
+                after=None,
+                reason=reason,
+            )
+        )
 
         return {"status": "applied", "type": "remove_drive", "name": name}
 
@@ -355,17 +407,24 @@ class Mutator:
         before = drive.pressure
         drive.spike(amount, self.config.drives.max_pressure)
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="spike",
-            target=f"drives.{name}.pressure",
-            before=round(before, 4),
-            after=round(drive.pressure, 4),
-            reason=reason,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="spike",
+                target=f"drives.{name}.pressure",
+                before=round(before, 4),
+                after=round(drive.pressure, 4),
+                reason=reason,
+            )
+        )
 
-        return {"status": "applied", "type": "spike_drive", "name": name,
-                "before": round(before, 4), "after": round(drive.pressure, 4)}
+        return {
+            "status": "applied",
+            "type": "spike_drive",
+            "name": name,
+            "before": round(before, 4),
+            "after": round(drive.pressure, 4),
+        }
 
     def _decay_drive(self, mutation: dict, reason: str) -> dict:
         name = mutation["drive"]
@@ -378,17 +437,24 @@ class Mutator:
         before = drive.pressure
         drive.decay(amount)
 
-        self.audit.record(MutationRecord(
-            timestamp=time.time(),
-            mutation_type="decay",
-            target=f"drives.{name}.pressure",
-            before=round(before, 4),
-            after=round(drive.pressure, 4),
-            reason=reason,
-        ))
+        self.audit.record(
+            MutationRecord(
+                timestamp=time.time(),
+                mutation_type="decay",
+                target=f"drives.{name}.pressure",
+                before=round(before, 4),
+                after=round(drive.pressure, 4),
+                reason=reason,
+            )
+        )
 
-        return {"status": "applied", "type": "decay_drive", "name": name,
-                "before": round(before, 4), "after": round(drive.pressure, 4)}
+        return {
+            "status": "applied",
+            "type": "decay_drive",
+            "name": name,
+            "before": round(before, 4),
+            "after": round(drive.pressure, 4),
+        }
 
     def get_state(self) -> dict:
         """Get current mutation state for the agent to reason about."""

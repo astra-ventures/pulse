@@ -1,4 +1,5 @@
 """Tests for the biosensor bridge — Phase E1."""
+
 import json
 import time
 import pytest
@@ -6,9 +7,13 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.biosensor_bridge import (
-    _hr_zone, _hrv_stress, _load_biosensor_state, _save_biosensor_state
+    _hr_zone,
+    _hrv_stress,
+    _load_biosensor_state,
+    _save_biosensor_state,
 )
 
 

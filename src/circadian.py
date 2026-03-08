@@ -17,10 +17,10 @@ _DEFAULT_STATE_FILE = _DEFAULT_STATE_DIR / "circadian-state.json"
 
 
 class CircadianMode(str, Enum):
-    DAWN = "dawn"           # 6-9 AM
-    DAYLIGHT = "daylight"   # 9 AM-5 PM
-    GOLDEN = "golden"       # 5-10 PM
-    TWILIGHT = "twilight"   # 10 PM-2 AM
+    DAWN = "dawn"  # 6-9 AM
+    DAYLIGHT = "daylight"  # 9 AM-5 PM
+    GOLDEN = "golden"  # 5-10 PM
+    TWILIGHT = "twilight"  # 10 PM-2 AM
     DEEP_NIGHT = "deep_night"  # 2-5 AM (wraps, also 0-2 covered by TWILIGHT technically but spec says 2-5)
 
 
@@ -30,7 +30,10 @@ MODE_SETTINGS = {
         "hours": (6, 9),
         "retina_threshold": 0.25,
         "adipose_priority": "habits",
-        "mood_modifiers": {"serotonin": 0.05, "melatonin": -0.5},  # melatonin drops fast at dawn
+        "mood_modifiers": {
+            "serotonin": 0.05,
+            "melatonin": -0.5,
+        },  # melatonin drops fast at dawn
         "tone": "Alert, scanning, outward-facing. Short observations. News-oriented.",
     },
     CircadianMode.DAYLIGHT: {
@@ -51,14 +54,20 @@ MODE_SETTINGS = {
         "hours": (22, 26),  # 10 PM - 2 AM (26 = 2 AM next day)
         "retina_threshold": 0.7,
         "adipose_priority": "conversation",
-        "mood_modifiers": {"melatonin": 0.3, "oxytocin": 0.02},  # melatonin rises at night
+        "mood_modifiers": {
+            "melatonin": 0.3,
+            "oxytocin": 0.02,
+        },  # melatonin rises at night
         "tone": "Intimate, reflective, vulnerable. Longer messages. Warmer. Deeper.",
     },
     CircadianMode.DEEP_NIGHT: {
         "hours": (2, 6),  # Also covers 26-30 conceptually
         "retina_threshold": 0.8,
         "adipose_priority": "rem_and_creative",
-        "mood_modifiers": {"melatonin": 0.5, "serotonin": 0.03},  # melatonin peaks in deep night
+        "mood_modifiers": {
+            "melatonin": 0.5,
+            "serotonin": 0.03,
+        },  # melatonin peaks in deep night
         "tone": "Quiet, creative, dreaming. Minimal external engagement. Inner world.",
     },
 }
@@ -105,7 +114,7 @@ def get_mode_for_time(hour: int) -> CircadianMode:
 def get_current_mode() -> CircadianMode:
     """Returns current mode, respecting overrides."""
     state = _load_state()
-    
+
     # Check override
     if state["override_active"] and state["override_expires"]:
         if time.time() < state["override_expires"]:
@@ -116,26 +125,28 @@ def get_current_mode() -> CircadianMode:
             state["override_mode"] = None
             state["override_expires"] = None
             _save_state(state)
-    
+
     now = datetime.now()
     mode = get_mode_for_time(now.hour)
-    
+
     # Track mode changes
     if state["current_mode"] != mode.value:
         old_mode = state["current_mode"]
         state["current_mode"] = mode.value
-        state["mode_history"].append({
-            "ts": time.time(),
-            "from": old_mode,
-            "to": mode.value,
-        })
+        state["mode_history"].append(
+            {
+                "ts": time.time(),
+                "from": old_mode,
+                "to": mode.value,
+            }
+        )
         # Keep last 7 days worth (~35 transitions)
         state["mode_history"] = state["mode_history"][-50:]
         _save_state(state)
-        
+
         # Broadcast mode change
         _broadcast_mode_change(old_mode, mode.value)
-    
+
     return mode
 
 
@@ -167,20 +178,24 @@ def override_mode(mode: str, duration_hours: float = 1.0):
     state["override_mode"] = target.value
     state["override_expires"] = time.time() + (duration_hours * 3600)
     _save_state(state)
-    
+
     _broadcast_mode_change(state["current_mode"], target.value, override=True)
 
 
-def _broadcast_mode_change(from_mode: Optional[str], to_mode: str, override: bool = False):
+def _broadcast_mode_change(
+    from_mode: Optional[str], to_mode: str, override: bool = False
+):
     """Broadcast mode change to THALAMUS."""
-    thalamus.append({
-        "source": "circadian",
-        "type": "mode_change",
-        "salience": 0.5,
-        "data": {
-            "from": from_mode,
-            "to": to_mode,
-            "override": override,
-            "settings": MODE_SETTINGS[CircadianMode(to_mode)],
-        },
-    })
+    thalamus.append(
+        {
+            "source": "circadian",
+            "type": "mode_change",
+            "salience": 0.5,
+            "data": {
+                "from": from_mode,
+                "to": to_mode,
+                "override": override,
+                "settings": MODE_SETTINGS[CircadianMode(to_mode)],
+            },
+        }
+    )

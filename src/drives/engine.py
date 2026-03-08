@@ -3,7 +3,7 @@ Drive Engine — internal motivation system.
 
 Drives accumulate pressure over time based on:
 - Unfulfilled goals (the longer ignored, the louder they get)
-- Curiosity (open questions create exploration urges)  
+- Curiosity (open questions create exploration urges)
 - Emotions (strong feelings amplify related drives)
 - Unfinished business (untested hypotheses nag)
 - External signals (sensor events spike relevant drives)
@@ -27,20 +27,23 @@ logger = logging.getLogger("pulse.drives")
 @dataclass
 class Drive:
     """A single drive — an internal motivation with accumulating pressure."""
+
     name: str
     category: str
     pressure: float = 0.0
     weight: float = 1.0
     last_addressed: float = 0.0  # timestamp
     source_data: dict = field(default_factory=dict)
-    
+
     @property
     def weighted_pressure(self) -> float:
         return self.pressure * self.weight
 
     def tick(self, dt: float, rate: float, max_pressure: float):
         """Accumulate pressure over time. Rate is per-minute."""
-        self.pressure = min(max_pressure, self.pressure + (rate * (dt / 60.0) * self.weight))
+        self.pressure = min(
+            max_pressure, self.pressure + (rate * (dt / 60.0) * self.weight)
+        )
 
     def decay(self, amount: float):
         """Reduce pressure (after being addressed)."""
@@ -63,6 +66,7 @@ class Drive:
 @dataclass
 class DriveState:
     """Snapshot of all drives at a point in time."""
+
     drives: List[Drive]
     timestamp: float
     total_pressure: float = 0.0
@@ -83,7 +87,7 @@ class DriveEngine:
         self.drives: Dict[str, Drive] = {}
         self.last_tick_time = time.time()
         self._source_cache: Dict[str, tuple] = {}  # path -> (mtime, data)
-        
+
         # Initialize drives from config categories
         for name, cat in config.drives.categories.items():
             self.drives[name] = Drive(
@@ -119,7 +123,7 @@ class DriveEngine:
         )
 
     def refresh_sources(self):
-        """Read workspace source files and apply drive adjustments. 
+        """Read workspace source files and apply drive adjustments.
         Separated from tick() to isolate I/O from state transitions."""
         self._refresh_sources()
 
@@ -143,13 +147,17 @@ class DriveEngine:
                     name="system", category="system", weight=1.5
                 )
             now = time.time()
-            cooldown = getattr(self.config.openclaw, 'min_trigger_interval', 300)
+            cooldown = getattr(self.config.openclaw, "min_trigger_interval", 300)
             since_addressed = now - self.drives["system"].last_addressed
             if since_addressed > cooldown and self.drives["system"].pressure < 1.0:
                 self.drives["system"].spike(0.5, self.config.drives.max_pressure)
-                logger.debug(f"System alert spike: {[a.get('type') for a in system_alerts]}")
+                logger.debug(
+                    f"System alert spike: {[a.get('type') for a in system_alerts]}"
+                )
             else:
-                logger.debug(f"System alert suppressed (addressed {since_addressed:.0f}s ago, pressure={self.drives['system'].pressure:.2f})")
+                logger.debug(
+                    f"System alert suppressed (addressed {since_addressed:.0f}s ago, pressure={self.drives['system'].pressure:.2f})"
+                )
 
     def _read_cached_json(self, path: Path) -> tuple[Optional[dict], bool]:
         """Read a JSON file with mtime caching. Returns (data, changed) tuple.
@@ -177,17 +185,29 @@ class DriveEngine:
         data, changed = self._read_cached_json(workspace.resolve_path("hypotheses"))
         if data and changed:
             items = data if isinstance(data, list) else data.get("hypotheses", [])
-            untested = [h for h in items if isinstance(h, dict) and not h.get("outcome")]
+            untested = [
+                h for h in items if isinstance(h, dict) and not h.get("outcome")
+            ]
             if untested and "unfinished" in self.drives:
                 boost = min(0.1, len(untested) * 0.02)
                 self.drives["unfinished"].spike(boost, self.config.drives.max_pressure)
-                logger.debug(f"Hypotheses changed: {len(untested)} untested, spiked unfinished +{boost:.3f}")
+                logger.debug(
+                    f"Hypotheses changed: {len(untested)} untested, spiked unfinished +{boost:.3f}"
+                )
 
         # Emotions — spike only when emotional state file changes
         data, changed = self._read_cached_json(workspace.resolve_path("emotions"))
-        if data and changed and isinstance(data, dict) and data.get("intensity", 0) > 0.7 and "emotions" in self.drives:
+        if (
+            data
+            and changed
+            and isinstance(data, dict)
+            and data.get("intensity", 0) > 0.7
+            and "emotions" in self.drives
+        ):
             self.drives["emotions"].spike(0.15, self.config.drives.max_pressure)
-            logger.debug(f"Emotional state changed: intensity={data.get('intensity')}, spiked emotions +0.15")
+            logger.debug(
+                f"Emotional state changed: intensity={data.get('intensity')}, spiked emotions +0.15"
+            )
 
     def on_trigger_success(self, decision):
         """Called after a successful agent turn. Decay all drives proportionally."""
@@ -244,12 +264,11 @@ class DriveEngine:
                     weight=data.get("weight", 0.5),
                     last_addressed=data.get("last_addressed", 0.0),
                 )
-                logger.info(f"Restored runtime drive: {name} (weight={data.get('weight', 0.5)})")
+                logger.info(
+                    f"Restored runtime drive: {name} (weight={data.get('weight', 0.5)})"
+                )
         logger.info(f"Restored {len(saved)} drive states")
 
     def save_state(self) -> dict:
         """Serialize drive state for persistence."""
-        return {
-            name: drive.to_dict()
-            for name, drive in self.drives.items()
-        }
+        return {name: drive.to_dict() for name, drive in self.drives.items()}

@@ -44,7 +44,9 @@ class HealthServer:
         site = web.TCPSite(self._runner, "127.0.0.1", self.port)
         try:
             await site.start()
-            logger.info(f"Health endpoint listening on http://127.0.0.1:{self.port}/health")
+            logger.info(
+                f"Health endpoint listening on http://127.0.0.1:{self.port}/health"
+            )
         except OSError as e:
             logger.warning(f"Could not start health endpoint on port {self.port}: {e}")
 
@@ -56,12 +58,14 @@ class HealthServer:
     async def _handle_health(self, request: web.Request) -> web.Response:
         """Simple liveness check."""
         uptime = time.time() - self.daemon.start_time if self.daemon.start_time else 0
-        return web.json_response({
-            "status": "alive",
-            "uptime_seconds": round(uptime),
-            "turn_count": self.daemon.turn_count,
-            "version": __version__,
-        })
+        return web.json_response(
+            {
+                "status": "alive",
+                "uptime_seconds": round(uptime),
+                "turn_count": self.daemon.turn_count,
+                "version": __version__,
+            }
+        )
 
     async def _handle_status(self, request: web.Request) -> web.Response:
         """Detailed status — drives, sensors, trigger history."""
@@ -83,32 +87,43 @@ class HealthServer:
         # Rate limit status
         now = time.time()
         one_hour_ago = now - 3600
-        recent_turns = len([t for t in self.daemon._turn_timestamps if t > one_hour_ago])
+        recent_turns = len(
+            [t for t in self.daemon._turn_timestamps if t > one_hour_ago]
+        )
 
         # Evaluator info
         evaluator_info = {"mode": self.daemon.config.evaluator.mode}
         if self.daemon.config.evaluator.mode == "model":
             evaluator_info["model"] = self.daemon.config.evaluator.model.model
 
-        return web.json_response({
-            "status": "alive",
-            "uptime_seconds": round(uptime),
-            "turn_count": self.daemon.turn_count,
-            "drives": drives,
-            "trigger_threshold": self.daemon.config.drives.trigger_threshold,
-            "max_pressure": self.daemon.config.drives.max_pressure,
-            "triggers": trigger_stats,
-            "rate_limit": {
-                "turns_last_hour": recent_turns,
-                "max_per_hour": self.daemon.config.openclaw.max_turns_per_hour,
-                "cooldown_remaining": max(0, round(
-                    self.daemon.config.openclaw.min_trigger_interval
-                    - (now - self.daemon.last_trigger_time)
-                )) if self.daemon.last_trigger_time else 0,
-            },
-            "evaluator": evaluator_info,
-            "version": __version__,
-        })
+        return web.json_response(
+            {
+                "status": "alive",
+                "uptime_seconds": round(uptime),
+                "turn_count": self.daemon.turn_count,
+                "drives": drives,
+                "trigger_threshold": self.daemon.config.drives.trigger_threshold,
+                "max_pressure": self.daemon.config.drives.max_pressure,
+                "triggers": trigger_stats,
+                "rate_limit": {
+                    "turns_last_hour": recent_turns,
+                    "max_per_hour": self.daemon.config.openclaw.max_turns_per_hour,
+                    "cooldown_remaining": (
+                        max(
+                            0,
+                            round(
+                                self.daemon.config.openclaw.min_trigger_interval
+                                - (now - self.daemon.last_trigger_time)
+                            ),
+                        )
+                        if self.daemon.last_trigger_time
+                        else 0
+                    ),
+                },
+                "evaluator": evaluator_info,
+                "version": __version__,
+            }
+        )
 
     async def _handle_evolution(self, request: web.Request) -> web.Response:
         """Current evolution state — drives, thresholds, mutation history."""
@@ -119,7 +134,7 @@ class HealthServer:
 
     async def _handle_feedback(self, request: web.Request) -> web.Response:
         """Accept turn feedback from the agent.
-        
+
         POST /feedback
         {
             "drives_addressed": ["goals", "curiosity"],  // which drives were worked on
@@ -139,6 +154,7 @@ class HealthServer:
         decay_overrides = data.get("decay_overrides", {})
 
         import time
+
         now = time.time()
         results = {}
 
@@ -151,9 +167,13 @@ class HealthServer:
                 if drive_name in decay_overrides:
                     decay_amount = float(decay_overrides[drive_name])
                 elif outcome == "success":
-                    decay_amount = min(drive.pressure, drive.pressure * 0.7)  # 70% decay
+                    decay_amount = min(
+                        drive.pressure, drive.pressure * 0.7
+                    )  # 70% decay
                 elif outcome == "partial":
-                    decay_amount = min(drive.pressure, drive.pressure * 0.4)  # 40% decay
+                    decay_amount = min(
+                        drive.pressure, drive.pressure * 0.4
+                    )  # 40% decay
                 else:  # blocked
                     decay_amount = 0.0  # don't decay if blocked
 
@@ -174,12 +194,15 @@ class HealthServer:
             try:
                 path = self.daemon.daily_sync._get_file()
                 self.daemon._mark_self_write(str(path))
-                now_str = __import__('datetime').datetime.now().strftime("%H:%M")
+                now_str = __import__("datetime").datetime.now().strftime("%H:%M")
                 import fcntl
+
                 with open(path, "a") as f:
                     fcntl.flock(f, fcntl.LOCK_EX)
                     try:
-                        f.write(f"- {now_str} 📨 Feedback: {outcome} — {summary[:100]}\n")
+                        f.write(
+                            f"- {now_str} 📨 Feedback: {outcome} — {summary[:100]}\n"
+                        )
                     finally:
                         fcntl.flock(f, fcntl.LOCK_UN)
             except OSError:
@@ -189,10 +212,12 @@ class HealthServer:
             f"Feedback received: {outcome} — addressed {drives_addressed} — {summary[:60]}"
         )
 
-        return web.json_response({
-            "status": "ok",
-            "drives_updated": results,
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "drives_updated": results,
+            }
+        )
 
     async def _handle_mutations(self, request: web.Request) -> web.Response:
         """Recent mutation audit log."""

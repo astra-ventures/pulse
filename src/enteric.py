@@ -19,17 +19,17 @@ MAX_PATTERNS = 200
 
 @dataclass
 class Intuition:
-    direction: str    # toward, away, neutral
-    confidence: float # 0.0-1.0
-    whisper: str      # brief text of the feeling
+    direction: str  # toward, away, neutral
+    confidence: float  # 0.0-1.0
+    whisper: str  # brief text of the feeling
 
 
 @dataclass
 class Pattern:
-    context_keys: list      # key features of the context
-    outcome: str            # positive, negative, neutral
-    direction: str          # toward, away, neutral
-    confidence: float       # how reliable this pattern has been
+    context_keys: list  # key features of the context
+    outcome: str  # positive, negative, neutral
+    direction: str  # toward, away, neutral
+    confidence: float  # how reliable this pattern has been
     ts: int = 0
 
     def __post_init__(self):
@@ -38,6 +38,7 @@ class Pattern:
 
 
 # ── State persistence ───────────────────────────────────────────────────
+
 
 def _load_state() -> dict:
     _DEFAULT_STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -48,9 +49,11 @@ def _load_state() -> dict:
             pass
     return {
         "pattern_library": [],
-        "accuracy_stats": {"toward": {"correct": 0, "total": 0},
-                           "away": {"correct": 0, "total": 0},
-                           "neutral": {"correct": 0, "total": 0}},
+        "accuracy_stats": {
+            "toward": {"correct": 0, "total": 0},
+            "away": {"correct": 0, "total": 0},
+            "neutral": {"correct": 0, "total": 0},
+        },
         "override_log": [],
         "training_history": [],
     }
@@ -93,6 +96,7 @@ def _similarity(keys_a: list[str], keys_b: list[str]) -> float:
 
 # ── Mood bias (reads ENDOCRINE state if available) ──────────────────────
 
+
 def _get_mood_bias() -> tuple[float, float]:
     """Returns (toward_bias, away_bias) from endocrine state.
     High cortisol → away bias. High dopamine → toward bias."""
@@ -113,6 +117,7 @@ def _get_mood_bias() -> tuple[float, float]:
 
 # ── Core functions ──────────────────────────────────────────────────────
 
+
 def gut_check(context: dict) -> Intuition:
     """Fast pattern matching — returns toward/away/neutral with confidence."""
     state = _load_state()
@@ -120,7 +125,11 @@ def gut_check(context: dict) -> Intuition:
     ctx_keys = _context_keys(context)
 
     if not patterns:
-        return Intuition(direction="neutral", confidence=0.1, whisper="no patterns yet — too early to tell")
+        return Intuition(
+            direction="neutral",
+            confidence=0.1,
+            whisper="no patterns yet — too early to tell",
+        )
 
     # Find top-3 most similar patterns
     scored = []
@@ -132,7 +141,9 @@ def gut_check(context: dict) -> Intuition:
     top = scored[:3]
 
     if not top:
-        return Intuition(direction="neutral", confidence=0.1, whisper="nothing similar in memory")
+        return Intuition(
+            direction="neutral", confidence=0.1, whisper="nothing similar in memory"
+        )
 
     # Weighted vote
     votes = {"toward": 0.0, "away": 0.0, "neutral": 0.0}
@@ -149,7 +160,9 @@ def gut_check(context: dict) -> Intuition:
 
     # Pick winner
     direction = max(votes, key=votes.get)
-    confidence = votes[direction] / max(total_weight + abs(toward_bias) + abs(away_bias), 0.01)
+    confidence = votes[direction] / max(
+        total_weight + abs(toward_bias) + abs(away_bias), 0.01
+    )
     confidence = min(1.0, max(0.0, confidence))
 
     # Generate whisper from best matching pattern
@@ -157,16 +170,24 @@ def gut_check(context: dict) -> Intuition:
     outcome = best_pattern.get("outcome", "unknown")
     whisper = f"this feels like something that went {outcome} before"
 
-    result = Intuition(direction=direction, confidence=round(confidence, 2), whisper=whisper)
+    result = Intuition(
+        direction=direction, confidence=round(confidence, 2), whisper=whisper
+    )
 
     # Broadcast strong intuitions
     if confidence > 0.7:
-        thalamus.append({
-            "source": "enteric",
-            "type": "intuition",
-            "salience": confidence,
-            "data": {"direction": direction, "confidence": confidence, "whisper": whisper},
-        })
+        thalamus.append(
+            {
+                "source": "enteric",
+                "type": "intuition",
+                "salience": confidence,
+                "data": {
+                    "direction": direction,
+                    "confidence": confidence,
+                    "whisper": whisper,
+                },
+            }
+        )
 
     return result
 
@@ -177,7 +198,11 @@ def train(outcome: str, original_context: dict, gut_was: str):
     ctx_keys = _context_keys(original_context)
 
     # Determine if gut was right
-    outcome_direction_map = {"positive": "toward", "negative": "away", "neutral": "neutral"}
+    outcome_direction_map = {
+        "positive": "toward",
+        "negative": "away",
+        "neutral": "neutral",
+    }
     correct_direction = outcome_direction_map.get(outcome, "neutral")
     was_correct = gut_was == correct_direction
 
@@ -198,26 +223,35 @@ def train(outcome: str, original_context: dict, gut_was: str):
     state["pattern_library"].append(new_pattern)
 
     # Log training
-    state["training_history"].append({
-        "outcome": outcome,
-        "gut_was": gut_was,
-        "correct": was_correct,
-        "ts": int(time.time() * 1000),
-    })
+    state["training_history"].append(
+        {
+            "outcome": outcome,
+            "gut_was": gut_was,
+            "correct": was_correct,
+            "ts": int(time.time() * 1000),
+        }
+    )
 
     _save_state(state)
 
 
-def log_override(context: dict, gut_direction: str, cortex_decision: str, outcome: Optional[str] = None):
+def log_override(
+    context: dict,
+    gut_direction: str,
+    cortex_decision: str,
+    outcome: Optional[str] = None,
+):
     """Log when CORTEX overrides a gut feeling."""
     state = _load_state()
-    state["override_log"].append({
-        "context_keys": _context_keys(context),
-        "gut_direction": gut_direction,
-        "cortex_decision": cortex_decision,
-        "outcome": outcome,
-        "ts": int(time.time() * 1000),
-    })
+    state["override_log"].append(
+        {
+            "context_keys": _context_keys(context),
+            "gut_direction": gut_direction,
+            "cortex_decision": cortex_decision,
+            "outcome": outcome,
+            "ts": int(time.time() * 1000),
+        }
+    )
     _save_state(state)
 
 

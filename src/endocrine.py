@@ -20,8 +20,8 @@ DECAY_RATES = {
     "dopamine": -0.08,
     "serotonin": -0.02,
     "oxytocin": -0.04,
-    "adrenaline": -0.28,   # 15-min half-life ≈ fast decay per hour
-    "melatonin": -0.01,    # very slow decay; accumulates during wake, decays in DEEP_NIGHT
+    "adrenaline": -0.28,  # 15-min half-life ≈ fast decay per hour
+    "melatonin": -0.01,  # very slow decay; accumulates during wake, decays in DEEP_NIGHT
 }
 
 # Event → hormone changes
@@ -108,51 +108,57 @@ def update_hormone(name: str, delta: float, reason: str = "") -> dict:
     state = _load_state()
     if name not in state["hormones"]:
         raise ValueError(f"Unknown hormone: {name}")
-    
+
     old = state["hormones"][name]
     state["hormones"][name] = _clamp(old + delta)
     state["last_update"] = time.time()
-    
-    state["event_log"].append({
-        "ts": time.time(),
-        "hormone": name,
-        "delta": delta,
-        "reason": reason,
-        "old": old,
-        "new": state["hormones"][name],
-    })
+
+    state["event_log"].append(
+        {
+            "ts": time.time(),
+            "hormone": name,
+            "delta": delta,
+            "reason": reason,
+            "old": old,
+            "new": state["hormones"][name],
+        }
+    )
     # Keep last 200 events
     state["event_log"] = state["event_log"][-200:]
-    
+
     _save_state(state)
-    
+
     # Broadcast significant shifts
     if abs(state["hormones"][name] - old) >= 0.2:
         _broadcast_mood(state)
-    
+
     return state["hormones"].copy()
 
 
 def apply_event(event_type: str) -> dict:
     """Apply a known event's hormone changes. Returns updated hormones."""
     if event_type not in EVENT_MAP:
-        raise ValueError(f"Unknown event type: {event_type}. Known: {list(EVENT_MAP.keys())}")
-    
+        raise ValueError(
+            f"Unknown event type: {event_type}. Known: {list(EVENT_MAP.keys())}"
+        )
+
     state = _load_state()
     changes = EVENT_MAP[event_type]
-    
+
     for hormone, delta in changes.items():
         old = state["hormones"][hormone]
         state["hormones"][hormone] = _clamp(old + delta)
-    
+
     state["last_update"] = time.time()
-    state["event_log"].append({
-        "ts": time.time(),
-        "event": event_type,
-        "changes": changes,
-    })
+    state["event_log"].append(
+        {
+            "ts": time.time(),
+            "event": event_type,
+            "changes": changes,
+        }
+    )
     state["event_log"] = state["event_log"][-200:]
-    
+
     _save_state(state)
     _broadcast_mood(state)
     return state["hormones"].copy()
@@ -161,21 +167,23 @@ def apply_event(event_type: str) -> dict:
 def tick(hours: float = 1.0) -> dict:
     """Apply natural decay for elapsed time. Returns updated hormones."""
     state = _load_state()
-    
+
     for hormone, rate in DECAY_RATES.items():
         decay = rate * hours
         state["hormones"][hormone] = _clamp(state["hormones"][hormone] + decay)
-    
+
     state["last_update"] = time.time()
-    
+
     # Snapshot for mood history (keep last 48)
-    state["mood_history"].append({
-        "ts": time.time(),
-        "hormones": state["hormones"].copy(),
-        "label": _derive_label(state["hormones"]),
-    })
+    state["mood_history"].append(
+        {
+            "ts": time.time(),
+            "hormones": state["hormones"].copy(),
+            "label": _derive_label(state["hormones"]),
+        }
+    )
     state["mood_history"] = state["mood_history"][-48:]
-    
+
     _save_state(state)
     return state["hormones"].copy()
 
@@ -204,7 +212,7 @@ def _derive_label(h: dict) -> str:
     oxytocin = h.get("oxytocin", 0)
     adrenaline = h.get("adrenaline", 0)
     melatonin = h.get("melatonin", 0)
-    
+
     # Check combinations in priority order
     # Adrenaline overrides most states
     if adrenaline >= HIGH:
@@ -235,41 +243,49 @@ def get_mood_influence() -> dict:
     """Returns modifiers that other systems should apply based on current mood."""
     state = _load_state()
     h = state["hormones"]
-    
+
     influence = {}
-    
+
     # High cortisol → risk aversion
     if h["cortisol"] >= HIGH:
         influence["risk_aversion"] = 0.3
     if h["cortisol"] >= 0.7:
         influence["risk_aversion"] = 0.5
-    
+
     # Low serotonin → reduced creativity
     if h["serotonin"] < LOW:
         influence["creativity"] = -0.2
-    
+
     # High dopamine → increased initiative
     if h["dopamine"] >= HIGH:
         influence["initiative"] = 0.3
-    
+
     # High oxytocin → warmth in communication
     if h["oxytocin"] >= HIGH:
         influence["warmth"] = 0.3
-    
+
     # Adrenaline → overrides CIRCADIAN, suppresses CEREBELLUM
     if h.get("adrenaline", 0) >= HIGH:
         influence["override_circadian"] = True
         influence["suppress_cerebellum"] = True
         influence["urgency"] = 0.5
-    
+
     # High melatonin → REM more likely
     if h.get("melatonin", 0) >= 0.6:
         influence["rem_boost"] = 0.3
-    
+
     # Low everything → withdrawal
-    if all(v < LOW for v in [h.get("cortisol", 0), h.get("dopamine", 0), h.get("serotonin", 0), h.get("oxytocin", 0)]):
+    if all(
+        v < LOW
+        for v in [
+            h.get("cortisol", 0),
+            h.get("dopamine", 0),
+            h.get("serotonin", 0),
+            h.get("oxytocin", 0),
+        ]
+    ):
         influence["withdrawal"] = 0.4
-    
+
     return influence
 
 
@@ -286,12 +302,14 @@ def emit_need_signals() -> dict:
     # Low oxytocin → need connection
     if h.get("oxytocin", 0.2) < 0.1:
         from pulse.src import hypothalamus
+
         hypothalamus.record_need_signal("connection", "endocrine")
         signals["connection"] = h["oxytocin"]
 
     # High cortisol → need to reduce stress
     if h.get("cortisol", 0.2) > 0.7:
         from pulse.src import hypothalamus
+
         hypothalamus.record_need_signal("reduce_stress", "endocrine")
         signals["reduce_stress"] = h["cortisol"]
 
@@ -299,8 +317,11 @@ def emit_need_signals() -> dict:
     history = state.get("mood_history", [])
     if len(history) >= 20:
         last_20 = history[-20:]
-        if all(entry.get("hormones", {}).get("dopamine", 0) >= 0.99 for entry in last_20):
+        if all(
+            entry.get("hormones", {}).get("dopamine", 0) >= 0.99 for entry in last_20
+        ):
             from pulse.src import hypothalamus
+
             hypothalamus.record_need_signal("new_challenge", "endocrine")
             signals["new_challenge"] = True
 
@@ -310,16 +331,18 @@ def emit_need_signals() -> dict:
 def _broadcast_mood(state: dict):
     """Broadcast current mood to THALAMUS."""
     h = state["hormones"]
-    thalamus.append({
-        "source": "endocrine",
-        "type": "mood_update",
-        "salience": 0.4,
-        "data": {
-            "hormones": h,
-            "label": _derive_label(h),
-            "influence": get_mood_influence(),
-        },
-    })
+    thalamus.append(
+        {
+            "source": "endocrine",
+            "type": "mood_update",
+            "salience": 0.4,
+            "data": {
+                "hormones": h,
+                "label": _derive_label(h),
+                "influence": get_mood_influence(),
+            },
+        }
+    )
 
 
 def update_from_biosensors(cache=None) -> dict:
@@ -333,6 +356,7 @@ def update_from_biosensors(cache=None) -> dict:
     try:
         if cache is None:
             from pulse.src.biosensor_cache import BiosensorCache
+
             cache = BiosensorCache()
 
         data = cache.read()
@@ -388,7 +412,9 @@ def update_from_biosensors(cache=None) -> dict:
             if minutes >= 30:
                 delta_s = 0.15
                 levels["serotonin"] = _clamp(levels.get("serotonin", 0.5) + delta_s)
-                deltas["serotonin"] = deltas.get("serotonin", "") + f" deep_sleep:+{delta_s}"
+                deltas["serotonin"] = (
+                    deltas.get("serotonin", "") + f" deep_sleep:+{delta_s}"
+                )
 
         if deltas:
             state["hormones"] = levels

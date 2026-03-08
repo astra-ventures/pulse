@@ -29,27 +29,27 @@ from typing import List, Optional
 
 logger = logging.getLogger("pulse.memory_consolidation")
 
-_DEFAULT_STATE_DIR  = Path.home() / ".pulse" / "state"
-_DEFAULT_CHRONICLE  = _DEFAULT_STATE_DIR / "chronicle.jsonl"
+_DEFAULT_STATE_DIR = Path.home() / ".pulse" / "state"
+_DEFAULT_CHRONICLE = _DEFAULT_STATE_DIR / "chronicle.jsonl"
 _DEFAULT_ENGRAM_DIR = Path.home() / ".pulse" / "hippocampus"
 _DEFAULT_ENGRAM_FILE = _DEFAULT_ENGRAM_DIR / "learnings.jsonl"
-_CONSOLIDATION_LOG  = _DEFAULT_STATE_DIR / "consolidation-log.jsonl"
+_CONSOLIDATION_LOG = _DEFAULT_STATE_DIR / "consolidation-log.jsonl"
 
 # ── Event type importance weights ──────────────────────────────────────────────
 
 EVENT_TYPE_WEIGHTS = {
-    "trigger_complete":   1.2,
-    "goal_achieved":      1.5,
-    "error":              1.3,
-    "milestone":          1.4,
-    "mood_update":        0.6,
-    "drive_spike":        0.8,
-    "biosensor_update":   0.7,
-    "dream_complete":     1.0,
-    "feedback":           1.1,
-    "trade_executed":     1.4,
-    "system_health":      0.9,
-    "default":            1.0,
+    "trigger_complete": 1.2,
+    "goal_achieved": 1.5,
+    "error": 1.3,
+    "milestone": 1.4,
+    "mood_update": 0.6,
+    "drive_spike": 0.8,
+    "biosensor_update": 0.7,
+    "dream_complete": 1.0,
+    "feedback": 1.1,
+    "trade_executed": 1.4,
+    "system_health": 0.9,
+    "default": 1.0,
 }
 
 # Recency decay: events older than this score full weight; beyond = reduced
@@ -61,12 +61,13 @@ PROMOTION_THRESHOLD = 0.6
 
 # Decay rate: ENGRAMs older than this get importance reduced
 ENGRAM_DECAY_AGE_DAYS = 14
-ENGRAM_DECAY_FACTOR   = 0.8  # multiply importance by this after decay age
+ENGRAM_DECAY_FACTOR = 0.8  # multiply importance by this after decay age
 
 
 @dataclass
 class ConsolidatedMemory:
     """A CHRONICLE event that has been promoted to long-term ENGRAM."""
+
     source_event_id: str
     content: str
     importance: float
@@ -78,9 +79,9 @@ class ConsolidatedMemory:
 
     def __post_init__(self):
         if not self.content_hash:
-            self.content_hash = hashlib.sha256(
-                self.content[:100].encode()
-            ).hexdigest()[:16]
+            self.content_hash = hashlib.sha256(self.content[:100].encode()).hexdigest()[
+                :16
+            ]
 
     def to_engram_dict(self) -> dict:
         return {
@@ -96,14 +97,15 @@ class ConsolidatedMemory:
 @dataclass
 class ConsolidationReport:
     """Summary of one consolidation run — stored in dream log."""
-    events_read:      int = 0
-    events_scored:    int = 0
-    promoted:         int = 0
-    already_known:    int = 0
-    decayed:          int = 0
-    top_themes:       List[str] = field(default_factory=list)
-    dream_insight:    str = ""
-    run_at:           float = field(default_factory=time.time)
+
+    events_read: int = 0
+    events_scored: int = 0
+    promoted: int = 0
+    already_known: int = 0
+    decayed: int = 0
+    top_themes: List[str] = field(default_factory=list)
+    dream_insight: str = ""
+    run_at: float = field(default_factory=time.time)
 
     def to_dict(self) -> dict:
         return {
@@ -126,6 +128,7 @@ class ConsolidationReport:
 
 
 # ── Core pipeline ─────────────────────────────────────────────────────────────
+
 
 def read_chronicle_recent(
     n: int = 50,
@@ -170,7 +173,9 @@ def score_event(event: dict, now: Optional[float] = None) -> float:
         recency = 1.0
     else:
         decay_progress = min(1.0, (age_hours - FULL_WEIGHT_HOURS) / 24)
-        recency = max(MIN_RECENCY_SCORE, 1.0 - (1.0 - MIN_RECENCY_SCORE) * decay_progress)
+        recency = max(
+            MIN_RECENCY_SCORE, 1.0 - (1.0 - MIN_RECENCY_SCORE) * decay_progress
+        )
 
     return round(salience * type_weight * recency, 4)
 
@@ -179,7 +184,15 @@ def _extract_content(event: dict) -> str:
     """Extract a human-readable content string from a CHRONICLE event."""
     data = event.get("data", {})
     # Try common fields in priority order; "reason" covers trigger events
-    for field_name in ("summary", "message", "description", "text", "content", "label", "reason"):
+    for field_name in (
+        "summary",
+        "message",
+        "description",
+        "text",
+        "content",
+        "label",
+        "reason",
+    ):
         val = data.get(field_name)
         if val and isinstance(val, str) and len(val.strip()) > 5:
             return val.strip()[:500]
@@ -291,9 +304,7 @@ def _generate_insight(memories: List[ConsolidatedMemory], events_read: int) -> s
     themes = _derive_themes(memories)
     top = memories[0] if memories else None
     theme_str = ", ".join(themes[:3]) if themes else "general activity"
-    insight = (
-        f"{len(memories)} memories consolidated around: {theme_str}. "
-    )
+    insight = f"{len(memories)} memories consolidated around: {theme_str}. "
     if top:
         insight += f'Most significant: "{top.content[:120].rstrip()}..."'
     return insight
@@ -331,10 +342,7 @@ def consolidate(
 
     # 2. Score events
     t = now or time.time()
-    scored = [
-        (event, score_event(event, now=t))
-        for event in events
-    ]
+    scored = [(event, score_event(event, now=t)) for event in events]
     above_threshold = [(e, s) for e, s in scored if s >= importance_threshold]
     report.events_scored = len(above_threshold)
 
