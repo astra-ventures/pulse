@@ -17,6 +17,7 @@ Usage:
     pulse restart             Restart the daemon
     pulse logs [n]            Show recent log lines
     pulse health              Raw health check
+    pulse doctor              Diagnostic checks for common setup issues
 """
 
 import argparse
@@ -61,6 +62,25 @@ def _get(endpoint: str) -> dict:
     url = f"{HEALTH_URL.format(port=_port())}{endpoint}"
     try:
         with urllib.request.urlopen(url, timeout=3) as resp:
+            return json.loads(resp.read())
+    except Exception:
+        return None
+
+
+def _post(endpoint: str, payload: dict) -> dict:
+    """POST JSON to a health endpoint and parse JSON response."""
+    import urllib.request
+
+    url = f"{HEALTH_URL.format(port=_port())}{endpoint}"
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
             return json.loads(resp.read())
     except Exception:
         return None
@@ -1207,6 +1227,7 @@ def cmd_help(args):
         ("pulse triggers [-n 20]", "Recent trigger history with success/failure and reasons"),
         ("pulse mutations [-n 20]", "Mutation audit log — every self-modification recorded"),
         ("pulse health", "Raw JSON from /health, /status, and /evolution endpoints"),
+        ("pulse doctor", "Read-only diagnostics for common setup/runtime issues"),
         ("pulse logs [-n 30]", "Colored log viewer (errors red, triggers magenta, mutations cyan)"),
         ("pulse config", "Show current configuration from pulse.yaml"),
         ("", ""),
@@ -1270,6 +1291,168 @@ def cmd_health(args):
             console.print(f"\n[red]{endpoint}: unreachable[/]")
 
 
+
+def cmd_doctor(args):
+    """Run diagnostic checks for common setup/runtime issues."""
+    import socket
+    import shutil
+    import platform
+
+    # We keep this command safe: read-only checks, no network except localhost.
+    checks = []
+
+    def add(name: str, ok: bool, detail: str = ""):
+        checks.append((name, ok, detail))
+
+    # ── Runtime / Python ─────────────────────────────────────────────────────
+    py = sys.version_info
+    add("Python", py >= (3, 9), f"{py.major}.{py.minor}.{py.micro}")
+    add("Platform", True, f"{platform.system()} {platform.release()}")
+
+    # ── pulse binary visibility ─────────────────────────────────────────────
+    pulse_bin = shutil.which("pulse")
+    add("pulse in PATH", bool(pulse_bin), pulse_bin or "not found")
+
+    # ── Config detection / parse ────────────────────────────────────────────
+    cfg_candidates = [
+        Path("pulse.yaml"),
+        Path("~/.pulse/pulse.yaml").expanduser(),
+        Path(__file__).parent.parent / "config" / "pulse.yaml",
+    ]
+    cfg_path = next((p for p in cfg_candidates if p.exists()), None)
+
+    if not cfg_path:
+        add("Config", False, "pulse.yaml not found (run: pulse init)")
+    else:
+        try:
+            import yaml
+            yaml.safe_load(cfg_path.read_text()) or {}
+            add("Config", True, str(cfg_path))
+        except Exception as e:
+            add("Config", False, f"Failed to parse {cfg_path}: {e}")
+
+    # ── Token presence ──────────────────────────────────────────────────────
+    env_file = Path("~/.pulse/.env").expanduser()
+    token_env = os.environ.get("PULSE_HOOK_TOKEN") or os.environ.get("OPENCLAW_HOOKS_TOKEN")
+    token_ok = bool(token_env) or env_file.exists()
+    token_detail = "env" if token_env else ("~/.pulse/.env" if env_file.exists() else "missing")
+    add("Webhook token", token_ok, token_detail)
+
+    # ── State/log dirs ──────────────────────────────────────────────────────
+    state_dir = _DEFAULT_STATE_DIR
+    logs_dir = LOG_FILE.parent
+    add("State dir", state_dir.exists(), str(state_dir))
+    add("State dir writable", state_dir.exists() and os.access(state_dir, os.W_OK), "")
+    add("Logs dir", logs_dir.exists(), str(logs_dir))
+    add("Logs dir writable", logs_dir.exists() and os.access(logs_dir, os.W_OK), "")
+
+    # ── LaunchAgent ─────────────────────────────────────────────────────────
+    add("LaunchAgent", PLIST.exists(), str(PLIST) if PLIST.exists() else "not installed")
+
+    # ── Daemon + localhost health ───────────────────────────────────────────
+    running, pid = _is_running()
+    add("Daemon", running, f"pid {pid}" if pid else "stopped")
+
+    # Port reachability (localhost only)
+    port = _port()
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=1):
+            port_open = True
+    except Exception:
+        port_open = False
+
+    if running:
+        add("Health port", port_open, f"127.0.0.1:{port}")
+        health = _get("/health")
+        add("/health", bool(health), "ok" if health else "unreachable")
+        status = _get("/status")
+        add("/status", bool(status), "ok" if status else "unreachable")
+    else:
+        # If not running, port open would be surprising (another process?)
+        add("Health port", not port_open, f"127.0.0.1:{port}" + (" (in use?)" if port_open else ""))
+
+    # ── Print results ───────────────────────────────────────────────────────
+    ok_count = sum(1 for _, ok, _ in checks if ok)
+    total = len(checks)
+    title = "🩺 pulse doctor"
+    border = "green" if ok_count == total else "yellow" if ok_count >= total - 2 else "red"
+
+    console.print()
+    console.print(Panel(
+        f"Checks passed: [bold]{ok_count}/{total}[/]\n"
+        "This command performs read-only diagnostics (localhost only).",
+        title=title,
+        border_style=border,
+    ))
+
+    table = Table(box=box.SIMPLE_HEAVY, padding=(0, 1), show_edge=False)
+    table.add_column("Check", style="bold")
+    table.add_column("Status")
+    table.add_column("Detail", overflow="fold")
+
+    for name, ok, detail in checks:
+        status = "[green]✓[/]" if ok else "[red]✗[/]"
+        table.add_row(name, status, detail or "—")
+
+    console.print(table)
+    console.print()
+
+    if not cfg_path:
+        console.print("[dim]Tip: run [bold]pulse init[/] to generate config + LaunchAgent.[/]")
+        console.print()
+
+
+def cmd_feedback(args):
+    """Send turn feedback to Pulse to decay drive pressure."""
+    running, _ = _is_running()
+    if not running:
+        console.print("[red]Pulse is not running[/] — start it first: pulse start")
+        return
+
+    drives = args.drives or []
+    if not drives and args.outcome != "cascade_stop":
+        console.print("[red]Provide at least one drive name[/] (or use --outcome cascade_stop)")
+        return
+
+    payload = {
+        "drives_addressed": drives,
+        "outcome": args.outcome,
+        "summary": args.summary or "",
+    }
+
+    if args.decay_overrides:
+        try:
+            payload["decay_overrides"] = json.loads(args.decay_overrides)
+        except json.JSONDecodeError as e:
+            console.print(f"[red]Invalid JSON for --decay-overrides:[/] {e}")
+            return
+
+    data = _post("/feedback", payload)
+    if not data or data.get("status") != "ok":
+        console.print("[red]Failed to send feedback[/]")
+        return
+
+    updated = data.get("drives_updated", {}) or {}
+    console.print("\n📨 [bold magenta]Feedback accepted[/]\n")
+    if not updated:
+        console.print("  [dim]No drives updated (already at 0?)[/]")
+        return
+
+    table = Table(box=box.SIMPLE_HEAVY, padding=(0, 1))
+    table.add_column("Drive", style="bold")
+    table.add_column("Before", justify="right")
+    table.add_column("After", justify="right")
+    table.add_column("Decayed", justify="right")
+
+    for name, r in sorted(updated.items()):
+        table.add_row(
+            name,
+            f"{r.get('before', 0):.2f}",
+            f"{r.get('after', 0):.2f}",
+            f"{r.get('decayed', 0):.2f}",
+        )
+
+    console.print(table)
 # ─── Main ────────────────────────────────────────────────────────
 
 def main():
@@ -1313,6 +1496,25 @@ def main():
 
     # config
     sub.add_parser("config", help="Show current configuration")
+
+    # doctor
+    sub.add_parser("doctor", help="Run diagnostic checks for common setup issues")
+
+    # feedback
+    p = sub.add_parser("feedback", help="Send feedback to Pulse (decays drive pressure)")
+    p.add_argument("--drives", "-d", nargs="*", default=[], help="Drive(s) addressed")
+    p.add_argument(
+        "--outcome",
+        choices=["success", "failure", "cascade_stop"],
+        default="success",
+        help="Outcome category",
+    )
+    p.add_argument("--summary", "-s", default="", help="Short summary of what you did")
+    p.add_argument(
+        "--decay-overrides",
+        default="",
+        help="Optional JSON map of drive->decay amount",
+    )
 
     # start/stop/restart
     sub.add_parser("start", help="Start the daemon")
@@ -1373,6 +1575,7 @@ def main():
         "spike": cmd_spike,
         "decay": cmd_decay,
         "config": cmd_config,
+        "doctor": cmd_doctor,
         "start": cmd_start,
         "stop": cmd_stop,
         "restart": cmd_restart,
@@ -1380,6 +1583,7 @@ def main():
         "health": cmd_health,
         "genome": cmd_genome,
         "plugin": cmd_plugin,
+        "feedback": cmd_feedback,
         "superego": cmd_superego,
         "help": cmd_help,
     }
