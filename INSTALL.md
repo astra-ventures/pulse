@@ -265,7 +265,7 @@ cp config/pulse.example.yaml ~/.pulse/config/pulse.yaml
 nano ~/.pulse/config/pulse.yaml
 
 # Run
-python -m pulse
+python3 -m pulse
 ```
 
 **Run as systemd service:**
