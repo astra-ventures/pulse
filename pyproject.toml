@@ -51,7 +51,7 @@ pulse = "pulse.src.cli:main"
 pulse-daemon = "pulse.src.__main__:main"
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
