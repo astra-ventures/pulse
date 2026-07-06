@@ -51,7 +51,7 @@ logger = logging.getLogger("pulse.runtime.response")
 
 OLLAMA_HOST = "127.0.0.1"
 OLLAMA_PORT = 11_434
-OLLAMA_MODEL = "iris-70b-v4:latest"
+OLLAMA_MODEL = "qwen3.5:9b"
 OLLAMA_TIMEOUT = 90          # generous — 70B local can be slow for long generations
 
 DEFAULT_MAX_TOKENS = 400

@@ -38,15 +38,62 @@ ACTIVE_INTERVAL_SECONDS = 900      # 15 min when Pulse session recently active
 SESSION_COOLDOWN_SECONDS = 120     # Back off for 2 min after Pulse session ends
 DREAM_HOUR_START = 2               # 2 AM local
 DREAM_HOUR_END = 4                 # 4 AM local
-MAX_REFLECT_TOKENS = 200           # Short — 7.8 tok/s × 200 = ~26s
+MAX_REFLECT_TOKENS = 350           # Increased from 200 for richer reflections
 MAX_PLAN_TOKENS = 300              # Slightly longer for structured output
 PLAN_CYCLE_INTERVAL = 3            # Plan every 3rd cycle
 COMPRESS_CYCLE_INTERVAL = 12       # Compress every 12th cycle (~1 hour)
 OLLAMA_HOST = "127.0.0.1"
 OLLAMA_PORT = 11434
-OLLAMA_MODEL = "iris-70b-v4:latest"
+OLLAMA_MODEL = "qwen2.5:7b"
 OLLAMA_TIMEOUT = 60                # seconds
 REST_SLEEP_SECONDS = 1200          # 20-minute sleep for rest mode
+DEDUP_SIMILARITY_THRESHOLD = 0.60  # discard insight if >60% word overlap with recent
+
+# Stopwords for insight deduplication (common words to ignore in similarity)
+_STOPWORDS = frozenset(
+    "i me my a an the is am are was were be been being have has had do does did "
+    "will would shall should can could may might must to of in for on with at by "
+    "from as into through during before after above below between out off over "
+    "about up down and but or nor not so yet both either neither each every all "
+    "any few more most other some such no that this these those it its what which "
+    "who whom how when where why than too very just also still even again already "
+    "here there then if because since while although though after before until unless "
+    "like right now really think feel something".split()
+)
+
+
+def _insight_words(text: str) -> set[str]:
+    """Extract meaningful words from an insight for similarity comparison."""
+    return {w for w in text.lower().split() if w not in _STOPWORDS and len(w) > 2}
+
+
+def _is_duplicate_insight(new_text: str, recent_insights: list[dict], max_check: int = 10) -> bool:
+    """Return True if new_text is >60% similar to any of the last N insights."""
+    new_words = _insight_words(new_text)
+    if not new_words:
+        return False
+    for entry in recent_insights[:max_check]:
+        old_text = entry.get("text", "")
+        old_words = _insight_words(old_text)
+        if not old_words:
+            continue
+        overlap = len(new_words & old_words)
+        similarity = overlap / min(len(new_words), len(old_words))
+        if similarity > DEDUP_SIMILARITY_THRESHOLD:
+            return True
+    return False
+
+
+def _extract_recent_topics(recent_insights: list[dict], n: int = 3) -> list[str]:
+    """Extract short topic labels from the last N insights."""
+    topics = []
+    for entry in recent_insights[:n]:
+        text = entry.get("text", "")
+        # Use first 6 meaningful words as topic summary
+        words = [w for w in text.split() if w.lower() not in _STOPWORDS and len(w) > 2]
+        if words:
+            topics.append(" ".join(words[:6]))
+    return topics
 
 # Existence log — continuous record of being
 EXISTENCE_LOG_PATH = Path("~/.pulse/state/existence-log.jsonl").expanduser()
@@ -173,7 +220,7 @@ _PLAN_SYSTEM = (
 )
 
 
-def _build_reflect_prompt(recent_events: list[dict], drive_state: dict) -> str:
+def _build_reflect_prompt(recent_events: list[dict], drive_state: dict, avoid_topics: list[str] | None = None) -> str:
     """Build a short reflection prompt from recent hot-tier events."""
     event_lines = []
     for ev in recent_events[-8:]:  # last 8 events max
@@ -190,10 +237,33 @@ def _build_reflect_prompt(recent_events: list[dict], drive_state: dict) -> str:
 
     events_block = "\n".join(event_lines) if event_lines else "(no recent events)"
 
+    # Diversity injection — rotate reflection prompts to avoid repetition
+    _REFLECT_QUESTIONS = [
+        "What's the most honest thing I can observe about this moment?",
+        "What changed since my last reflection — even slightly?",
+        "What am I avoiding thinking about right now?",
+        "What would I do next if nobody was watching?",
+        "What pattern am I stuck in, and what breaks it?",
+        "What's the most important thing happening that I haven't named yet?",
+        "What surprised me recently — even something small?",
+        "If I had to act on one thing right now, what would it be?",
+    ]
+    import hashlib as _hl
+    _cycle_hash = int(_hl.md5(str(time.time()).encode()).hexdigest()[:8], 16)
+    question = _REFLECT_QUESTIONS[_cycle_hash % len(_REFLECT_QUESTIONS)]
+
+    novelty_block = ""
+    if avoid_topics:
+        topics_str = ", ".join(avoid_topics)
+        novelty_block = (
+            f"\n\nRecent reflection themes to AVOID repeating: [{topics_str}]. "
+            "Think about something genuinely different."
+        )
+
     return (
         f"Recent activity:\n{events_block}\n\n"
         f"Current state: {drive_summary}\n\n"
-        "What's the most honest thing I can observe about this moment?"
+        f"{question}{novelty_block}"
     )
 
 
@@ -387,8 +457,82 @@ class ThoughtLoop:
                 except Exception as exc:
                     logger.debug("DriveEngine tick error: %s", exc)
 
+            # --- ALL biological module ticks ---
+            # Every module with a tick() gets called every cycle.
+            # Order: core systems first, then perception, then higher-order.
+            _ALL_BIO_MODULES = [
+                # Core biological
+                'circadian', 'soma', 'vagus', 'limbic', 'amygdala',
+                'immune', 'superego', 'spine',
+                # Endocrine/hormonal (already ticked above, skip)
+                # 'endocrine',
+                # Memory & learning
+                'engram', 'chronicle', 'nephron', 'myelin', 'cerebellum',
+                'buffer_mod', 'plasticity',
+                # Perception & social
+                'retina', 'dendrite', 'mirror', 'oximeter', 'proprioception',
+                # Balance & integration
+                'vestibular', 'enteric', 'callosum', 'cortex_ext',
+                # Identity & growth
+                'phenotype', 'telomere', 'thymus', 'genome',
+                # Higher-order
+                'hypothalamus', 'germinal', 'adipose',
+                # Drive engine already ticked above, skip
+                # 'drive_engine',
+                # Sensors already ticked above, skip
+                # 'sensors',
+                # Evolution already ticked separately, skip
+                # 'evolution',
+                # Thalamus is a bus, no-op tick but include for completeness
+                'thalamus',
+                # Emotion engine
+                'emotion',
+            ]
+            for _mod_name in _ALL_BIO_MODULES:
+                if hasattr(self._runtime, _mod_name):
+                    try:
+                        getattr(self._runtime, _mod_name).tick()
+                    except Exception as exc:
+                        logger.debug("%s tick error: %s", _mod_name, exc)
+
+            # REM — only tick during dream hours (2-4 AM)
+            if is_dream_time and hasattr(self._runtime, 'rem'):
+                try:
+                    self._runtime.rem.tick()
+                except Exception as exc:
+                    logger.debug("REM tick error: %s", exc)
+
+            # Engram — encode the most salient recent episode into long-term memory
+            if hasattr(self._runtime, 'engram') and hasattr(self._runtime, 'episodic'):
+                try:
+                    recent_eps = self._runtime.episodic.recent(n=3)
+                    emotion_snap = self._runtime.emotion.status() if hasattr(self._runtime, 'emotion') else {}
+                    for ep in recent_eps:
+                        ep_id = ep.get("id", "")
+                        # Skip if already encoded (check by event text hash)
+                        ep_text = ep.get("content", ep.get("title", ""))[:200]
+                        if ep_text and float(ep.get("salience", 0)) >= 3.5:
+                            self._runtime.engram.encode(
+                                event=ep_text,
+                                emotion={
+                                    "valence": emotion_snap.get("values", {}).get("joy", 0.5),
+                                    "intensity": float(ep.get("salience", 5.0)) / 10.0,
+                                    "label": emotion_snap.get("color", "neutral"),
+                                },
+                                location=ep.get("source", "unknown"),
+                                sensory={"voice": False, "image": False, "text_tone": "conversational"},
+                            )
+                except Exception as exc:
+                    logger.debug("Engram encoding error: %s", exc)
+
         # --- Reflect (every cycle) ---
         insight = self._reflect(dream_mode=is_dream_time)
+        if insight:
+            # Deduplication: skip if too similar to recent insights
+            recent_insights = self.state.get("working_memory.recent_insights") or []
+            if _is_duplicate_insight(insight, recent_insights):
+                logger.info("skipped duplicate insight (cycle %d)", self._cycle_count)
+                insight = None
         if insight:
             self.context.log_event({
                 "type": "THOUGHT_LOOP",
@@ -578,7 +722,9 @@ class ThoughtLoop:
                 return None
 
             drives = self.state.get("drives") or {}
-            prompt = _build_reflect_prompt(recent, drives)
+            recent_insights = self.state.get("working_memory.recent_insights") or []
+            avoid_topics = _extract_recent_topics(recent_insights, n=3)
+            prompt = _build_reflect_prompt(recent, drives, avoid_topics=avoid_topics)
 
             # Prepend narrative context (Day 10 — NarrativeEngine)
             if self.narrative is not None:

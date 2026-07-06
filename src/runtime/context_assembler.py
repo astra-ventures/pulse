@@ -53,6 +53,8 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlparse
 
+from . import nervous_system_summary as _nsys
+
 if TYPE_CHECKING:
     from .state_engine import StateEngine
     from .self_model import SelfModel
@@ -278,6 +280,14 @@ class ContextAssembler:
             soma_text = self._get_soma_summary()
             if soma_text:
                 sections.append(f"[SOMA] {soma_text}")
+
+        # 8b. Nervous System summary (compact + standard + full)
+        try:
+            ns_text = _nsys.get_summary(self._state)
+            if ns_text:
+                sections.append(f"[NERVOUS SYSTEM] {ns_text}")
+        except Exception as exc:
+            logger.debug("nervous system summary failed: %s", exc)
 
         # 9. Values (full only)
         if fmt == "full":

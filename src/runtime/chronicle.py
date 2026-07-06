@@ -65,17 +65,32 @@ class Chronicle:
         self._state.set(f"{self._KEY}.last_capture_ts", entry["ts"])
         return entry
 
+    # Salience defaults by event type — hot tier doesn't always include salience
+    _TYPE_SALIENCE = {
+        "MESSAGE_RECEIVED": 0.7,
+        "MESSAGE_SENT": 0.5,
+        "THOUGHT_LOOP": 0.6,
+        "EMOTIONAL_SHIFT": 0.8,
+        "DRIVE_PEAK": 0.7,
+        "GOAL_PROGRESS": 0.9,
+        "RELATIONSHIP_UPDATE": 0.6,
+        "INSIGHT": 0.7,
+        "SYSTEM_EVENT": 0.3,
+        "PULSE_TRIGGER": 0.4,
+    }
+
     def capture_from_context(self, n: int = 20) -> int:
         """Read recent context events and record significant ones."""
         recorded = 0
         try:
             recent = self._context.get_recent_context(hours=1)
             for event in (recent or [])[-n:]:
-                salience = float(event.get("salience", 0))
+                event_type = event.get("type", "unknown")
+                salience = float(event.get("salience", self._TYPE_SALIENCE.get(event_type, 0.3)))
                 if salience >= SIGNIFICANCE_THRESHOLD:
                     result = self.record_event(
-                        source=event.get("source", event.get("type", "unknown")),
-                        event_type=event.get("type", "unknown"),
+                        source=event.get("source", event_type),
+                        event_type=event_type,
                         data=event.get("content", {}),
                         salience=salience,
                     )
